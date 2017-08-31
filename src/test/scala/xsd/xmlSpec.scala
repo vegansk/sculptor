@@ -5,7 +5,8 @@ import scala.xml._
 
 object xmlSpec extends mutable.Specification {
 
-  val doc = XML.loadString { """
+  val doc = XML.loadString {
+    """
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
     <xs:complexType name="Record">
         <xs:sequence>
