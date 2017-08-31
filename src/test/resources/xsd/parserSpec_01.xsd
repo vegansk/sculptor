@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:simpleType name="restricted_string_t">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="10"/>
+            <xs:pattern value="[a-z]+"/>
+            <xs:pattern value="[abc]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="restricted_integer_t">
+        <xs:restriction base="xs:integer"/>
+    </xs:simpleType>
+    <xs:complexType name="record_t">
+        <xs:sequence>
+            <xs:element name="str" type="xs:string"/>
+            <xs:element name="int" type="xs:integer"/>
+        </xs:sequence>
+    </xs:complexType>
+</xs:schema>
