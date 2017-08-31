@@ -27,22 +27,36 @@ object parser {
     withNode(node) {
       for {
         name <- attr("name")(node)
-        typ <- attrO("type")(node).flatMap(t => t.fold(parseAnonType(node))(tname => parseTypeName(tname)))
+        typ <- attrO("type")(node).flatMap(
+          t => t.fold(parseAnonType(node))(tname => parseTypeName(tname))
+        )
       } yield (name, typ)
     }
   }
 
-  private def parseRestrictedString(name: Option[String], restriction: Node): ResultS[types.RStr] = {
+  private def parseRestrictedString(name: Option[String],
+                                    restriction: Node): ResultS[types.RStr] = {
     withNode(restriction) {
       for {
         minLength <- optElAttrAsInt("minLength", "value")(restriction)
         maxLength <- optElAttrAsInt("maxLength", "value")(restriction)
-        regExp <- els("pattern")(restriction).flatMap(_.traverse(attr("value")(_)))
-      } yield types.RStr(name = name, minLength = minLength, maxLength = maxLength, regExp = regExp)
+        regExp <- els("pattern")(restriction)
+          .flatMap(_.traverse(attr("value")(_)))
+      } yield
+        types.RStr(
+          name = name,
+          minLength = minLength,
+          maxLength = maxLength,
+          regExp = regExp
+        )
     }
   }
 
-  private def parseRestrictedOrdinal(name: Option[String], `type`: types.Ordinal, restriction: Node): ResultS[types.ROrdinal] = {
+  private def parseRestrictedOrdinal(
+    name: Option[String],
+    `type`: types.Ordinal,
+    restriction: Node
+  ): ResultS[types.ROrdinal] = {
     withNode(restriction) {
       for {
         minInclusive <- optElAttrAsInt("minInclusive", "value")(restriction)
@@ -50,17 +64,19 @@ object parser {
         minExclusive <- optElAttrAsInt("minExclusive", "value")(restriction)
         maxExclusive <- optElAttrAsInt("maxExclusive", "value")(restriction)
         totalDigits <- optElAttrAsInt("totalDigits", "value")(restriction)
-        regExp <- els("pattern")(restriction).flatMap(_.traverse(attr("value")(_)))
-      } yield types.ROrdinal(
-        name = name,
-        `type` = `type`,
-        minInclusive = minInclusive,
-        maxInclusive = maxInclusive,
-        minExclusive = minExclusive,
-        maxExclusive = maxExclusive,
-        totalDigits = totalDigits,
-        regExp = regExp
-      )
+        regExp <- els("pattern")(restriction)
+          .flatMap(_.traverse(attr("value")(_)))
+      } yield
+        types.ROrdinal(
+          name = name,
+          `type` = `type`,
+          minInclusive = minInclusive,
+          maxInclusive = maxInclusive,
+          minExclusive = minExclusive,
+          maxExclusive = maxExclusive,
+          totalDigits = totalDigits,
+          regExp = regExp
+        )
     }
   }
 
@@ -71,8 +87,11 @@ object parser {
         restriction <- el("restriction")(node)
         base <- attr("base")(restriction).flatMap(parseTypeName(_))
         typ <- base match {
-          case LinkedType(types.Str) => parseRestrictedString(name.some, restriction).map(LinkedType)
-          case LinkedType(types.Int) => parseRestrictedOrdinal(name.some, types.Int, restriction).map(LinkedType)
+          case LinkedType(types.Str) =>
+            parseRestrictedString(name.some, restriction).map(LinkedType)
+          case LinkedType(types.Int) =>
+            parseRestrictedOrdinal(name.some, types.Int, restriction)
+              .map(LinkedType)
           case typ => left(new Exception(s"Unknown base type: $typ"))
         }
       } yield typ
@@ -88,7 +107,7 @@ object parser {
         name <- attr("name")(node)
         seq <- el("sequence")(node)
         fields <- els("element")(seq).flatMap(_.traverse(parseElement(_)))
-      } yield CRecord(Some(name), Map(fields:_*))
+      } yield CRecord(Some(name), Map(fields: _*))
     }
   }
 
@@ -109,7 +128,14 @@ object parser {
     } yield CModule(None, simpleTypes ++ complexTypes)
 
     r.value.run(ParserState()).value match {
-      case (state, result) => result.leftMap(e => new Exception(s"$e (path: ${state.path.reverse.map(_.label).mkString(".")})", e))
+      case (state, result) =>
+        result.leftMap(
+          e =>
+            new Exception(
+              s"$e (path: ${state.path.reverse.map(_.label).mkString(".")})",
+              e
+          )
+        )
     }
   }
 

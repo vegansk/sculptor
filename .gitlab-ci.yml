@@ -10,4 +10,4 @@ cache:
 
 test:
   script:
-    - bin/sbt test -sbt-launch-dir cache/.sbt/launchers -sbt-boot cache/.sbt/boot -ivy cache/.ivy2
+    - bin/sbt scalafmt::test test -sbt-launch-dir cache/.sbt/launchers -sbt-boot cache/.sbt/boot -ivy cache/.ivy2

@@ -5,16 +5,23 @@ import cats.implicits._
 
 object xml {
 
-  def getByNameO(name: String, ns: Option[String] = None)(el: Node): Option[Node] =
+  def getByNameO(name: String,
+                 ns: Option[String] = None)(el: Node): Option[Node] =
     (el \ name)
       .filter(n => ns.map(_ === n.prefix).getOrElse(true))
       .headOption
 
-  def getByName(name: String, ns: Option[String] = None)(el: Node): Either[Throwable, Node] =
+  def getByName(name: String,
+                ns: Option[String] = None)(el: Node): Either[Throwable, Node] =
     getByNameO(name, ns)(el)
-      .toRight(new Exception(s"No such element: ${ns.map(_ + ":" + name).getOrElse(name)} in $el"))
+      .toRight(
+        new Exception(
+          s"No such element: ${ns.map(_ + ":" + name).getOrElse(name)} in $el"
+        )
+      )
 
-  def findByName(name: String, ns: Option[String] = None)(el: Node): List[Node] =
+  def findByName(name: String,
+                 ns: Option[String] = None)(el: Node): List[Node] =
     (el \ name)
       .filter(n => ns.map(_ === n.prefix).getOrElse(true))
       .toList

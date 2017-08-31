@@ -10,7 +10,8 @@ object parserSpec extends mutable.Specification {
 
     "parse xsd" >> {
 
-      val xsd = getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_01.xsd")
+      val xsd =
+        getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_01.xsd")
 
       parser(XML.load(xsd)) must_== Right(
         types.Module(
@@ -22,16 +23,10 @@ object parserSpec extends mutable.Specification {
               Some(10),
               List("[a-z]+", "[abc]+")
             ),
-            types.ROrdinal(
-              Some("restricted_integer_t"),
-              types.Int
-            ),
+            types.ROrdinal(Some("restricted_integer_t"), types.Int),
             types.Record(
               Some("record_t"),
-              Map(
-                "str" -> types.Str,
-                "int" -> types.Int
-              )
+              Map("str" -> types.Str, "int" -> types.Int)
             )
           )
         )
