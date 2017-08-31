@@ -14,8 +14,8 @@ object parser {
       ns <- getNs
       p <- liftE(prefixed(name))
       `type` <- p match {
-        case (ns1, "integer") if ns1 == ns => right(LinkedType(types.Int))
-        case (ns1, "string") if ns1 == ns => right(LinkedType(types.Str))
+        case (ns1, "integer") if ns1 === ns => right(LinkedType(types.Int))
+        case (ns1, "string") if ns1 === ns => right(LinkedType(types.Str))
         case (ns1, name) => right(UnlinkedType(name))
       }
     } yield `type`
@@ -132,7 +132,7 @@ object parser {
     } yield m
   }
 
-  def apply(reader: java.io.InputStream): Result[types.Module] = {
+  def fromStream(reader: java.io.InputStream): Result[types.Module] = {
     for {
       xsd <- Try(XML.load(reader)).toEither
       module <- this(xsd)

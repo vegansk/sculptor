@@ -11,3 +11,13 @@ libraryDependencies ++= Seq(
 scalacOptions ++= Seq(
   "-Ypartial-unification"
 )
+
+wartremoverErrors in (Compile, compile) ++= Warts.allBut(
+  // Allow defaul arguments
+  Wart.DefaultArguments,
+  // See https://github.com/wartremover/wartremover/issues/263
+  Wart.Any,
+  Wart.Nothing,
+  // Parsers are recursive
+  Wart.Recursion
+)
