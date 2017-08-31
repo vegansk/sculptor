@@ -37,5 +37,5 @@ object xml {
 
   def push(p: Path, n: Node): Path = n :: p
 
-  def pop(p: Path): Path = p.tail
+  def pop(p: Path): Path = p.drop(1)
 }

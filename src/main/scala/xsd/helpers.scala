@@ -16,7 +16,7 @@ object helpers {
 
   type Result[A] = Either[Throwable, A]
 
-  case class ParserState(
+  final case class ParserState(
     ns: Option[String] = None,
     path: xml.Path = xml.mkPath
   )
