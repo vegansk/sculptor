@@ -2,39 +2,39 @@ package sculptor
 
 object types {
 
-  type Num = Int
+  type Number = Int
 
-  sealed trait Type
+  sealed trait TypeF[A]
 
-  sealed trait Standard extends Type
+  final case class IntF[A]() extends TypeF[A]
 
-  sealed trait Ordinal extends Standard
+  final case class StringF[A]() extends TypeF[A]
 
-  sealed trait StringLike extends Standard
+  final case class RestrictedStringF[A](name: Option[String] = None,
+                                        baseType: A,
+                                        minLength: Option[Number] = None,
+                                        maxLength: Option[Number] = None,
+                                        regExp: List[String] = Nil)
+      extends TypeF[A]
 
-  final case object Int extends Ordinal
+  final case class RestrictedNumberF[A](name: Option[String] = None,
+                                        baseType: A,
+                                        minInclusive: Option[Number] = None,
+                                        maxInclusive: Option[Number] = None,
+                                        minExclusive: Option[Number] = None,
+                                        maxExclusive: Option[Number] = None,
+                                        totalDigits: Option[Number] = None,
+                                        regExp: List[String] = Nil)
+      extends TypeF[A]
 
-  final case object Str extends StringLike
+  final case class RecordF[A](name: Option[String], fields: List[(String, A)])
+      extends TypeF[A]
 
-  /** Restricted string type */
-  final case class RStr(name: Option[String] = None,
-                        minLength: Option[Num] = None,
-                        maxLength: Option[Num] = None,
-                        regExp: List[String] = Nil)
-      extends StringLike
+  final case class ModuleF[A](name: Option[String], types: List[A])
 
-  final case class ROrdinal(name: Option[String] = None,
-                            `type`: Ordinal = Int,
-                            minInclusive: Option[Num] = None,
-                            maxInclusive: Option[Num] = None,
-                            minExclusive: Option[Num] = None,
-                            maxExclusive: Option[Num] = None,
-                            totalDigits: Option[Num] = None,
-                            regExp: List[String] = Nil)
-      extends Ordinal
+  type TypeT = Fix[TypeF]
 
-  final case class Record(name: Option[String], fields: Map[String, Type])
-      extends Type
+  object TypeT { def apply(a: TypeF[TypeT]): TypeT = Fix(a) }
 
-  final case class Module(name: Option[String], types: List[Type])
+  type Module = ModuleF[TypeT]
 }
