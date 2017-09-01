@@ -1,19 +1,10 @@
 package sculptor.xsd
 
-import sculptor._
 import scala.util.Try
 import scala.xml._
-import cats._, cats.implicits._, cats.data._
+import cats.implicits._, cats.data._
 
 object helpers {
-
-  // These are used for compile pass
-  sealed trait CType
-  final case class LinkedType(`type`: types.Type) extends CType
-  final case class UnlinkedType(name: String) extends CType
-  final case class CRecord(name: Option[String], fields: Map[String, CType])
-      extends CType
-  final case class CModule(name: Option[String], types: List[CType])
 
   type Result[A] = Either[Throwable, A]
 
@@ -27,8 +18,6 @@ object helpers {
   def left(v: => Throwable): ResultS[Nothing] = EitherT.leftT(v)
   def liftS[A](s: ParserStateS[A]): ResultS[A] = EitherT.liftT(s)
   def liftE[A](e: Result[A]): ResultS[A] = EitherT(State.pure(e))
-
-  type ParsedElement = (String, CType)
 
   def getNs: ResultS[Option[String]] = liftS(State.get[ParserState].map(_.ns))
   def updateNs(ns: Option[String]): ResultS[Unit] =

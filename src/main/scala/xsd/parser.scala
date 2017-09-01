@@ -1,22 +1,62 @@
 package sculptor.xsd
 
 import sculptor._
+import types._
 import scala.util.Try
 import scala.xml._
-import cats._, cats.implicits._, cats.data._
+import cats.implicits._
 
 object parser {
 
   import helpers._
+
+  private final case class Ident(value: String)
+
+  private type CTypeF[A] = Either[Ident, TypeF[A]]
+  private type CType = Fix[CTypeF]
+
+  private object CType {
+    def apply(v: TypeF[CType]): CType = Fix(Right(v): CTypeF[CType])
+
+    def unapply(v: CType): Option[CTypeF[CType]] = v.unfix.some
+
+    def toTypeT(v: CType): Result[TypeT] =
+      v.unfix
+        .flatMap(_ match {
+          case IntF() => Right(TypeT(IntF()))
+          case StringF() => Right(TypeT(StringF()))
+          case RestrictedStringF(n, bt, minL, maxL, re) => {
+            toTypeT(bt)
+              .map(bt => TypeT(RestrictedStringF(n, bt, minL, maxL, re)))
+          }
+          case RestrictedNumberF(n, bt, minI, maxI, minE, maxE, td, re) => {
+            toTypeT(bt).map(
+              bt =>
+                TypeT(RestrictedNumberF(n, bt, minI, maxI, minE, maxE, td, re))
+            )
+          }
+          case RecordF(n, f) => {
+            f.traverse(f => toTypeT(f._2).map(t => (f._1, t)))
+              .map(f => TypeT(RecordF(n, f)))
+          }
+        })
+        .leftMap(name => new Exception(s"Found unknown identifier ${name}"))
+  }
+
+  private object CIdent {
+    def apply(v: String): CType = Fix(Left(Ident(v)): CTypeF[CType])
+  }
+
+  private type ParsedElement = (String, CType)
 
   private def parseTypeName(name: String): ResultS[CType] = {
     for {
       ns <- getNs
       p <- liftE(prefixed(name))
       `type` <- p match {
-        case (ns1, "integer") if ns1 === ns => right(LinkedType(types.Int))
-        case (ns1, "string") if ns1 === ns => right(LinkedType(types.Str))
-        case (ns1, name) => right(UnlinkedType(name))
+        case (ns1, "integer") if ns1 === ns => right(CType(IntF()))
+        case (ns1, "string") if ns1 === ns => right(CType(StringF()))
+        case (_, name) => right(CIdent(name))
       }
     } yield `type`
   }
@@ -35,7 +75,7 @@ object parser {
   }
 
   private def parseRestrictedString(name: Option[String],
-                                    restriction: Node): ResultS[types.RStr] = {
+                                    restriction: Node): ResultS[CType] = {
     withNode(restriction) {
       for {
         minLength <- optElAttrAsInt("minLength", "value")(restriction)
@@ -43,20 +83,21 @@ object parser {
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
-        types.RStr(
-          name = name,
-          minLength = minLength,
-          maxLength = maxLength,
-          regExp = regExp
+        CType(
+          RestrictedStringF(
+            name = name,
+            baseType = CType(StringF()),
+            minLength = minLength,
+            maxLength = maxLength,
+            regExp = regExp
+          )
         )
     }
   }
 
-  private def parseRestrictedOrdinal(
-    name: Option[String],
-    `type`: types.Ordinal,
-    restriction: Node
-  ): ResultS[types.ROrdinal] = {
+  private def parseRestrictedOrdinal(name: Option[String],
+                                     baseType: CType,
+                                     restriction: Node): ResultS[CType] = {
     withNode(restriction) {
       for {
         minInclusive <- optElAttrAsInt("minInclusive", "value")(restriction)
@@ -67,15 +108,17 @@ object parser {
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
-        types.ROrdinal(
-          name = name,
-          `type` = `type`,
-          minInclusive = minInclusive,
-          maxInclusive = maxInclusive,
-          minExclusive = minExclusive,
-          maxExclusive = maxExclusive,
-          totalDigits = totalDigits,
-          regExp = regExp
+        CType(
+          RestrictedNumberF(
+            name = name,
+            baseType = baseType,
+            minInclusive = minInclusive,
+            maxInclusive = maxInclusive,
+            minExclusive = minExclusive,
+            maxExclusive = maxExclusive,
+            totalDigits = totalDigits,
+            regExp = regExp
+          )
         )
     }
   }
@@ -87,11 +130,10 @@ object parser {
         restriction <- el("restriction")(node)
         base <- attr("base")(restriction).flatMap(parseTypeName(_))
         typ <- base match {
-          case LinkedType(types.Str) =>
-            parseRestrictedString(name.some, restriction).map(LinkedType)
-          case LinkedType(types.Int) =>
-            parseRestrictedOrdinal(name.some, types.Int, restriction)
-              .map(LinkedType)
+          case CType(Right(StringF())) =>
+            parseRestrictedString(name.some, restriction)
+          case CType(Right(IntF())) =>
+            parseRestrictedOrdinal(name.some, CType(IntF()), restriction)
           case typ => left(new Exception(s"Unknown base type: $typ"))
         }
       } yield typ
@@ -101,17 +143,17 @@ object parser {
   private def parseSimpleTypes(root: Node): ResultS[List[CType]] =
     els("simpleType")(root).flatMap(_.traverse(parseSimpleType(_)))
 
-  private def parseComplexType(node: Node): ResultS[CRecord] = {
+  private def parseComplexType(node: Node): ResultS[CType] = {
     withNode(node) {
       for {
         name <- attr("name")(node)
         seq <- el("sequence")(node)
         fields <- els("element")(seq).flatMap(_.traverse(parseElement(_)))
-      } yield CRecord(Some(name), Map(fields: _*))
+      } yield CType(RecordF(Some(name), fields))
     }
   }
 
-  private def parseComplexTypes(root: Node): ResultS[List[CRecord]] =
+  private def parseComplexTypes(root: Node): ResultS[List[CType]] =
     els("complexType")(root).flatMap(_.traverse(parseComplexType(_)))
 
   private val XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
@@ -119,13 +161,13 @@ object parser {
   private def findNamespace(xsd: Node): ResultS[Option[String]] =
     right(xml.getPrefix(XSD_NAMESPACE)(xsd))
 
-  private[sculptor] def compilePass(xsd: Node): Result[CModule] = {
+  private def compilePass(xsd: Node): Result[ModuleF[CType]] = {
     val r = for {
       ns <- findNamespace(xsd)
       _ <- updateNs(ns)
       simpleTypes <- parseSimpleTypes(xsd)
       complexTypes <- parseComplexTypes(xsd)
-    } yield CModule(None, simpleTypes ++ complexTypes)
+    } yield ModuleF(None, simpleTypes ++ complexTypes)
 
     r.value.run(ParserState()).value match {
       case (state, result) =>
@@ -139,16 +181,10 @@ object parser {
     }
   }
 
-  private def linkType(t: CType): Result[types.Type] = t match {
-    case LinkedType(t) => Right(t)
-    case UnlinkedType(name) => Left(new Throwable(s"Can't find type $name"))
-    case CRecord(n, t) => t.traverse(linkType(_)).map(types.Record(n, _))
-  }
-
-  private def linkPass(m: CModule): Result[types.Module] = {
+  private def linkPass(m: ModuleF[CType]): Result[types.Module] = {
     for {
-      t <- m.types.traverse(linkType(_))
-    } yield types.Module(m.name, t)
+      t <- m.types.traverse(CType.toTypeT(_))
+    } yield ModuleF(m.name, t)
   }
 
   def apply(xsd: Node): Result[types.Module] = {
