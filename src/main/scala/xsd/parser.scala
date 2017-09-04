@@ -24,8 +24,27 @@ object parser {
       pname <- liftE(prefixed(name))
       typ <- {
         pname match {
-          case (ns1, "integer") if ns1 === ns => right(TypeT(IntF()))
-          case (ns1, "string") if ns1 === ns => right(TypeT(StringF()))
+          case (ns1, name) if ns1 === ns => {
+            name match {
+              case "integer" => right(TypeT(IntegerF()))
+              case "string" => right(TypeT(StringF()))
+              case "decimal" => right(TypeT(DecimalF()))
+              case "nonNegativeInteger" => right(TypeT(NonNegativeIntegerF()))
+              case "byte" => right(TypeT(ByteF()))
+              case "int" => right(TypeT(IntF()))
+              case "long" => right(TypeT(LongF()))
+              case "negativeInteger" => right(TypeT(NegativeIntegerF()))
+              case "nonPositiveInteger" => right(TypeT(NonPositiveIntegerF()))
+              case "positiveInteger" => right(TypeT(PositiveIntegerF()))
+              case "short" => right(TypeT(ShortF()))
+              case "unsignedLong" => right(TypeT(UnsignedLongF()))
+              case "unsignedInt" => right(TypeT(UnsignedIntF()))
+              case "unsignedShort" => right(TypeT(UnsignedShortF()))
+              case "unsignedByte" => right(TypeT(UnsignedByteF()))
+              case "date" => right(TypeT(DateF()))
+              case _ => leftStr(s"Unknown xsd type $name")
+            }
+          }
           //TODO: Namespaces!!!
           case (_, name) => right(TypeT(TypeIdF(Ident(name))))
         }
@@ -33,7 +52,8 @@ object parser {
     } yield typ
   }
 
-  private def parseAnonType(node: Node): ResultS[TypeT] = ???
+  private def parseAnonType(node: Node): ResultS[TypeT] =
+    leftStr("Anonymous types is not implemented")
 
   private def parseElement(node: Node): ResultS[ParsedElement] = {
     withNode(node) {
@@ -50,8 +70,8 @@ object parser {
                                     restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
       for {
-        minLength <- optElAttrAsInt("minLength", "value")(restriction)
-        maxLength <- optElAttrAsInt("maxLength", "value")(restriction)
+        minLength <- optElAttrAsNumber("minLength", "value")(restriction)
+        maxLength <- optElAttrAsNumber("maxLength", "value")(restriction)
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
@@ -67,16 +87,16 @@ object parser {
     }
   }
 
-  private def parseRestrictedOrdinal(name: Ident,
-                                     baseType: TypeT,
-                                     restriction: Node): ResultS[TypeT] = {
+  private def parseRestrictedNumber(name: Ident,
+                                    baseType: TypeT,
+                                    restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
       for {
-        minInclusive <- optElAttrAsInt("minInclusive", "value")(restriction)
-        maxInclusive <- optElAttrAsInt("maxInclusive", "value")(restriction)
-        minExclusive <- optElAttrAsInt("minExclusive", "value")(restriction)
-        maxExclusive <- optElAttrAsInt("maxExclusive", "value")(restriction)
-        totalDigits <- optElAttrAsInt("totalDigits", "value")(restriction)
+        minInclusive <- optElAttrAsNumber("minInclusive", "value")(restriction)
+        maxInclusive <- optElAttrAsNumber("maxInclusive", "value")(restriction)
+        minExclusive <- optElAttrAsNumber("minExclusive", "value")(restriction)
+        maxExclusive <- optElAttrAsNumber("maxExclusive", "value")(restriction)
+        totalDigits <- optElAttrAsNumber("totalDigits", "value")(restriction)
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
@@ -104,8 +124,13 @@ object parser {
         `type` <- base match {
           case TypeT(StringF()) =>
             parseRestrictedString(name, restriction)
-          case TypeT(IntF()) =>
-            parseRestrictedOrdinal(name, TypeT(IntF()), restriction)
+          case t @ TypeT(
+                IntegerF() | DecimalF() | NonNegativeIntegerF() | ByteF() |
+                IntF() | LongF() | NegativeIntegerF() | NonPositiveIntegerF() |
+                PositiveIntegerF() | ShortF() | UnsignedLongF() |
+                UnsignedIntF() | UnsignedShortF() | UnsignedByteF()
+              ) =>
+            parseRestrictedNumber(name, t, restriction)
           case typ => leftStr(s"Unknown base type: $typ")
         }
       } yield (name, `type`)
