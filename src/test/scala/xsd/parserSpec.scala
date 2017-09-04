@@ -30,13 +30,13 @@ object parserSpec extends mutable.Specification {
               ),
             Ident("rint_t") ->
               TypeT(
-                RestrictedNumberF(Ident("rint_t"), TypeT(IntF()))
+                RestrictedNumberF(Ident("rint_t"), TypeT(IntegerF()))
               ),
             Ident("rec_t") ->
               TypeT(
                 RecordF(
                   Ident("rec_t"),
-                  List(Ident("str") -> TypeT(StringF()), Ident("int") -> TypeT(IntF()))
+                  List(Ident("str") -> TypeT(StringF()), Ident("int") -> TypeT(IntegerF()))
                 )
               )
           )
@@ -60,7 +60,7 @@ object parserSpec extends mutable.Specification {
               ),
             Ident("rint_t") ->
               TypeT(
-                RestrictedNumberF(Ident("rint_t"), TypeT(IntF()))
+                RestrictedNumberF(Ident("rint_t"), TypeT(IntegerF()))
               ),
             Ident("rec_t") ->
               TypeT(
@@ -78,6 +78,15 @@ object parserSpec extends mutable.Specification {
     "issue an error about unknown types" >> {
       val xsd =
         getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_03.xsd")
+
+      val err = parser(XML.load(xsd))
+      println(err)
+      err.isLeft must_== true
+    }
+
+    "be able to parse fes-1.0 schema" >> {
+      val xsd =
+        getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
 
       val err = parser(XML.load(xsd))
       println(err)

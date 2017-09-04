@@ -1,5 +1,6 @@
 package sculptor.xsd
 
+import sculptor.types._
 import scala.util.Try
 import scala.xml._
 import cats.implicits._, cats.data._
@@ -42,8 +43,8 @@ private[xsd] object helpers {
       case _ => Left(new Exception("Can't make empty string prefixed"))
     }
 
-  def parseInt(v: String): Either[Throwable, Int] =
-    Either.catchNonFatal(Integer.parseInt(v))
+  def parseNumber(v: String): Either[Throwable, Number] =
+    Either.catchNonFatal(BigDecimal(v))
 
   def attr(name: String)(node: Node): ResultS[String] =
     liftE(xml.getAttr(name)(node))
@@ -57,11 +58,12 @@ private[xsd] object helpers {
     getNs.flatMap(ns => right(xml.findByName(name, ns)(node)))
   def intAttr(name: String)(node: Node): ResultS[Int] =
     attr(name)(node).flatMap(v => liftE(Try(Integer.parseInt(v)).toEither))
-  def optElAttrAsInt(name: String,
-                     attrName: String)(node: Node): ResultS[Option[Int]] =
+  def optElAttrAsNumber(name: String, attrName: String)(
+    node: Node
+  ): ResultS[Option[Number]] =
     OptionT(elO(name)(node))
       .semiflatMap(attr(attrName)(_))
-      .semiflatMap(v => liftE(parseInt(v)))
+      .semiflatMap(v => liftE(parseNumber(v)))
       .value
 
 }
