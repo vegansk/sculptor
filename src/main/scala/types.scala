@@ -4,20 +4,24 @@ object types {
 
   type Number = Int
 
+  final case class Ident(name: String)
+
   sealed trait TypeF[A]
 
   final case class IntF[A]() extends TypeF[A]
 
   final case class StringF[A]() extends TypeF[A]
 
-  final case class RestrictedStringF[A](name: Option[String] = None,
+  final case class TypeIdF[A](ref: Ident) extends TypeF[A]
+
+  final case class RestrictedStringF[A](name: Ident,
                                         baseType: A,
                                         minLength: Option[Number] = None,
                                         maxLength: Option[Number] = None,
                                         regExp: List[String] = Nil)
       extends TypeF[A]
 
-  final case class RestrictedNumberF[A](name: Option[String] = None,
+  final case class RestrictedNumberF[A](name: Ident,
                                         baseType: A,
                                         minInclusive: Option[Number] = None,
                                         maxInclusive: Option[Number] = None,
@@ -27,10 +31,10 @@ object types {
                                         regExp: List[String] = Nil)
       extends TypeF[A]
 
-  final case class RecordF[A](name: Option[String], fields: List[(String, A)])
+  final case class RecordF[A](name: Ident, fields: List[(Ident, A)])
       extends TypeF[A]
 
-  final case class ModuleF[A](name: Option[String], types: List[A])
+  final case class ModuleF[A](name: Option[String], types: Map[Ident, A])
 
   type TypeT = Fix[TypeF]
 

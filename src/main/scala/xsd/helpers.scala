@@ -4,7 +4,7 @@ import scala.util.Try
 import scala.xml._
 import cats.implicits._, cats.data._
 
-object helpers {
+private[xsd] object helpers {
 
   type Result[A] = Either[Throwable, A]
 
@@ -15,7 +15,8 @@ object helpers {
   type ResultS[A] = EitherT[ParserStateS, Throwable, A]
 
   def right[A](v: A): ResultS[A] = EitherT.rightT(v)
-  def left(v: => Throwable): ResultS[Nothing] = EitherT.leftT(v)
+  def left[A](v: => Throwable): ResultS[A] = EitherT.leftT(v)
+  def leftStr[A](s: => String): ResultS[A] = EitherT.leftT(new Exception(s))
   def liftS[A](s: ParserStateS[A]): ResultS[A] = EitherT.liftT(s)
   def liftE[A](e: Result[A]): ResultS[A] = EitherT(State.pure(e))
 
@@ -26,7 +27,6 @@ object helpers {
     liftS(State.modify[ParserState](s => s.copy(path = xml.push(s.path, n))))
   def popNode: ResultS[Unit] =
     liftS(State.modify[ParserState](s => s.copy(path = xml.pop(s.path))))
-
   def withNode[A](n: Node)(body: => ResultS[A]): ResultS[A] = {
     for {
       _ <- pushNode(n)

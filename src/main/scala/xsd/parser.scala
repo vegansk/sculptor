@@ -10,63 +10,35 @@ object parser {
 
   import helpers._
 
-  private final case class Ident(value: String)
+  private object TypeT {
+    def apply(v: TypeF[TypeT]): TypeT = Fix(v)
 
-  private type CTypeF[A] = Either[Ident, TypeF[A]]
-  private type CType = Fix[CTypeF]
-
-  private object CType {
-    def apply(v: TypeF[CType]): CType = Fix(Right(v): CTypeF[CType])
-
-    def unapply(v: CType): Option[CTypeF[CType]] = v.unfix.some
-
-    def toTypeT(v: CType): Result[TypeT] =
-      v.unfix
-        .flatMap(_ match {
-          case IntF() => Right(TypeT(IntF()))
-          case StringF() => Right(TypeT(StringF()))
-          case RestrictedStringF(n, bt, minL, maxL, re) => {
-            toTypeT(bt)
-              .map(bt => TypeT(RestrictedStringF(n, bt, minL, maxL, re)))
-          }
-          case RestrictedNumberF(n, bt, minI, maxI, minE, maxE, td, re) => {
-            toTypeT(bt).map(
-              bt =>
-                TypeT(RestrictedNumberF(n, bt, minI, maxI, minE, maxE, td, re))
-            )
-          }
-          case RecordF(n, f) => {
-            f.traverse(f => toTypeT(f._2).map(t => (f._1, t)))
-              .map(f => TypeT(RecordF(n, f)))
-          }
-        })
-        .leftMap(name => new Exception(s"Found unknown identifier ${name}"))
+    def unapply(v: TypeT): Option[TypeF[TypeT]] = v.unfix.some
   }
 
-  private object CIdent {
-    def apply(v: String): CType = Fix(Left(Ident(v)): CTypeF[CType])
-  }
+  private type ParsedElement = (Ident, TypeT)
 
-  private type ParsedElement = (String, CType)
-
-  private def parseTypeName(name: String): ResultS[CType] = {
+  private def parseTypeName(name: String): ResultS[TypeT] = {
     for {
       ns <- getNs
-      p <- liftE(prefixed(name))
-      `type` <- p match {
-        case (ns1, "integer") if ns1 === ns => right(CType(IntF()))
-        case (ns1, "string") if ns1 === ns => right(CType(StringF()))
-        case (_, name) => right(CIdent(name))
+      pname <- liftE(prefixed(name))
+      typ <- {
+        pname match {
+          case (ns1, "integer") if ns1 === ns => right(TypeT(IntF()))
+          case (ns1, "string") if ns1 === ns => right(TypeT(StringF()))
+          //TODO: Namespaces!!!
+          case (_, name) => right(TypeT(TypeIdF(Ident(name))))
+        }
       }
-    } yield `type`
+    } yield typ
   }
 
-  private def parseAnonType(node: Node): ResultS[CType] = ???
+  private def parseAnonType(node: Node): ResultS[TypeT] = ???
 
   private def parseElement(node: Node): ResultS[ParsedElement] = {
     withNode(node) {
       for {
-        name <- attr("name")(node)
+        name <- attr("name")(node).map(Ident(_))
         typ <- attrO("type")(node).flatMap(
           t => t.fold(parseAnonType(node))(tname => parseTypeName(tname))
         )
@@ -74,8 +46,8 @@ object parser {
     }
   }
 
-  private def parseRestrictedString(name: Option[String],
-                                    restriction: Node): ResultS[CType] = {
+  private def parseRestrictedString(name: Ident,
+                                    restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
       for {
         minLength <- optElAttrAsInt("minLength", "value")(restriction)
@@ -83,10 +55,10 @@ object parser {
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
-        CType(
+        TypeT(
           RestrictedStringF(
             name = name,
-            baseType = CType(StringF()),
+            baseType = TypeT(StringF()),
             minLength = minLength,
             maxLength = maxLength,
             regExp = regExp
@@ -95,9 +67,9 @@ object parser {
     }
   }
 
-  private def parseRestrictedOrdinal(name: Option[String],
-                                     baseType: CType,
-                                     restriction: Node): ResultS[CType] = {
+  private def parseRestrictedOrdinal(name: Ident,
+                                     baseType: TypeT,
+                                     restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
       for {
         minInclusive <- optElAttrAsInt("minInclusive", "value")(restriction)
@@ -108,7 +80,7 @@ object parser {
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
       } yield
-        CType(
+        TypeT(
           RestrictedNumberF(
             name = name,
             baseType = baseType,
@@ -123,37 +95,37 @@ object parser {
     }
   }
 
-  private def parseSimpleType(node: Node): ResultS[CType] = {
+  private def parseSimpleType(node: Node): ResultS[ParsedElement] = {
     withNode(node) {
       for {
-        name <- attr("name")(node)
+        name <- attr("name")(node).map(Ident(_))
         restriction <- el("restriction")(node)
         base <- attr("base")(restriction).flatMap(parseTypeName(_))
-        typ <- base match {
-          case CType(Right(StringF())) =>
-            parseRestrictedString(name.some, restriction)
-          case CType(Right(IntF())) =>
-            parseRestrictedOrdinal(name.some, CType(IntF()), restriction)
-          case typ => left(new Exception(s"Unknown base type: $typ"))
+        `type` <- base match {
+          case TypeT(StringF()) =>
+            parseRestrictedString(name, restriction)
+          case TypeT(IntF()) =>
+            parseRestrictedOrdinal(name, TypeT(IntF()), restriction)
+          case typ => leftStr(s"Unknown base type: $typ")
         }
-      } yield typ
+      } yield (name, `type`)
     }
   }
 
-  private def parseSimpleTypes(root: Node): ResultS[List[CType]] =
+  private def parseSimpleTypes(root: Node): ResultS[List[ParsedElement]] =
     els("simpleType")(root).flatMap(_.traverse(parseSimpleType(_)))
 
-  private def parseComplexType(node: Node): ResultS[CType] = {
+  private def parseComplexType(node: Node): ResultS[ParsedElement] = {
     withNode(node) {
       for {
-        name <- attr("name")(node)
+        name <- attr("name")(node).map(Ident(_))
         seq <- el("sequence")(node)
         fields <- els("element")(seq).flatMap(_.traverse(parseElement(_)))
-      } yield CType(RecordF(Some(name), fields))
+      } yield (name, TypeT(RecordF(name, fields)))
     }
   }
 
-  private def parseComplexTypes(root: Node): ResultS[List[CType]] =
+  private def parseComplexTypes(root: Node): ResultS[List[ParsedElement]] =
     els("complexType")(root).flatMap(_.traverse(parseComplexType(_)))
 
   private val XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
@@ -161,13 +133,13 @@ object parser {
   private def findNamespace(xsd: Node): ResultS[Option[String]] =
     right(xml.getPrefix(XSD_NAMESPACE)(xsd))
 
-  private def compilePass(xsd: Node): Result[ModuleF[CType]] = {
+  private def compilePass(xsd: Node): Result[Module] = {
     val r = for {
       ns <- findNamespace(xsd)
       _ <- updateNs(ns)
       simpleTypes <- parseSimpleTypes(xsd)
       complexTypes <- parseComplexTypes(xsd)
-    } yield ModuleF(None, simpleTypes ++ complexTypes)
+    } yield ModuleF(None, (simpleTypes ++ complexTypes).toMap)
 
     r.value.run(ParserState()).value match {
       case (state, result) =>
@@ -181,20 +153,44 @@ object parser {
     }
   }
 
-  private def linkPass(m: ModuleF[CType]): Result[types.Module] = {
+  private def linkRecord(m: Module, r: RecordF[TypeT]): Result[TypeT] = {
+    r.fields.foldLeft(Right(TypeT(r)): Result[TypeT]) { (a, v) =>
+      v._2 match {
+        case TypeT(id: TypeIdF[TypeT]) =>
+          if ((m.types.contains(id.ref)))
+            a
+          else
+            Left(
+              new Exception(
+                s"Can't find the type ${id.ref.name} for the field ${r.name.name}.${v._1.name}"
+              )
+            )
+        case _ => a
+      }
+    }
+  }
+
+  private def linkType(m: Module, t: TypeT): Result[TypeT] = {
+    t match {
+      case TypeT(r: RecordF[TypeT]) => linkRecord(m, r)
+      case _ => Right(t)
+    }
+  }
+
+  private def linkPass(m: Module): Result[Module] = {
     for {
-      t <- m.types.traverse(CType.toTypeT(_))
+      t <- m.types.traverse(linkType(m, _))
     } yield ModuleF(m.name, t)
   }
 
-  def apply(xsd: Node): Result[types.Module] = {
+  def apply(xsd: Node): Result[Module] = {
     for {
       cm <- compilePass(xsd)
       m <- linkPass(cm)
     } yield m
   }
 
-  def fromStream(reader: java.io.InputStream): Result[types.Module] = {
+  def fromStream(reader: java.io.InputStream): Result[Module] = {
     for {
       xsd <- Try(XML.load(reader)).toEither
       module <- this(xsd)
