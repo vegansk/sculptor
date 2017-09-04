@@ -52,8 +52,20 @@ object parser {
     } yield typ
   }
 
-  private def parseAnonType(node: Node): ResultS[TypeT] =
-    leftStr("Anonymous types is not implemented")
+  private def parseAnonType(node: Node): ResultS[TypeT] = {
+    node.child
+      .find(_.label match {
+        case "simpleType" | "complexType" => true
+        case _ => false
+      })
+      .fold(leftStr[TypeT]("Can't parse anonymous type")) { v =>
+        v.label match {
+          case "simpleType" => parseSimpleType0(v)
+          case "complexType" => parseComplexType0(v)
+          case _ => leftStr(s"Unknown anonymous type ${v.label}")
+        }
+      }
+  }
 
   private def parseElement(node: Node): ResultS[ParsedElement] = {
     withNode(node) {
@@ -66,7 +78,7 @@ object parser {
     }
   }
 
-  private def parseRestrictedString(name: Ident,
+  private def parseRestrictedString(name: Option[Ident],
                                     restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
       for {
@@ -87,7 +99,7 @@ object parser {
     }
   }
 
-  private def parseRestrictedNumber(name: Ident,
+  private def parseRestrictedNumber(name: Option[Ident],
                                     baseType: TypeT,
                                     restriction: Node): ResultS[TypeT] = {
     withNode(restriction) {
@@ -115,10 +127,10 @@ object parser {
     }
   }
 
-  private def parseSimpleType(node: Node): ResultS[ParsedElement] = {
+  private def parseSimpleType0(node: Node): ResultS[TypeT] = {
     withNode(node) {
       for {
-        name <- attr("name")(node).map(Ident(_))
+        name <- attrO("name")(node).map(_.map(Ident(_)))
         restriction <- el("restriction")(node)
         base <- attr("base")(restriction).flatMap(parseTypeName(_))
         `type` <- base match {
@@ -133,21 +145,48 @@ object parser {
             parseRestrictedNumber(name, t, restriction)
           case typ => leftStr(s"Unknown base type: $typ")
         }
-      } yield (name, `type`)
+      } yield `type`
     }
+  }
+
+  private def parseSimpleType(node: Node): ResultS[ParsedElement] = {
+    for {
+      `type` <- parseSimpleType0(node)
+      name <- {
+        `type`.unfix match {
+          case RestrictedStringF(Some(name), _, _, _, _) =>
+            right(name)
+          case RestrictedNumberF(Some(name), _, _, _, _, _, _, _) =>
+            right(name)
+          case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
+        }
+      }
+    } yield (name, `type`)
   }
 
   private def parseSimpleTypes(root: Node): ResultS[List[ParsedElement]] =
     els("simpleType")(root).flatMap(_.traverse(parseSimpleType(_)))
 
-  private def parseComplexType(node: Node): ResultS[ParsedElement] = {
+  private def parseComplexType0(node: Node): ResultS[TypeT] = {
     withNode(node) {
       for {
-        name <- attr("name")(node).map(Ident(_))
+        name <- attrO("name")(node).map(_.map(Ident(_)))
         seq <- el("sequence")(node)
         fields <- els("element")(seq).flatMap(_.traverse(parseElement(_)))
-      } yield (name, TypeT(RecordF(name, fields)))
+      } yield TypeT(RecordF(name, fields))
     }
+  }
+
+  private def parseComplexType(node: Node): ResultS[ParsedElement] = {
+    for {
+      `type` <- parseComplexType0(node)
+      name <- {
+        `type`.unfix match {
+          case RecordF(Some(name), _) => right(name)
+          case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
+        }
+      }
+    } yield (name, `type`)
   }
 
   private def parseComplexTypes(root: Node): ResultS[List[ParsedElement]] =
@@ -187,7 +226,9 @@ object parser {
           else
             Left(
               new Exception(
-                s"Can't find the type ${id.ref.name} for the field ${r.name.name}.${v._1.name}"
+                s"Can't find the type ${id.ref.name} for the field ${r.name
+                  .map(_.name)
+                  .getOrElse("<anonymous>")}.${v._1.name}"
               )
             )
         case _ => a

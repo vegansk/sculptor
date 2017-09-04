@@ -4,6 +4,7 @@ import org.specs2._
 import sculptor._
 import types._
 import scala.xml.XML
+import cats.implicits._
 
 object parserSpec extends mutable.Specification {
 
@@ -14,14 +15,16 @@ object parserSpec extends mutable.Specification {
       val xsd =
         getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_01.xsd")
 
-      parser(XML.load(xsd)) must_== Right(
+      val module = parser(XML.load(xsd))
+      module.isRight must_== true
+      module must_== Right(
         ModuleF(
           None,
           Map(
             Ident("rstr_t") ->
               TypeT(
                 RestrictedStringF(
-                  Ident("rstr_t"),
+                  Ident("rstr_t").some,
                   TypeT(StringF()),
                   Some(1),
                   Some(10),
@@ -30,13 +33,22 @@ object parserSpec extends mutable.Specification {
               ),
             Ident("rint_t") ->
               TypeT(
-                RestrictedNumberF(Ident("rint_t"), TypeT(IntegerF()))
+                RestrictedNumberF(Ident("rint_t").some, TypeT(IntegerF()))
               ),
             Ident("rec_t") ->
               TypeT(
                 RecordF(
-                  Ident("rec_t"),
-                  List(Ident("str") -> TypeT(StringF()), Ident("int") -> TypeT(IntegerF()))
+                  Ident("rec_t").some,
+                  List(
+                    Ident("str") -> TypeT(StringF()),
+                    Ident("int") -> TypeT(IntegerF()),
+                    Ident("anonDecimal") -> TypeT(
+                      RestrictedNumberF(None, TypeT(DecimalF()), minExclusive = Some(0))
+                    ),
+                    Ident("subRec") -> TypeT(
+                      RecordF(None, List(Ident("subEl") -> TypeT(StringF())))
+                    )
+                  )
                 )
               )
           )
@@ -55,17 +67,17 @@ object parserSpec extends mutable.Specification {
           Map(
             Ident("rstr_t") ->
               TypeT(
-                RestrictedStringF(Ident("rstr_t"), TypeT(StringF())
+                RestrictedStringF(Ident("rstr_t").some, TypeT(StringF())
                 )
               ),
             Ident("rint_t") ->
               TypeT(
-                RestrictedNumberF(Ident("rint_t"), TypeT(IntegerF()))
+                RestrictedNumberF(Ident("rint_t").some, TypeT(IntegerF()))
               ),
             Ident("rec_t") ->
               TypeT(
                 RecordF(
-                  Ident("rec_t"),
+                  Ident("rec_t").some,
                   List(Ident("str") -> TypeT(TypeIdF(Ident("rstr_t"))), Ident("int") -> TypeT(TypeIdF(Ident("rint_t"))))
                 )
               )
@@ -80,7 +92,6 @@ object parserSpec extends mutable.Specification {
         getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_03.xsd")
 
       val err = parser(XML.load(xsd))
-      println(err)
       err.isLeft must_== true
     }
 

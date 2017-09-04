@@ -15,6 +15,20 @@
         <xs:sequence>
             <xs:element name="str" type="xs:string"/>
             <xs:element name="int" type="xs:integer"/>
+            <xs:element name="anonDecimal">
+                <xs:simpleType>
+                    <xs:restriction base="xs:decimal">
+                        <xs:minExclusive value="0"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="subRec">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="subEl" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
 </xs:schema>
