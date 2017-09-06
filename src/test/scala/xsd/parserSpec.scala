@@ -7,7 +7,8 @@ import scala.xml.XML
 
 object parserSpec extends mutable.Specification {
 
-  def field(name: String, `type`: TypeF[TypeT]): TypeT = TypeT(FieldF(Ident(name), TypeT(`type`)))
+  def field(name: String, `type`: TypeF[TypeT]): TypeT =
+    TypeT(FieldF(Ident(name), TypeT(`type`)))
 
   val rstr_t = NamedTypeF(
     Ident("rstr_t"),
@@ -28,15 +29,27 @@ object parserSpec extends mutable.Specification {
         List(
           field("str", StringF()),
           field("int", IntegerF()),
-          field("anonDecimal", RestrictedNumberF(TypeT(DecimalF()), minExclusive = Some(0))),
-          field("subRec",
-                ComplexTypeF(Sequence(List(field("subEl", StringF()))))
+          field(
+            "anonDecimal",
+            RestrictedNumberF(TypeT(DecimalF()), minExclusive = Some(0))
+          ),
+          field(
+            "subRec",
+            ComplexTypeF(Sequence(List(field("subEl", StringF()))))
           ),
           TypeT(
-            ComplexTypeF(Sequence(List(field("seqStr", StringF()), field("seqInt", IntegerF()))))
+            ComplexTypeF(
+              Sequence(
+                List(field("seqStr", StringF()), field("seqInt", IntegerF()))
+              )
+            )
           ),
           TypeT(
-            ComplexTypeF(Choice(List(field("seqStr", StringF()), field("seqInt", IntegerF()))))
+            ComplexTypeF(
+              Choice(
+                List(field("seqStr", StringF()), field("seqInt", IntegerF()))
+              )
+            )
           )
         )
       )
@@ -45,11 +58,7 @@ object parserSpec extends mutable.Specification {
 
   val rec2_t = NamedTypeF(
     Ident("rec2_t"),
-    ComplexTypeF(
-      All(
-        List(field("str", StringF()), field("int", IntegerF()))
-      )
-    )
+    ComplexTypeF(All(List(field("str", StringF()), field("int", IntegerF()))))
   )
 
   "xsd parser" should {
@@ -84,7 +93,12 @@ object parserSpec extends mutable.Specification {
                 NamedTypeF(
                   Ident("rec_t"),
                   ComplexTypeF(
-                    Sequence(List[TypeT](field("str", TypeIdF(rstr_t.name)), field("int", TypeIdF(rint_t.name))))
+                    Sequence(
+                      List[TypeT](
+                        field("str", TypeIdF(rstr_t.name)),
+                        field("int", TypeIdF(rint_t.name))
+                      )
+                    )
                   )
                 )
               )
