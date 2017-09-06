@@ -33,7 +33,14 @@ object parser {
               case "unsignedInt" => right(TypeT(UnsignedIntF()))
               case "unsignedShort" => right(TypeT(UnsignedShortF()))
               case "unsignedByte" => right(TypeT(UnsignedByteF()))
+              case "any" => right(TypeT(AnyF()))
               case "date" => right(TypeT(DateF()))
+              case "dateTime" => right(TypeT(DateTimeF()))
+              case "time" => right(TypeT(TimeF()))
+              case "duration" => right(TypeT(DurationF()))
+              case "boolean" => right(TypeT(BooleanF()))
+              case "double" => right(TypeT(DoubleF()))
+              case "float" => right(TypeT(FloatF()))
               case _ => leftStr(s"Unknown xsd type $name")
             }
           }
@@ -164,20 +171,24 @@ object parser {
         t <- right(ComplexTypeF(f(body)))
       } yield t
 
-  private def parseSeqChild(el: Node): ResultS[TypeT] = {
+  private def parseSeqChild(el: Node): ResultS[Option[TypeT]] = {
+    type Res = Option[TypeT]
     withNode(el) {
       // Use complexType body's fold here
       withComplexBody(
         // Else branch
+        //TODO: Namespaces!!!
         _.label match {
-          case "element" => parseElement(el)
-          case v => leftStr[TypeT](s"Unknown sequence child type $v")
+          case "element" => parseElement(el).map(_.some)
+          case "any" => right(TypeT(AnyF()).some)
+          case "annotation" => right(none[TypeT])
+          case v => leftStr[Res](s"Unknown sequence child type $v")
         }
       )(
-        el => toComplexTypeF(body => Sequence(body))(el).map(t => TypeT(t)),
-        el => toComplexTypeF(body => Choice(body))(el).map(t => TypeT(t)),
         el =>
-          leftStr[TypeT](s"Type all cannot be used inside another sequence")
+          toComplexTypeF(body => Sequence(body))(el).map(t => TypeT(t).some),
+        el => toComplexTypeF(body => Choice(body))(el).map(t => TypeT(t).some),
+        el => leftStr[Res](s"Type all cannot be used inside another sequence")
       )(el)
     }
   }
@@ -186,7 +197,7 @@ object parser {
     xml
       .childElems(el)
       .map(parseSeqChild(_))
-      .sequence
+      .foldMapM(_.map(_.toList))
 
   private def parseComplexTypeBody(node: Node): ResultS[ComplexTypeF[TypeT]] =
     withComplexTypeS(

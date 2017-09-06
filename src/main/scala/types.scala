@@ -8,6 +8,8 @@ object types {
 
   sealed trait TypeF[A]
 
+  final case class AnyF[A]() extends TypeF[A]
+
   final case class StringF[A]() extends TypeF[A]
 
   final case class IntegerF[A]() extends TypeF[A]
@@ -39,6 +41,18 @@ object types {
   final case class DecimalF[A]() extends TypeF[A]
 
   final case class DateF[A]() extends TypeF[A]
+
+  final case class DateTimeF[A]() extends TypeF[A]
+
+  final case class TimeF[A]() extends TypeF[A]
+
+  final case class DurationF[A]() extends TypeF[A]
+
+  final case class BooleanF[A]() extends TypeF[A]
+
+  final case class DoubleF[A]() extends TypeF[A]
+
+  final case class FloatF[A]() extends TypeF[A]
 
   final case class TypeIdF[A](ref: Ident) extends TypeF[A]
 
