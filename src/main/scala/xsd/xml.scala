@@ -38,6 +38,22 @@ object xml {
   def text(node: Node): String =
     node.text.trim
 
+  def nodeToElem(node: Node): Option[Node] = node match {
+    case el: Elem => Some(el)
+    case _ => None
+  }
+
+  def childElems(node: Node): List[Node] =
+    node.child.map(nodeToElem(_).toList).flatten.toList
+
+  def childElemO(node: Node): Option[Node] =
+    node.child.collectFirst(Function.unlift(nodeToElem))
+
+  def childElem(node: Node): Either[Throwable, Node] =
+    childElemO(node).toRight(
+      new Exception(s"The node doesn't contain any children elements")
+    )
+
   type Path = List[Node]
 
   def mkPath: Path = Nil

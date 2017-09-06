@@ -66,4 +66,57 @@ private[xsd] object helpers {
       .semiflatMap(v => liftE(parseNumber(v)))
       .value
 
+  def withComplexBody[A](whenUnknown: Node => A)(
+    whenSequence: Node => A,
+    whenChoice: Node => A,
+    whenAll: Node => A
+  ): Node => A = _ match {
+    //TODO: Namespaces!!!
+    case el if el.label === "sequence" => whenSequence(el)
+    case el if el.label === "choice" => whenChoice(el)
+    case el if el.label === "all" => whenAll(el)
+    case el => whenUnknown(el)
+  }
+
+  def withComplexBodyO[A](whenSequence: Node => A,
+                          whenChoice: Node => A,
+                          whenAll: Node => A): Node => Option[A] =
+    withComplexBody(_ => none[A])(
+      whenSequence(_).some,
+      whenChoice(_).some,
+      whenAll(_).some
+    )
+
+  def withComplexBodyS[A](
+    whenSequence: Node => ResultS[A],
+    whenChoice: Node => ResultS[A],
+    whenAll: Node => ResultS[A]
+  )(node: Node): ResultS[A] =
+    withComplexBody(
+      el => leftStr[A](s"Unknown body type ${el.label} for complexType")
+    )(whenSequence, whenChoice, whenAll)(node)
+
+  def withComplexType[A](whenUnknown: => A)(
+    whenSequence: Node => A,
+    whenChoice: Node => A,
+    whenAll: Node => A
+  )(node: Node): A = {
+    xml
+      .childElems(node)
+      .collectFirst(
+        Function.unlift(withComplexBodyO(whenSequence, whenChoice, whenAll))
+      )
+      .getOrElse(whenUnknown)
+  }
+
+  def withComplexTypeS[A](
+    whenSequence: Node => ResultS[A],
+    whenChoice: Node => ResultS[A],
+    whenAll: Node => ResultS[A]
+  )(node: Node): ResultS[A] =
+    withComplexType(leftStr[A]("Can't find the body of the complexType"))(
+      whenSequence,
+      whenChoice,
+      whenAll
+    )(node)
 }

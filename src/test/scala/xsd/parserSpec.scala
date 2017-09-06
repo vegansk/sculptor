@@ -4,9 +4,53 @@ import org.specs2._
 import sculptor._
 import types._
 import scala.xml.XML
-import cats.implicits._
 
 object parserSpec extends mutable.Specification {
+
+  def field(name: String, `type`: TypeF[TypeT]): TypeT = TypeT(FieldF(Ident(name), TypeT(`type`)))
+
+  val rstr_t = NamedTypeF(
+    Ident("rstr_t"),
+    RestrictedStringF(
+      TypeT(StringF()),
+      Some(1),
+      Some(10),
+      List("[a-z]+", "[abc]+")
+    )
+  )
+
+  val rint_t = NamedTypeF(Ident("rint_t"), RestrictedNumberF(TypeT(IntegerF())))
+
+  val rec_t = NamedTypeF(
+    Ident("rec_t"),
+    ComplexTypeF(
+      Sequence(
+        List(
+          field("str", StringF()),
+          field("int", IntegerF()),
+          field("anonDecimal", RestrictedNumberF(TypeT(DecimalF()), minExclusive = Some(0))),
+          field("subRec",
+                ComplexTypeF(Sequence(List(field("subEl", StringF()))))
+          ),
+          TypeT(
+            ComplexTypeF(Sequence(List(field("seqStr", StringF()), field("seqInt", IntegerF()))))
+          ),
+          TypeT(
+            ComplexTypeF(Choice(List(field("seqStr", StringF()), field("seqInt", IntegerF()))))
+          )
+        )
+      )
+    )
+  )
+
+  val rec2_t = NamedTypeF(
+    Ident("rec2_t"),
+    ComplexTypeF(
+      All(
+        List(field("str", StringF()), field("int", IntegerF()))
+      )
+    )
+  )
 
   "xsd parser" should {
 
@@ -17,43 +61,11 @@ object parserSpec extends mutable.Specification {
 
       val module = parser(XML.load(xsd))
       module.isRight must_== true
-      module must_== Right(
-        ModuleF(
-          None,
-          Map(
-            Ident("rstr_t") ->
-              TypeT(
-                RestrictedStringF(
-                  Ident("rstr_t").some,
-                  TypeT(StringF()),
-                  Some(1),
-                  Some(10),
-                  List("[a-z]+", "[abc]+")
-                )
-              ),
-            Ident("rint_t") ->
-              TypeT(
-                RestrictedNumberF(Ident("rint_t").some, TypeT(IntegerF()))
-              ),
-            Ident("rec_t") ->
-              TypeT(
-                RecordF(
-                  Ident("rec_t").some,
-                  List(
-                    Ident("str") -> TypeT(StringF()),
-                    Ident("int") -> TypeT(IntegerF()),
-                    Ident("anonDecimal") -> TypeT(
-                      RestrictedNumberF(None, TypeT(DecimalF()), minExclusive = Some(0))
-                    ),
-                    Ident("subRec") -> TypeT(
-                      RecordF(None, List(Ident("subEl") -> TypeT(StringF())))
-                    )
-                  )
-                )
-              )
-          )
-        )
-      )
+      val types = module.map(_.types).getOrElse(Map())
+      types(rstr_t.name) must_== TypeT(rstr_t)
+      types(rint_t.name) must_== TypeT(rint_t)
+      types(rec_t.name) must_== TypeT(rec_t)
+      types(rec2_t.name) must_== TypeT(rec2_t)
 
     }
 
@@ -65,20 +77,15 @@ object parserSpec extends mutable.Specification {
         ModuleF(
           None,
           Map(
-            Ident("rstr_t") ->
-              TypeT(
-                RestrictedStringF(Ident("rstr_t").some, TypeT(StringF())
-                )
-              ),
-            Ident("rint_t") ->
-              TypeT(
-                RestrictedNumberF(Ident("rint_t").some, TypeT(IntegerF()))
-              ),
+            rstr_t.name -> TypeT(rstr_t),
+            rint_t.name -> TypeT(rint_t),
             Ident("rec_t") ->
               TypeT(
-                RecordF(
-                  Ident("rec_t").some,
-                  List(Ident("str") -> TypeT(TypeIdF(Ident("rstr_t"))), Ident("int") -> TypeT(TypeIdF(Ident("rint_t"))))
+                NamedTypeF(
+                  Ident("rec_t"),
+                  ComplexTypeF(
+                    Sequence(List[TypeT](field("str", TypeIdF(rstr_t.name)), field("int", TypeIdF(rint_t.name))))
+                  )
                 )
               )
           )
