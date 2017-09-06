@@ -29,6 +29,20 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:sequence>
+                <xs:element name="seqStr" type="xs:string"/>
+                <xs:element name="seqInt" type="xs:integer"/>
+            </xs:sequence>
+            <xs:choice>
+                <xs:element name="seqStr" type="xs:string"/>
+                <xs:element name="seqInt" type="xs:integer"/>
+            </xs:choice>
         </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="rec2_t">
+        <xs:all>
+            <xs:element name="str" type="xs:string"/>
+            <xs:element name="int" type="xs:integer"/>
+        </xs:all>
     </xs:complexType>
 </xs:schema>

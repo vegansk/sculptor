@@ -10,14 +10,6 @@ object parser {
 
   import helpers._
 
-  private object TypeT {
-    def apply(v: TypeF[TypeT]): TypeT = Fix(v)
-
-    def unapply(v: TypeT): Option[TypeF[TypeT]] = v.unfix.some
-  }
-
-  private type ParsedElement = (Ident, TypeT)
-
   private def parseTypeName(name: String): ResultS[TypeT] = {
     for {
       ns <- getNs
@@ -67,14 +59,14 @@ object parser {
       }
   }
 
-  private def parseElement(node: Node): ResultS[ParsedElement] = {
+  private def parseElement(node: Node): ResultS[TypeT] = {
     withNode(node) {
       for {
         name <- attr("name")(node).map(Ident(_))
         typ <- attrO("type")(node).flatMap(
           t => t.fold(parseAnonType(node))(tname => parseTypeName(tname))
         )
-      } yield (name, typ)
+      } yield TypeT(FieldF(name, typ))
     }
   }
 
@@ -86,16 +78,15 @@ object parser {
         maxLength <- optElAttrAsNumber("maxLength", "value")(restriction)
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
-      } yield
-        TypeT(
+        rs <- right(
           RestrictedStringF(
-            name = name,
             baseType = TypeT(StringF()),
             minLength = minLength,
             maxLength = maxLength,
             regExp = regExp
-          )
+          ): TypeF[TypeT]
         )
+      } yield TypeT(name.fold(rs)(NamedTypeF(_, rs)))
     }
   }
 
@@ -111,10 +102,8 @@ object parser {
         totalDigits <- optElAttrAsNumber("totalDigits", "value")(restriction)
         regExp <- els("pattern")(restriction)
           .flatMap(_.traverse(attr("value")(_)))
-      } yield
-        TypeT(
+        rn <- right(
           RestrictedNumberF(
-            name = name,
             baseType = baseType,
             minInclusive = minInclusive,
             maxInclusive = maxInclusive,
@@ -122,8 +111,9 @@ object parser {
             maxExclusive = maxExclusive,
             totalDigits = totalDigits,
             regExp = regExp
-          )
+          ): TypeF[TypeT]
         )
+      } yield TypeT(name.fold(rn)(NamedTypeF(_, rn)))
     }
   }
 
@@ -149,47 +139,84 @@ object parser {
     }
   }
 
-  private def parseSimpleType(node: Node): ResultS[ParsedElement] = {
+  private def parseSimpleType(node: Node): ResultS[TypeT] = {
     for {
       `type` <- parseSimpleType0(node)
       name <- {
         `type`.unfix match {
-          case RestrictedStringF(Some(name), _, _, _, _) =>
-            right(name)
-          case RestrictedNumberF(Some(name), _, _, _, _, _, _, _) =>
+          case NamedTypeF(name, _) =>
             right(name)
           case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
         }
       }
-    } yield (name, `type`)
+    } yield `type`
   }
 
-  private def parseSimpleTypes(root: Node): ResultS[List[ParsedElement]] =
+  private def parseSimpleTypes(root: Node): ResultS[List[TypeT]] =
     els("simpleType")(root).flatMap(_.traverse(parseSimpleType(_)))
+
+  private def toComplexTypeF(
+    f: List[TypeT] => SeqLike[TypeT]
+  ): Node => ResultS[ComplexTypeF[TypeT]] =
+    el =>
+      for {
+        body <- parseSeqBody(el)
+        t <- right(ComplexTypeF(f(body)))
+      } yield t
+
+  private def parseSeqChild(el: Node): ResultS[TypeT] = {
+    withNode(el) {
+      // Use complexType body's fold here
+      withComplexBody(
+        // Else branch
+        _.label match {
+          case "element" => parseElement(el)
+          case v => leftStr[TypeT](s"Unknown sequence child type $v")
+        }
+      )(
+        el => toComplexTypeF(body => Sequence(body))(el).map(t => TypeT(t)),
+        el => toComplexTypeF(body => Choice(body))(el).map(t => TypeT(t)),
+        el =>
+          leftStr[TypeT](s"Type all cannot be used inside another sequence")
+      )(el)
+    }
+  }
+
+  private def parseSeqBody(el: Node): ResultS[List[TypeT]] =
+    xml
+      .childElems(el)
+      .map(parseSeqChild(_))
+      .sequence
+
+  private def parseComplexTypeBody(node: Node): ResultS[ComplexTypeF[TypeT]] =
+    withComplexTypeS(
+      toComplexTypeF(Sequence(_)),
+      toComplexTypeF(Choice(_)),
+      toComplexTypeF(All(_))
+    )(node)
 
   private def parseComplexType0(node: Node): ResultS[TypeT] = {
     withNode(node) {
       for {
         name <- attrO("name")(node).map(_.map(Ident(_)))
-        seq <- el("sequence")(node)
-        fields <- els("element")(seq).flatMap(_.traverse(parseElement(_)))
-      } yield TypeT(RecordF(name, fields))
+        body <- parseComplexTypeBody(node)
+      } yield TypeT(name.fold(body: TypeF[TypeT])(NamedTypeF(_, body)))
     }
   }
 
-  private def parseComplexType(node: Node): ResultS[ParsedElement] = {
+  private def parseComplexType(node: Node): ResultS[TypeT] = {
     for {
       `type` <- parseComplexType0(node)
       name <- {
         `type`.unfix match {
-          case RecordF(Some(name), _) => right(name)
+          case NamedTypeF(name, _) => right(name)
           case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
         }
       }
-    } yield (name, `type`)
+    } yield `type`
   }
 
-  private def parseComplexTypes(root: Node): ResultS[List[ParsedElement]] =
+  private def parseComplexTypes(root: Node): ResultS[List[TypeT]] =
     els("complexType")(root).flatMap(_.traverse(parseComplexType(_)))
 
   private val XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
@@ -198,12 +225,18 @@ object parser {
     right(xml.getPrefix(XSD_NAMESPACE)(xsd))
 
   private def compilePass(xsd: Node): Result[Module] = {
-    val r = for {
+    val r: ResultS[Module] = for {
       ns <- findNamespace(xsd)
       _ <- updateNs(ns)
-      simpleTypes <- parseSimpleTypes(xsd)
-      complexTypes <- parseComplexTypes(xsd)
-    } yield ModuleF(None, (simpleTypes ++ complexTypes).toMap)
+      simpleTypesT <- parseSimpleTypes(xsd)
+      complexTypesT <- parseComplexTypes(xsd)
+      types <- (simpleTypesT ++ complexTypesT).traverse {
+        _ match {
+          case t @ TypeT(NamedTypeF(f, _)) => right((f, t))
+          case t => leftStr[(Ident, TypeT)](s"Got anonymous type $t")
+        }
+      }
+    } yield ModuleF(None, types.toMap)
 
     r.value.run(ParserState()).value match {
       case (state, result) =>
@@ -217,28 +250,31 @@ object parser {
     }
   }
 
-  private def linkRecord(m: Module, r: RecordF[TypeT]): Result[TypeT] = {
-    r.fields.foldLeft(Right(TypeT(r)): Result[TypeT]) { (a, v) =>
-      v._2 match {
-        case TypeT(id: TypeIdF[TypeT]) =>
-          if ((m.types.contains(id.ref)))
-            a
-          else
-            Left(
-              new Exception(
-                s"Can't find the type ${id.ref.name} for the field ${r.name
-                  .map(_.name)
-                  .getOrElse("<anonymous>")}.${v._1.name}"
-              )
-            )
-        case _ => a
+  private def linkComplexType(m: Module,
+                              ctName: Ident,
+                              ct: ComplexTypeF[TypeT]): Result[TypeT] = {
+    ct.body.body
+      .foldLeft(Right(TypeT(NamedTypeF(ctName, ct))): Result[TypeT]) {
+        (a, v) =>
+          v.unfix match {
+            case FieldF(name, TypeT(TypeIdF(ref))) =>
+              if ((m.types.contains(ref)))
+                a
+              else
+                Left(
+                  new Exception(
+                    s"Can't find the type ${ref.name} for the field ${ctName.name}.${name.name}"
+                  )
+                )
+            case _ => a
+          }
       }
-    }
   }
 
   private def linkType(m: Module, t: TypeT): Result[TypeT] = {
-    t match {
-      case TypeT(r: RecordF[TypeT]) => linkRecord(m, r)
+    t.unfix match {
+      case NamedTypeF(name, ct: ComplexTypeF[TypeT]) =>
+        linkComplexType(m, name, ct)
       case _ => Right(t)
     }
   }
