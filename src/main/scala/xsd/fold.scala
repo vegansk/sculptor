@@ -115,9 +115,55 @@ object fold {
   def annotation[A](appinfo: Op[A], documentation: Op[A]): Op[A] =
     foldChild("appinfo" -> appinfo, "documentation" -> documentation)
 
-  def simpleType[A]: Op[A] = ???
+  def simpleType[A](annotation: Op[A],
+                    list: Op[A],
+                    restriction: Op[A],
+                    union: Op[A]): Op[A] = foldChild(
+    "annotation" -> annotation,
+    "list" -> list,
+    "restriction" -> restriction,
+    "union" -> union
+  )
+
+  def list[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
+    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
+
+  def restriction[A](annotation: Op[A],
+                     simpleType: Op[A],
+                     minExclusive: Op[A],
+                     minInclusive: Op[A],
+                     maxExclusive: Op[A],
+                     maxInclusive: Op[A],
+                     totalDigits: Op[A],
+                     fractionDigits: Op[A],
+                     length: Op[A],
+                     minLength: Op[A],
+                     maxLength: Op[A],
+                     enumeration: Op[A],
+                     whiteSpace: Op[A],
+                     pattern: Op[A]): Op[A] = foldChild(
+    "annotation" -> annotation,
+    "simpleType" -> simpleType,
+    "minExclusive" -> minExclusive,
+    "minInclusive" -> minInclusive,
+    "maxExclusive" -> maxExclusive,
+    "maxInclusive" -> maxInclusive,
+    "totalDigits" -> totalDigits,
+    "fractionDigits" -> fractionDigits,
+    "length" -> length,
+    "minLength" -> minLength,
+    "maxLength" -> maxLength,
+    "enumeration" -> enumeration,
+    "whiteSpace" -> whiteSpace,
+    "pattern" -> pattern
+  )
+
+  def union[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
+    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
 
   def complexType[A]: Op[A] = ???
 
   def element[A]: Op[A] = ???
+
+  def nop[A]: Op[A] = a => _ => ok(a)
 }
