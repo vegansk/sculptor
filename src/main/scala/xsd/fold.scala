@@ -66,26 +66,32 @@ object fold {
       res <- ok(n.child.filter(ch => Option(ch.prefix) === ns).toList)
     } yield res
 
+  private def foldChild[A](handlers: Tuple2[String, Op[A]]*): Op[A] =
+    a =>
+      n =>
+        withNode(n) {
+          for {
+            h <- ok(Map(handlers: _*))
+            child <- xsdChild(n)
+            res <- child.foldLeftM(a) { (a, n) =>
+              h.get(n.label)
+                .fold(error[A](s"Unknown element of type `${fullName(n)}`"))(
+                  _(a)(n)
+                )
+            }
+          } yield res
+    }
+
   private def schema0[A](annotation: Op[A],
                          simpleType: Op[A],
                          complexType: Op[A],
                          element: Op[A]): Op[A] =
-    a =>
-      n =>
-        for {
-          child <- xsdChild(n)
-          res <- child.foldLeftM(a) { (a, n) =>
-            withNode(n) {
-              n.label match {
-                case "annotation" => annotation(a)(n)
-                case "simpleType" => simpleType(a)(n)
-                case "complexType" => complexType(a)(n)
-                case "element" => element(a)(n)
-                case _ => error[A](s"Unknown element of type `${fullName(n)}`")
-              }
-            }
-          }
-        } yield res
+    foldChild(
+      "annotation" -> annotation,
+      "simpleType" -> simpleType,
+      "complexType" -> complexType,
+      "element" -> element
+    )
 
   def schema[A](annotation: Op[A],
                 simpleType: Op[A],
@@ -106,7 +112,8 @@ object fold {
           } yield res
     }
 
-  def annotation[A]: Op[A] = ???
+  def annotation[A](appinfo: Op[A], documentation: Op[A]): Op[A] =
+    foldChild("appinfo" -> appinfo, "documentation" -> documentation)
 
   def simpleType[A]: Op[A] = ???
 
