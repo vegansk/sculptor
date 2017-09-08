@@ -17,6 +17,8 @@ object foldSpec extends mutable.Specification {
 
       val annotation = fold.annotation[Result](fold.nop, fold.nop)
 
+      val attribute = fold.attribute[Result](fold.nop, fold.nop)
+
       val list = fold.list[Result](
         annotation = annotation,
         //TODO: Fight specs2 recursion crash
@@ -57,11 +59,23 @@ object foldSpec extends mutable.Specification {
         union = union
       )
 
+      val complexType = fold.complexType(
+        annotation = annotation,
+        simpleContent = fold.nop,
+        complexContent = fold.nop,
+        group = fold.nop,
+        all = fold.nop,
+        choice = fold.nop,
+        sequence = fold.nop,
+        attribute = attribute
+      )
+
       val f = fold.schema(
         annotation = annotation,
         simpleType = simpleType,
-        complexType = fold.nop,
+        complexType = complexType,
         element = fold.nop,
+        attribute = attribute
       )(())(XML.load(resource))
 
       val res = f.value.run(fold.FoldState()).value

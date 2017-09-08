@@ -85,18 +85,21 @@ object fold {
   private def schema0[A](annotation: Op[A],
                          simpleType: Op[A],
                          complexType: Op[A],
-                         element: Op[A]): Op[A] =
+                         element: Op[A],
+                         attribute: Op[A]): Op[A] =
     foldChild(
       "annotation" -> annotation,
       "simpleType" -> simpleType,
       "complexType" -> complexType,
-      "element" -> element
+      "element" -> element,
+      "attribute" -> attribute
     )
 
   def schema[A](annotation: Op[A],
                 simpleType: Op[A],
                 complexType: Op[A],
-                element: Op[A]): Op[A] =
+                element: Op[A],
+                attribute: Op[A]): Op[A] =
     a =>
       n =>
         withNode(n) {
@@ -106,7 +109,13 @@ object fold {
             l <- xsdLabel(n)
             res <- l match {
               case "schema" =>
-                schema0(annotation, simpleType, complexType, element)(a)(n)
+                schema0(
+                  annotation,
+                  simpleType,
+                  complexType,
+                  element,
+                  attribute
+                )(a)(n)
               case l => error[A](s"`schema` tag was expected, found `$l`")
             }
           } yield res
@@ -161,7 +170,34 @@ object fold {
   def union[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
     foldChild("annotation" -> annotation, "simpleType" -> simpleType)
 
-  def complexType[A]: Op[A] = ???
+  def complexType[A](annotation: Op[A],
+                     simpleContent: Op[A],
+                     complexContent: Op[A],
+                     group: Op[A],
+                     all: Op[A],
+                     choice: Op[A],
+                     sequence: Op[A],
+                     attribute: Op[A]): Op[A] = foldChild(
+    "annotation" -> annotation,
+    "simpleContent" -> simpleContent,
+    "complexContent" -> complexContent,
+    "group" -> group,
+    "all" -> all,
+    "choice" -> choice,
+    "sequence" -> sequence,
+    "attribute" -> attribute
+  )
+
+  def simpleContent[A](annotation: Op[A],
+                       restriction: Op[A],
+                       extension: Op[A]): Op[A] = ???
+
+  def simpleContentRestriction[A]: Op[A] = ???
+
+  def simpleContentExtension[A]: Op[A] = ???
+
+  def attribute[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
+    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
 
   def element[A]: Op[A] = ???
 
