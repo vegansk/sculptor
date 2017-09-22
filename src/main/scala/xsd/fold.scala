@@ -99,11 +99,11 @@ object fold {
       )
     )
 
-  def schema[A](annotation: => Op[A],
-                simpleType: => Op[A],
-                complexType: => Op[A],
-                element: => Op[A],
-                attribute: => Op[A]): Op[A] =
+  def schema[A](annotation: => Op[A] = nop[A],
+                simpleType: => Op[A] = nop[A],
+                complexType: => Op[A] = nop[A],
+                element: => Op[A] = nop[A],
+                attribute: => Op[A] = nop[A]): Op[A] =
     a =>
       n =>
         withNode(n) {
@@ -130,10 +130,10 @@ object fold {
       Eval.later(Seq("appinfo" -> appinfo, "documentation" -> documentation))
     )
 
-  def simpleType[A](annotation: => Op[A],
-                    list: => Op[A],
-                    restriction: => Op[A],
-                    union: => Op[A]): Op[A] =
+  def simpleType[A](annotation: => Op[A] = nop[A],
+                    list: => Op[A] = nop[A],
+                    restriction: => Op[A] = nop[A],
+                    union: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -145,25 +145,26 @@ object fold {
       )
     )
 
-  def list[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
+  def list[A](annotation: => Op[A] = nop[A],
+              simpleType: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
     )
 
-  def restriction[A](annotation: => Op[A],
-                     simpleType: => Op[A],
-                     minExclusive: => Op[A],
-                     minInclusive: => Op[A],
-                     maxExclusive: => Op[A],
-                     maxInclusive: => Op[A],
-                     totalDigits: => Op[A],
-                     fractionDigits: => Op[A],
-                     length: => Op[A],
-                     minLength: => Op[A],
-                     maxLength: => Op[A],
-                     enumeration: => Op[A],
-                     whiteSpace: => Op[A],
-                     pattern: => Op[A]): Op[A] =
+  def restriction[A](annotation: => Op[A] = nop[A],
+                     simpleType: => Op[A] = nop[A],
+                     minExclusive: => Op[A] = nop[A],
+                     minInclusive: => Op[A] = nop[A],
+                     maxExclusive: => Op[A] = nop[A],
+                     maxInclusive: => Op[A] = nop[A],
+                     totalDigits: => Op[A] = nop[A],
+                     fractionDigits: => Op[A] = nop[A],
+                     length: => Op[A] = nop[A],
+                     minLength: => Op[A] = nop[A],
+                     maxLength: => Op[A] = nop[A],
+                     enumeration: => Op[A] = nop[A],
+                     whiteSpace: => Op[A] = nop[A],
+                     pattern: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -190,14 +191,14 @@ object fold {
       Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
     )
 
-  def complexType[A](annotation: => Op[A],
-                     simpleContent: => Op[A],
-                     complexContent: => Op[A],
-                     group: => Op[A],
-                     all: => Op[A],
-                     choice: => Op[A],
-                     sequence: => Op[A],
-                     attribute: => Op[A]): Op[A] =
+  def complexType[A](annotation: => Op[A] = nop[A],
+                     simpleContent: => Op[A] = nop[A],
+                     complexContent: => Op[A] = nop[A],
+                     group: => Op[A] = nop[A],
+                     all: => Op[A] = nop[A],
+                     choice: => Op[A] = nop[A],
+                     sequence: => Op[A] = nop[A],
+                     attribute: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -213,10 +214,10 @@ object fold {
       )
     )
 
-  def group[A](annotation: => Op[A],
-               all: => Op[A],
-               choice: => Op[A],
-               sequence: => Op[A]): Op[A] =
+  def group[A](annotation: => Op[A] = nop[A],
+               all: => Op[A] = nop[A],
+               choice: => Op[A] = nop[A],
+               sequence: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -228,17 +229,18 @@ object fold {
       )
     )
 
-  def all[A](annotation: => Op[A], element: => Op[A]): Op[A] =
+  def all[A](annotation: => Op[A] = nop[A],
+             element: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(Seq("annotation" -> annotation, "element" -> element))
     )
 
-  def choice[A](annotation: => Op[A],
-                element: => Op[A],
-                group: => Op[A],
-                choice: => Op[A],
-                sequence: => Op[A],
-                any: => Op[A]): Op[A] =
+  def choice[A](annotation: => Op[A] = nop[A],
+                element: => Op[A] = nop[A],
+                group: => Op[A] = nop[A],
+                choice: => Op[A] = nop[A],
+                sequence: => Op[A] = nop[A],
+                any: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -252,12 +254,12 @@ object fold {
       )
     )
 
-  def sequence[A](annotation: => Op[A],
-                  element: => Op[A],
-                  group: => Op[A],
-                  choice: => Op[A],
-                  sequence: => Op[A],
-                  any: => Op[A]): Op[A] =
+  def sequence[A](annotation: => Op[A] = nop[A],
+                  element: => Op[A] = nop[A],
+                  group: => Op[A] = nop[A],
+                  choice: => Op[A] = nop[A],
+                  sequence: => Op[A] = nop[A],
+                  any: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -271,12 +273,12 @@ object fold {
       )
     )
 
-  def any[A](annotation: => Op[A]): Op[A] =
+  def any[A](annotation: => Op[A] = nop[A]): Op[A] =
     foldChild(Eval.later(Seq("annotation" -> annotation)))
 
-  def simpleContent[A](annotation: => Op[A],
-                       restriction: => Op[A],
-                       extension: => Op[A]): Op[A] =
+  def simpleContent[A](annotation: => Op[A] = nop[A],
+                       restriction: => Op[A] = nop[A],
+                       extension: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -287,23 +289,23 @@ object fold {
       )
     )
 
-  def simpleContentRestriction[A](annotation: => Op[A],
-                                  simpleType: => Op[A],
-                                  minExclusive: => Op[A],
-                                  minInclusive: => Op[A],
-                                  maxExclusive: => Op[A],
-                                  maxInclusive: => Op[A],
-                                  totalDigits: => Op[A],
-                                  fractionDigits: => Op[A],
-                                  length: => Op[A],
-                                  minLength: => Op[A],
-                                  maxLength: => Op[A],
-                                  enumeration: => Op[A],
-                                  whiteSpace: => Op[A],
-                                  pattern: => Op[A],
-                                  attribute: => Op[A],
-                                  attributeGroup: => Op[A],
-                                  anyAttribute: => Op[A]): Op[A] =
+  def simpleContentRestriction[A](annotation: => Op[A] = nop[A],
+                                  simpleType: => Op[A] = nop[A],
+                                  minExclusive: => Op[A] = nop[A],
+                                  minInclusive: => Op[A] = nop[A],
+                                  maxExclusive: => Op[A] = nop[A],
+                                  maxInclusive: => Op[A] = nop[A],
+                                  totalDigits: => Op[A] = nop[A],
+                                  fractionDigits: => Op[A] = nop[A],
+                                  length: => Op[A] = nop[A],
+                                  minLength: => Op[A] = nop[A],
+                                  maxLength: => Op[A] = nop[A],
+                                  enumeration: => Op[A] = nop[A],
+                                  whiteSpace: => Op[A] = nop[A],
+                                  pattern: => Op[A] = nop[A],
+                                  attribute: => Op[A] = nop[A],
+                                  attributeGroup: => Op[A] = nop[A],
+                                  anyAttribute: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -328,10 +330,10 @@ object fold {
       )
     )
 
-  def simpleContentExtension[A](annotation: => Op[A],
-                                attribute: => Op[A],
-                                attributeGroup: => Op[A],
-                                anyAttribute: => Op[A]): Op[A] =
+  def simpleContentExtension[A](annotation: => Op[A] = nop[A],
+                                attribute: => Op[A] = nop[A],
+                                attributeGroup: => Op[A] = nop[A],
+                                anyAttribute: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -343,15 +345,16 @@ object fold {
       )
     )
 
-  def attribute[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
+  def attribute[A](annotation: => Op[A] = nop[A],
+                   simpleType: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
     )
 
-  def attributeGroup[A](annotation: => Op[A],
-                        attribute: => Op[A],
-                        attributeGroup: => Op[A],
-                        anyAttribute: => Op[A]): Op[A] =
+  def attributeGroup[A](annotation: => Op[A] = nop[A],
+                        attribute: => Op[A] = nop[A],
+                        attributeGroup: => Op[A] = nop[A],
+                        anyAttribute: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -363,15 +366,15 @@ object fold {
       )
     )
 
-  def anyAttribute[A](annotation: => Op[A]): Op[A] =
+  def anyAttribute[A](annotation: => Op[A] = nop[A]): Op[A] =
     foldChild(Eval.later(Seq("annotation" -> annotation)))
 
-  def element[A](annotation: => Op[A],
-                 simpleType: => Op[A],
-                 complexType: => Op[A],
-                 unique: => Op[A],
-                 key: => Op[A],
-                 keyref: => Op[A]): Op[A] =
+  def element[A](annotation: => Op[A] = nop[A],
+                 simpleType: => Op[A] = nop[A],
+                 complexType: => Op[A] = nop[A],
+                 unique: => Op[A] = nop[A],
+                 key: => Op[A] = nop[A],
+                 keyref: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -385,9 +388,9 @@ object fold {
       )
     )
 
-  def unique[A](annotation: => Op[A],
-                selector: => Op[A],
-                field: => Op[A]): Op[A] =
+  def unique[A](annotation: => Op[A] = nop[A],
+                selector: => Op[A] = nop[A],
+                field: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -398,9 +401,9 @@ object fold {
       )
     )
 
-  def key[A](annotation: => Op[A],
-             selector: => Op[A],
-             field: => Op[A]): Op[A] =
+  def key[A](annotation: => Op[A] = nop[A],
+             selector: => Op[A] = nop[A],
+             field: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -411,9 +414,9 @@ object fold {
       )
     )
 
-  def keyref[A](annotation: => Op[A],
-                selector: => Op[A],
-                field: => Op[A]): Op[A] =
+  def keyref[A](annotation: => Op[A] = nop[A],
+                selector: => Op[A] = nop[A],
+                field: => Op[A] = nop[A]): Op[A] =
     foldChild(
       Eval.later(
         Seq(
@@ -424,10 +427,10 @@ object fold {
       )
     )
 
-  def selector[A](annotation: => Op[A]): Op[A] =
+  def selector[A](annotation: => Op[A] = nop[A]): Op[A] =
     foldChild(Eval.later(Seq("annotation" -> annotation)))
 
-  def field[A](annotation: => Op[A]): Op[A] =
+  def field[A](annotation: => Op[A] = nop[A]): Op[A] =
     foldChild(Eval.later(Seq("annotation" -> annotation)))
 
   def nop[A]: Op[A] = a => _ => ok(a)
