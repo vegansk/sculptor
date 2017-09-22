@@ -14,16 +14,16 @@ object foldSpec extends mutable.Specification {
 
       type Result = Unit
 
-      lazy val annotation: fold.Op[Result] = fold.annotation[Result](fold.nop, fold.nop)
+      lazy val annotation: fold.Op[Result] = fold.annotation[Result]()
 
-      lazy val attribute: fold.Op[Result] = fold.attribute[Result](fold.nop, fold.nop)
+      lazy val attribute: fold.Op[Result] = fold.attribute[Result]()
 
       lazy val list: fold.Op[Result] = fold.list[Result](
         annotation = annotation,
         simpleType = simpleType
       )
 
-      lazy val restriction: fold.Op[Result] = fold.restriction[Result](
+      lazy val restriction: fold.Op[Result] = fold.simpleTypeRestriction[Result](
         annotation = fold.nop,
         simpleType = simpleType,
         minExclusive = fold.nop,

@@ -56,6 +56,7 @@ scalacOptions ++= Seq(
   "-Ywarn-unused:privates", // Warn if a private member is unused.
   "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
 )
+
 wartremoverErrors in (Compile, compile) ++= Warts.allBut(
   // Allow defaul arguments
   Wart.DefaultArguments,
