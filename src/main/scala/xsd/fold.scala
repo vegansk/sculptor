@@ -133,16 +133,17 @@ object fold {
   def simpleType[A](annotation: => Op[A],
                     list: => Op[A],
                     restriction: => Op[A],
-                    union: => Op[A]): Op[A] = foldChild(
-    Eval.later(
-      Seq(
-        "annotation" -> annotation,
-        "list" -> list,
-        "restriction" -> restriction,
-        "union" -> union
+                    union: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "list" -> list,
+          "restriction" -> restriction,
+          "union" -> union
+        )
       )
     )
-  )
 
   def list[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
     foldChild(
@@ -162,26 +163,27 @@ object fold {
                      maxLength: => Op[A],
                      enumeration: => Op[A],
                      whiteSpace: => Op[A],
-                     pattern: => Op[A]): Op[A] = foldChild(
-    Eval.later(
-      Seq(
-        "annotation" -> annotation,
-        "simpleType" -> simpleType,
-        "minExclusive" -> minExclusive,
-        "minInclusive" -> minInclusive,
-        "maxExclusive" -> maxExclusive,
-        "maxInclusive" -> maxInclusive,
-        "totalDigits" -> totalDigits,
-        "fractionDigits" -> fractionDigits,
-        "length" -> length,
-        "minLength" -> minLength,
-        "maxLength" -> maxLength,
-        "enumeration" -> enumeration,
-        "whiteSpace" -> whiteSpace,
-        "pattern" -> pattern
+                     pattern: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "simpleType" -> simpleType,
+          "minExclusive" -> minExclusive,
+          "minInclusive" -> minInclusive,
+          "maxExclusive" -> maxExclusive,
+          "maxInclusive" -> maxInclusive,
+          "totalDigits" -> totalDigits,
+          "fractionDigits" -> fractionDigits,
+          "length" -> length,
+          "minLength" -> minLength,
+          "maxLength" -> maxLength,
+          "enumeration" -> enumeration,
+          "whiteSpace" -> whiteSpace,
+          "pattern" -> pattern
+        )
       )
     )
-  )
 
   def union[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
     foldChild(
@@ -195,43 +197,238 @@ object fold {
                      all: => Op[A],
                      choice: => Op[A],
                      sequence: => Op[A],
-                     attribute: => Op[A]): Op[A] = foldChild(
-    Eval.later(
-      Seq(
-        "annotation" -> annotation,
-        "simpleContent" -> simpleContent,
-        "complexContent" -> complexContent,
-        "group" -> group,
-        "all" -> all,
-        "choice" -> choice,
-        "sequence" -> sequence,
-        "attribute" -> attribute
+                     attribute: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "simpleContent" -> simpleContent,
+          "complexContent" -> complexContent,
+          "group" -> group,
+          "all" -> all,
+          "choice" -> choice,
+          "sequence" -> sequence,
+          "attribute" -> attribute
+        )
       )
     )
-  )
+
+  def group[A](annotation: => Op[A],
+               all: => Op[A],
+               choice: => Op[A],
+               sequence: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "all" -> all,
+          "choice" -> choice,
+          "sequence" -> sequence
+        )
+      )
+    )
+
+  def all[A](annotation: => Op[A], element: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(Seq("annotation" -> annotation, "element" -> element))
+    )
+
+  def choice[A](annotation: => Op[A],
+                element: => Op[A],
+                group: => Op[A],
+                choice: => Op[A],
+                sequence: => Op[A],
+                any: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "element" -> element,
+          "group" -> group,
+          "choice" -> choice,
+          "sequence" -> sequence,
+          "any" -> any
+        )
+      )
+    )
+
+  def sequence[A](annotation: => Op[A],
+                  element: => Op[A],
+                  group: => Op[A],
+                  choice: => Op[A],
+                  sequence: => Op[A],
+                  any: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "element" -> element,
+          "group" -> group,
+          "choice" -> choice,
+          "sequence" -> sequence,
+          "any" -> any
+        )
+      )
+    )
+
+  def any[A](annotation: => Op[A]): Op[A] =
+    foldChild(Eval.later(Seq("annotation" -> annotation)))
 
   def simpleContent[A](annotation: => Op[A],
                        restriction: => Op[A],
-                       extension: => Op[A]): Op[A] = foldChild(
-    Eval.later(
-      Seq(
-        "annotation" -> annotation,
-        "restriction" -> restriction,
-        "extension" -> extension
+                       extension: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "restriction" -> restriction,
+          "extension" -> extension
+        )
       )
     )
-  )
 
-  def simpleContentRestriction[A]: Op[A] = ???
+  def simpleContentRestriction[A](annotation: => Op[A],
+                                  simpleType: => Op[A],
+                                  minExclusive: => Op[A],
+                                  minInclusive: => Op[A],
+                                  maxExclusive: => Op[A],
+                                  maxInclusive: => Op[A],
+                                  totalDigits: => Op[A],
+                                  fractionDigits: => Op[A],
+                                  length: => Op[A],
+                                  minLength: => Op[A],
+                                  maxLength: => Op[A],
+                                  enumeration: => Op[A],
+                                  whiteSpace: => Op[A],
+                                  pattern: => Op[A],
+                                  attribute: => Op[A],
+                                  attributeGroup: => Op[A],
+                                  anyAttribute: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "simpleType" -> simpleType,
+          "minExclusive" -> minExclusive,
+          "minInclusive" -> minInclusive,
+          "maxExclusive" -> maxExclusive,
+          "maxInclusive" -> maxInclusive,
+          "totalDigits" -> totalDigits,
+          "fractionDigits" -> fractionDigits,
+          "length" -> length,
+          "minLength" -> minLength,
+          "maxLength" -> maxLength,
+          "enumeration" -> enumeration,
+          "whiteSpace" -> whiteSpace,
+          "pattern" -> pattern,
+          "attribute" -> attribute,
+          "attributeGroup" -> attributeGroup,
+          "anyAttribute" -> anyAttribute
+        )
+      )
+    )
 
-  def simpleContentExtension[A]: Op[A] = ???
+  def simpleContentExtension[A](annotation: => Op[A],
+                                attribute: => Op[A],
+                                attributeGroup: => Op[A],
+                                anyAttribute: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "attribute" -> attribute,
+          "attributeGroup" -> attributeGroup,
+          "anyAttribute" -> anyAttribute
+        )
+      )
+    )
 
   def attribute[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
     foldChild(
       Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
     )
 
-  def element[A]: Op[A] = ???
+  def attributeGroup[A](annotation: => Op[A],
+                        attribute: => Op[A],
+                        attributeGroup: => Op[A],
+                        anyAttribute: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "attribute" -> attribute,
+          "attributeGroup" -> attributeGroup,
+          "anyAttribute" -> anyAttribute
+        )
+      )
+    )
+
+  def anyAttribute[A](annotation: => Op[A]): Op[A] =
+    foldChild(Eval.later(Seq("annotation" -> annotation)))
+
+  def element[A](annotation: => Op[A],
+                 simpleType: => Op[A],
+                 complexType: => Op[A],
+                 unique: => Op[A],
+                 key: => Op[A],
+                 keyref: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "simpleType" -> simpleType,
+          "complexType" -> complexType,
+          "unique" -> unique,
+          "key" -> key,
+          "keyref" -> keyref
+        )
+      )
+    )
+
+  def unique[A](annotation: => Op[A],
+                selector: => Op[A],
+                field: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "selector" -> selector,
+          "field" -> field
+        )
+      )
+    )
+
+  def key[A](annotation: => Op[A],
+             selector: => Op[A],
+             field: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "selector" -> selector,
+          "field" -> field
+        )
+      )
+    )
+
+  def keyref[A](annotation: => Op[A],
+                selector: => Op[A],
+                field: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "selector" -> selector,
+          "field" -> field
+        )
+      )
+    )
+
+  def selector[A](annotation: => Op[A]): Op[A] =
+    foldChild(Eval.later(Seq("annotation" -> annotation)))
+
+  def field[A](annotation: => Op[A]): Op[A] =
+    foldChild(Eval.later(Seq("annotation" -> annotation)))
 
   def nop[A]: Op[A] = a => _ => ok(a)
 }
