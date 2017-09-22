@@ -3,7 +3,6 @@ package sculptor.xsd
 import org.specs2._
 import scala.xml.XML
 
-
 object foldSpec extends mutable.Specification {
 
   "xsd fold" should {
@@ -15,22 +14,18 @@ object foldSpec extends mutable.Specification {
 
       type Result = Unit
 
-      val annotation = fold.annotation[Result](fold.nop, fold.nop)
+      lazy val annotation: fold.Op[Result] = fold.annotation[Result](fold.nop, fold.nop)
 
-      val attribute = fold.attribute[Result](fold.nop, fold.nop)
+      lazy val attribute: fold.Op[Result] = fold.attribute[Result](fold.nop, fold.nop)
 
-      val list = fold.list[Result](
+      lazy val list: fold.Op[Result] = fold.list[Result](
         annotation = annotation,
-        //TODO: Fight specs2 recursion crash
-        // simpleType = simpleType
-        simpleType = fold.nop
+        simpleType = simpleType
       )
 
-      val restriction = fold.restriction[Result](
+      lazy val restriction: fold.Op[Result] = fold.restriction[Result](
         annotation = fold.nop,
-        //TODO: Fight specs2 recursion crash
-        // simpleType = simpleType
-        simpleType = fold.nop,
+        simpleType = simpleType,
         minExclusive = fold.nop,
         minInclusive = fold.nop,
         maxExclusive = fold.nop,
@@ -45,21 +40,19 @@ object foldSpec extends mutable.Specification {
         pattern = fold.nop
       )
 
-      val union = fold.union[Result](
+      lazy val union: fold.Op[Result] = fold.union[Result](
         annotation = annotation,
-        //TODO: Fight specs2 recursion crash
-        // simpleType = simpleType
-        simpleType = fold.nop
+        simpleType = simpleType
       )
 
-      val simpleType = fold.simpleType[Result](
+      lazy val simpleType: fold.Op[Result] = fold.simpleType[Result](
         annotation = annotation,
         list = list,
         restriction = restriction,
         union = union
       )
 
-      val complexType = fold.complexType(
+      lazy val complexType: fold.Op[Result] = fold.complexType(
         annotation = annotation,
         simpleContent = fold.nop,
         complexContent = fold.nop,
@@ -70,7 +63,7 @@ object foldSpec extends mutable.Specification {
         attribute = attribute
       )
 
-      val f = fold.schema(
+      lazy val f = fold.schema(
         annotation = annotation,
         simpleType = simpleType,
         complexType = complexType,

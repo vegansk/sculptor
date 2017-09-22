@@ -1,7 +1,7 @@
 package sculptor.xsd
 
 import scala.xml._
-import cats.data._, cats.implicits._
+import cats._, cats.data._, cats.implicits._
 
 object fold {
 
@@ -66,12 +66,12 @@ object fold {
       res <- ok(n.child.filter(ch => Option(ch.prefix) === ns).toList)
     } yield res
 
-  private def foldChild[A](handlers: Tuple2[String, Op[A]]*): Op[A] =
+  private def foldChild[A](handlers: Eval[Seq[Tuple2[String, Op[A]]]]): Op[A] =
     a =>
       n =>
         withNode(n) {
           for {
-            h <- ok(Map(handlers: _*))
+            h <- ok(Map(handlers.value: _*))
             child <- xsdChild(n)
             res <- child.foldLeftM(a) { (a, n) =>
               h.get(n.label)
@@ -82,24 +82,28 @@ object fold {
           } yield res
     }
 
-  private def schema0[A](annotation: Op[A],
-                         simpleType: Op[A],
-                         complexType: Op[A],
-                         element: Op[A],
-                         attribute: Op[A]): Op[A] =
+  private def schema0[A](annotation: => Op[A],
+                         simpleType: => Op[A],
+                         complexType: => Op[A],
+                         element: => Op[A],
+                         attribute: => Op[A]): Op[A] =
     foldChild(
-      "annotation" -> annotation,
-      "simpleType" -> simpleType,
-      "complexType" -> complexType,
-      "element" -> element,
-      "attribute" -> attribute
+      Eval.later(
+        Seq(
+          "annotation" -> annotation,
+          "simpleType" -> simpleType,
+          "complexType" -> complexType,
+          "element" -> element,
+          "attribute" -> attribute
+        )
+      )
     )
 
-  def schema[A](annotation: Op[A],
-                simpleType: Op[A],
-                complexType: Op[A],
-                element: Op[A],
-                attribute: Op[A]): Op[A] =
+  def schema[A](annotation: => Op[A],
+                simpleType: => Op[A],
+                complexType: => Op[A],
+                element: => Op[A],
+                attribute: => Op[A]): Op[A] =
     a =>
       n =>
         withNode(n) {
@@ -121,83 +125,111 @@ object fold {
           } yield res
     }
 
-  def annotation[A](appinfo: Op[A], documentation: Op[A]): Op[A] =
-    foldChild("appinfo" -> appinfo, "documentation" -> documentation)
+  def annotation[A](appinfo: => Op[A], documentation: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(Seq("appinfo" -> appinfo, "documentation" -> documentation))
+    )
 
-  def simpleType[A](annotation: Op[A],
-                    list: Op[A],
-                    restriction: Op[A],
-                    union: Op[A]): Op[A] = foldChild(
-    "annotation" -> annotation,
-    "list" -> list,
-    "restriction" -> restriction,
-    "union" -> union
+  def simpleType[A](annotation: => Op[A],
+                    list: => Op[A],
+                    restriction: => Op[A],
+                    union: => Op[A]): Op[A] = foldChild(
+    Eval.later(
+      Seq(
+        "annotation" -> annotation,
+        "list" -> list,
+        "restriction" -> restriction,
+        "union" -> union
+      )
+    )
   )
 
-  def list[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
-    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
+  def list[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
+    )
 
-  def restriction[A](annotation: Op[A],
-                     simpleType: Op[A],
-                     minExclusive: Op[A],
-                     minInclusive: Op[A],
-                     maxExclusive: Op[A],
-                     maxInclusive: Op[A],
-                     totalDigits: Op[A],
-                     fractionDigits: Op[A],
-                     length: Op[A],
-                     minLength: Op[A],
-                     maxLength: Op[A],
-                     enumeration: Op[A],
-                     whiteSpace: Op[A],
-                     pattern: Op[A]): Op[A] = foldChild(
-    "annotation" -> annotation,
-    "simpleType" -> simpleType,
-    "minExclusive" -> minExclusive,
-    "minInclusive" -> minInclusive,
-    "maxExclusive" -> maxExclusive,
-    "maxInclusive" -> maxInclusive,
-    "totalDigits" -> totalDigits,
-    "fractionDigits" -> fractionDigits,
-    "length" -> length,
-    "minLength" -> minLength,
-    "maxLength" -> maxLength,
-    "enumeration" -> enumeration,
-    "whiteSpace" -> whiteSpace,
-    "pattern" -> pattern
+  def restriction[A](annotation: => Op[A],
+                     simpleType: => Op[A],
+                     minExclusive: => Op[A],
+                     minInclusive: => Op[A],
+                     maxExclusive: => Op[A],
+                     maxInclusive: => Op[A],
+                     totalDigits: => Op[A],
+                     fractionDigits: => Op[A],
+                     length: => Op[A],
+                     minLength: => Op[A],
+                     maxLength: => Op[A],
+                     enumeration: => Op[A],
+                     whiteSpace: => Op[A],
+                     pattern: => Op[A]): Op[A] = foldChild(
+    Eval.later(
+      Seq(
+        "annotation" -> annotation,
+        "simpleType" -> simpleType,
+        "minExclusive" -> minExclusive,
+        "minInclusive" -> minInclusive,
+        "maxExclusive" -> maxExclusive,
+        "maxInclusive" -> maxInclusive,
+        "totalDigits" -> totalDigits,
+        "fractionDigits" -> fractionDigits,
+        "length" -> length,
+        "minLength" -> minLength,
+        "maxLength" -> maxLength,
+        "enumeration" -> enumeration,
+        "whiteSpace" -> whiteSpace,
+        "pattern" -> pattern
+      )
+    )
   )
 
-  def union[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
-    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
+  def union[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
+    )
 
-  def complexType[A](annotation: Op[A],
-                     simpleContent: Op[A],
-                     complexContent: Op[A],
-                     group: Op[A],
-                     all: Op[A],
-                     choice: Op[A],
-                     sequence: Op[A],
-                     attribute: Op[A]): Op[A] = foldChild(
-    "annotation" -> annotation,
-    "simpleContent" -> simpleContent,
-    "complexContent" -> complexContent,
-    "group" -> group,
-    "all" -> all,
-    "choice" -> choice,
-    "sequence" -> sequence,
-    "attribute" -> attribute
+  def complexType[A](annotation: => Op[A],
+                     simpleContent: => Op[A],
+                     complexContent: => Op[A],
+                     group: => Op[A],
+                     all: => Op[A],
+                     choice: => Op[A],
+                     sequence: => Op[A],
+                     attribute: => Op[A]): Op[A] = foldChild(
+    Eval.later(
+      Seq(
+        "annotation" -> annotation,
+        "simpleContent" -> simpleContent,
+        "complexContent" -> complexContent,
+        "group" -> group,
+        "all" -> all,
+        "choice" -> choice,
+        "sequence" -> sequence,
+        "attribute" -> attribute
+      )
+    )
   )
 
-  def simpleContent[A](annotation: Op[A],
-                       restriction: Op[A],
-                       extension: Op[A]): Op[A] = ???
+  def simpleContent[A](annotation: => Op[A],
+                       restriction: => Op[A],
+                       extension: => Op[A]): Op[A] = foldChild(
+    Eval.later(
+      Seq(
+        "annotation" -> annotation,
+        "restriction" -> restriction,
+        "extension" -> extension
+      )
+    )
+  )
 
   def simpleContentRestriction[A]: Op[A] = ???
 
   def simpleContentExtension[A]: Op[A] = ???
 
-  def attribute[A](annotation: Op[A], simpleType: Op[A]): Op[A] =
-    foldChild("annotation" -> annotation, "simpleType" -> simpleType)
+  def attribute[A](annotation: => Op[A], simpleType: => Op[A]): Op[A] =
+    foldChild(
+      Eval.later(Seq("annotation" -> annotation, "simpleType" -> simpleType))
+    )
 
   def element[A]: Op[A] = ???
 
