@@ -5,7 +5,8 @@ scalaVersion := Version.scala212
 libraryDependencies ++= Seq(
   Dependencies.scalaXml,
   Dependencies.specs2,
-  Dependencies.cats
+  Dependencies.cats,
+  Dependencies.shapeless
 )
 
 scalacOptions ++= Seq(
