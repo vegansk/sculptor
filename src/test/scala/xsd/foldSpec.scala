@@ -14,62 +14,44 @@ object foldSpec extends mutable.Specification {
 
       type Result = Unit
 
-      lazy val annotation: fold.Op[Result] = fold.annotation[Result]()
+      lazy val annotation: fold.AnnotationOp[Result] = fold.annotation()
 
-      lazy val attribute: fold.Op[Result] = fold.attribute[Result]()
+      lazy val attribute: fold.AttributeOp[Result] = fold.attribute()
 
-      lazy val list: fold.Op[Result] = fold.list[Result](
+      lazy val list: fold.ListOp[Result] = fold.list(
         annotation = annotation,
         simpleType = simpleType
       )
 
-      lazy val restriction: fold.Op[Result] = fold.simpleTypeRestriction[Result](
-        annotation = fold.nop,
-        simpleType = simpleType,
-        minExclusive = fold.nop,
-        minInclusive = fold.nop,
-        maxExclusive = fold.nop,
-        maxInclusive = fold.nop,
-        totalDigits = fold.nop,
-        fractionDigits = fold.nop,
-        length = fold.nop,
-        minLength = fold.nop,
-        maxLength = fold.nop,
-        enumeration = fold.nop,
-        whiteSpace = fold.nop,
-        pattern = fold.nop
+      lazy val restriction: fold.SimpleTypeRestrictionOp[Result] = fold.simpleTypeRestriction(
+        simpleType = simpleType
       )
 
-      lazy val union: fold.Op[Result] = fold.union[Result](
+      lazy val union: fold.UnionOp[Result] = fold.union(
         annotation = annotation,
         simpleType = simpleType
       )
 
-      lazy val simpleType: fold.Op[Result] = fold.simpleType[Result](
+      lazy val simpleType: fold.SimpleTypeOp[Result] = fold.simpleType(
         annotation = annotation,
         list = list,
         restriction = restriction,
         union = union
       )
 
-      lazy val complexType: fold.Op[Result] = fold.complexType(
+      lazy val complexType: fold.ComplexTypeOp[Result] = fold.complexType(
         annotation = annotation,
-        simpleContent = fold.nop,
-        complexContent = fold.nop,
-        group = fold.nop,
-        all = fold.nop,
-        choice = fold.nop,
-        sequence = fold.nop,
         attribute = attribute
       )
 
-      lazy val f = fold.schema(
+      val xsd = XML.load(resource)
+
+      val f = fold.schema(
         annotation = annotation,
         simpleType = simpleType,
         complexType = complexType,
-        element = fold.nop,
         attribute = attribute
-      )(())(XML.load(resource))
+      )(())(xsd)
 
       val res = f.value.run(fold.FoldState()).value
       println((res._1.schemaNs, res._2))
