@@ -54,6 +54,11 @@ object xml {
       new Exception(s"The node doesn't contain any children elements")
     )
 
+  def fullName(n: Node): String = {
+    val sb = new StringBuilder()
+    n.nameToString(sb).toString
+  }
+
   type Path = List[Node]
 
   def mkPath: Path = Nil
@@ -61,4 +66,6 @@ object xml {
   def push(p: Path, n: Node): Path = n :: p
 
   def pop(p: Path): Path = p.drop(1)
+
+  def pathToString(p: Path): String = p.reverse.map(fullName).mkString("/")
 }
