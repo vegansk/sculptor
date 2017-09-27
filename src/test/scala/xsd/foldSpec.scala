@@ -1,61 +1,135 @@
 package sculptor.xsd
 
 import org.specs2._
-import scala.xml.XML
+import scala.xml._
 
 object foldSpec extends mutable.Specification {
 
+  object helper {
+
+    def xsd(n: Node): Node = {
+      <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+        {n}
+        </xs:schema>
+    }
+
+    def runState[A](s: fold.FoldState)(r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
+      r.value.run(s).value
+
+    def run[A](r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
+      runState(fold.FoldState(appendPathToError = true, strictMode = true))(r)
+
+    def checkFold[A](initial: A, expected: A)(op: fold.SchemaOp[A])(data: Node) = {
+      val res = run {
+        op(initial)(xsd(data))
+      }
+
+      res._2 must_=== Right(expected)
+    }
+
+  }
+
+  import helper._
+
   "xsd fold" should {
 
-    "fold fes-1.0 schema" >> {
+    "detect schema namespace" >> {
+      run(
+        fold.findSchemaNs {
+          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
+        }
+      )._2 must_=== Right(Some("xs"))
+    }
 
-      val resource =
-        getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
+    "implement strict mode" >> {
 
-      type Result = Unit
+      val data = <xs:simpleType name="simpleTypeRestriction" />
+      runState(
+        fold.FoldState(appendPathToError = false, strictMode = true)
+      )(
+        fold.schema()(())(xsd(data))
+      )._2 must_=== Left("Found unprocessed node `simpleType`")
 
-      lazy val annotation: fold.AnnotationOp[Result] = fold.annotation()
+    }
 
-      lazy val attribute: fold.AttributeOp[Result] = fold.attribute()
+    "detect form default settings" >> {
 
-      lazy val list: fold.ListOp[Result] = fold.list(
-        annotation = annotation,
-        simpleType = simpleType
-      )
+      val unset = <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
 
-      lazy val restriction: fold.SimpleTypeRestrictionOp[Result] = fold.simpleTypeRestriction(
-        simpleType = simpleType
-      )
+      val set =
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+      attributeFormDefault="unqualified"
+      elementFormDefault="qualified"
+        />
 
-      lazy val union: fold.UnionOp[Result] = fold.union(
-        annotation = annotation,
-        simpleType = simpleType
-      )
+      run(
+        fold.findAttributeFormDefault(unset)
+      )._2 must_=== Right(None)
 
-      lazy val simpleType: fold.SimpleTypeOp[Result] = fold.simpleType(
-        annotation = annotation,
-        list = list,
-        restriction = restriction,
-        union = union
-      )
+      run(
+        fold.findElementFormDefault(unset)
+      )._2 must_=== Right(None)
 
-      lazy val complexType: fold.ComplexTypeOp[Result] = fold.complexType(
-        annotation = annotation,
-        attribute = attribute
-      )
+      run(
+        fold.findAttributeFormDefault(set)
+      )._2 must_=== Right(Some(fold.Unqualified))
 
-      val xsd = XML.load(resource)
+      run(
+        fold.findElementFormDefault(set)
+      )._2 must_=== Right(Some(fold.Qualified))
+    }
 
-      val f = fold.schema(
-        annotation = annotation,
-        simpleType = simpleType,
-        complexType = complexType,
-        attribute = attribute
-      )(())(xsd)
+    "handle attributes" >> {
+      runState(
+        fold.FoldState(attributeFormDefault = fold.Unqualified)
+      )(
+        fold.xsdAttributes {
+          <xs:simpleType name="simpleTypeRestriction" otherNs:test="test"/>
+        }
+      )._2.map(
+        _.map {
+          case a@Attribute(name, _, _) => (name, a.value.text)
+        }
+      ) must_=== Right(List(("name", "simpleTypeRestriction")))
 
-      val res = f.value.run(fold.FoldState()).value
-      println((res._1.schemaNs, res._2))
-      res._2.isRight must_== true
+      runState(
+        fold.FoldState(schemaNs = Some("xs"), attributeFormDefault = fold.Qualified)
+      )(
+        fold.xsdAttributes {
+          <xs:simpleType xs:name="simpleTypeRestriction" test="test"/>
+        }
+      )._2.map(
+        _.map {
+          case a@Attribute(name, _, _) => (name, a.value.text)
+        }
+      ) must_=== Right(List(("name", "simpleTypeRestriction")))
+    }
+
+    "fold simple type" >> {
+
+      val simpleType =
+        <xs:simpleType name="simpleTypeRestriction">
+          <xs:restriction base="xs:integer" />
+        </xs:simpleType>
+
+      checkFold(false, true) {
+        fold.schema(
+          simpleType = fold.simpleTypeOp[Boolean] {
+            _ => _ => fold.ok(true)
+          }
+        )
+      } (simpleType)
+
+      checkFold(None, Some("simpleTypeRestriction")) {
+        fold.schema(
+          simpleType = fold.simpleType(
+            restriction = fold.simpleTypeRestrictionOp(fold.nop[Option[String]]),
+            name = fold.nameOp {
+              _ => n => fold.ok(Some(n))
+            }
+          )
+        )
+      } (simpleType)
 
     }
 

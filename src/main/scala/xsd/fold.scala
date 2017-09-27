@@ -15,10 +15,17 @@ object fold {
     def eqv(a: FormDefault, b: FormDefault) = a == b
   }
 
-  final case class FoldState(schemaNs: Option[String] = None,
+  final case class FoldState( // xsd namespace prefix
+                             schemaNs: Option[String] = None,
                              attributeFormDefault: FormDefault = Unqualified,
                              elementFormDefault: FormDefault = Unqualified,
-                             path: xml.Path = xml.mkPath)
+                             // The path to the current processing element
+                             path: xml.Path = xml.mkPath,
+                             // Append path to the error message
+                             appendPathToError: Boolean = false,
+                             errorRaised: Boolean = false,
+                             // In strict mode, all the childs and attributes must be processed
+                             strictMode: Boolean = false)
 
   type FS[A] = State[FoldState, A]
 
@@ -54,6 +61,21 @@ object fold {
   private def updateElementFormDefault(e: FormDefault): Result[Unit] =
     liftS(State.modify[FoldState](_.copy(elementFormDefault = e)))
 
+  def getAppendPathToError: Result[Boolean] =
+    liftS(State.get[FoldState].map(_.appendPathToError))
+
+  def getErrorRaised: Result[Boolean] =
+    liftS(State.get[FoldState].map(_.errorRaised))
+
+  def setErrorRaised(errorRaised: Boolean): Result[Unit] =
+    liftS(State.modify[FoldState](_.copy(errorRaised = errorRaised)))
+
+  def getStrictMode: Result[Boolean] =
+    liftS(State.get[FoldState].map(_.strictMode))
+
+  def getPath: Result[xml.Path] =
+    liftS(State.get[FoldState].map(_.path))
+
   private def pushNode(n: Node): Result[Unit] =
     liftS(State.modify[FoldState](s => s.copy(path = xml.push(s.path, n))))
 
@@ -70,7 +92,7 @@ object fold {
 
   private val XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
 
-  private def findSchemaNs(xsd: Node): Result[Option[String]] =
+  private[xsd] def findSchemaNs(xsd: Node): Result[Option[String]] =
     ok(xml.getPrefix(XSD_NAMESPACE)(xsd))
 
   private def findFormDefault(
@@ -84,23 +106,22 @@ object fold {
       }
     }
 
-  private val findAttributeFormDefault = findFormDefault(
+  private[xsd] val findAttributeFormDefault = findFormDefault(
     "attributeFormDefault"
   ) _
 
-  private val findElementFormDefault = findFormDefault("elementFormDefault") _
+  private[xsd] val findElementFormDefault = findFormDefault(
+    "elementFormDefault"
+  ) _
 
-  private def fullName(n: Node): String = {
-    val sb = new StringBuilder()
-    n.nameToString(sb).toString
-  }
-
-  private val filterNs =
-    (schemaNs: Option[String], ns: Option[String], default: FormDefault) =>
-      ns match {
-        case None if default === Qualified => true
-        case ns if ns === schemaNs => true
-        case _ => false
+  private def filterNs(schemaNs: Option[String],
+                       ns: Option[String],
+                       default: FormDefault): Boolean =
+    ns match {
+      case None if default === Qualified => false
+      case None if default === Unqualified => true
+      case ns if ns === schemaNs => true
+      case _ => false
     }
 
   private def xsdLabel(n: Node): Result[String] =
@@ -109,7 +130,7 @@ object fold {
       elementFormDefault <- getElementFormDefault
       _ <- if (!filterNs(ns, Option(n.prefix), elementFormDefault))
         error(
-          s"Element's prefix `${fullName(n)}` doesn't match the xml schema prefix `${ns.getOrElse("")}`"
+          s"Element's prefix `${xml.fullName(n)}` doesn't match the xml schema prefix `${ns.getOrElse("")}`"
         )
       else ok(())
     } yield n.label
@@ -120,6 +141,10 @@ object fold {
       elementFormDefault <- getElementFormDefault
       res <- ok(
         n.child.toList
+          .filter(_ match {
+            case _: Elem => true
+            case _ => false
+          })
           .filter(ch => filterNs(ns, Option(ch.prefix), elementFormDefault))
       )
     } yield res
@@ -132,23 +157,43 @@ object fold {
           a2 <- y(a1)(n)
         } yield a2
 
+  def handleError[A](res: Result[A]): Result[A] =
+    res.handleErrorWith { err0 =>
+      for {
+        appendPathToError <- getAppendPathToError
+        errorRaised <- getErrorRaised
+        _ <- setErrorRaised(true)
+        path <- getPath
+        a <- {
+          err0 + (
+            if (appendPathToError && !errorRaised)
+              s" [${xml.pathToString(path)}]"
+            else ""
+          )
+        }.raiseError[Result, A]
+      } yield a
+    }
+
   private def foldChild[A](handlers: Handlers[Op, A]): Op[A] =
     a =>
       n =>
         withNode(n) {
-          for {
+          val res = for {
             h <- ok(Map(handlers.value: _*))
             child <- xsdChild(n)
+            appendPathToError <- getAppendPathToError
+            path <- getPath
             res <- child.foldLeftM(a) { (a, n) =>
               h.get(n.label)
-                .fold(error[A](s"Unknown element of type `${fullName(n)}`"))(
-                  _(a)(n)
-                )
+                .fold(
+                  error[A](s"Unknown element of type `${xml.fullName(n)}`")
+                )(_(a)(n))
             }
           } yield res
+          handleError(res)
     }
 
-  private def xsdAttributes(n: Node): Result[List[Attribute]] =
+  private[xsd] def xsdAttributes(n: Node): Result[List[Attribute]] =
     for {
       ns <- getSchemaNs
       attributeFormDefault <- getAttributeFormDefault
@@ -169,7 +214,7 @@ object fold {
     a =>
       n =>
         withNode(n) {
-          for {
+          val res = for {
             h <- ok(Map(handlers.value: _*))
             attrs <- xsdAttributes(n)
             res <- attrs.foldLeftM(a) { (a, attr) =>
@@ -179,6 +224,7 @@ object fold {
                 )
             }
           } yield res
+          handleError(res)
     }
 
   trait SchemaTag
@@ -247,32 +293,68 @@ object fold {
   trait RefererTag
   trait XpathTag
 
-  type SchemaOp[A] = Op[A] @@ SchemaTag
   type IdOp[A] = AttrOp[A] @@ IdTag
+  def idOp[A](op: AttrOp[A]): IdOp[A] = tag[IdTag][AttrOp[A]](op)
   type TargetNamespaceOp[A] = AttrOp[A] @@ TargetNamespaceTag
+  def targetNamespaceOp[A](op: AttrOp[A]): TargetNamespaceOp[A] =
+    tag[TargetNamespaceTag][AttrOp[A]](op)
   type FinalOp[A] = AttrOp[A] @@ FinalTag
+  def finalOp[A](op: AttrOp[A]): FinalOp[A] = tag[FinalTag][AttrOp[A]](op)
   type NameOp[A] = AttrOp[A] @@ NameTag
+  def nameOp[A](op: AttrOp[A]): NameOp[A] = tag[NameTag][AttrOp[A]](op)
   type ItemTypeOp[A] = AttrOp[A] @@ ItemTypeTag
+  def itemTypeOp[A](op: AttrOp[A]): ItemTypeOp[A] =
+    tag[ItemTypeTag][AttrOp[A]](op)
   type BaseOp[A] = AttrOp[A] @@ BaseTag
+  def baseOp[A](op: AttrOp[A]): BaseOp[A] = tag[BaseTag][AttrOp[A]](op)
   type MemberTypesOp[A] = AttrOp[A] @@ MemberTypesTag
+  def memberTypesOp[A](op: AttrOp[A]): MemberTypesOp[A] =
+    tag[MemberTypesTag][AttrOp[A]](op)
   type AbstractOp[A] = AttrOp[A] @@ AbstractTag
+  def abstractOp[A](op: AttrOp[A]): AbstractOp[A] =
+    tag[AbstractTag][AttrOp[A]](op)
   type BlockOp[A] = AttrOp[A] @@ BlockTag
+  def blockOp[A](op: AttrOp[A]): BlockOp[A] = tag[BlockTag][AttrOp[A]](op)
   type MixedOp[A] = AttrOp[A] @@ MixedTag
+  def mixedOp[A](op: AttrOp[A]): MixedOp[A] = tag[MixedTag][AttrOp[A]](op)
   type MaxOccursOp[A] = AttrOp[A] @@ MaxOccursTag
+  def maxOccursOp[A](op: AttrOp[A]): MaxOccursOp[A] =
+    tag[MaxOccursTag][AttrOp[A]](op)
   type MinOccursOp[A] = AttrOp[A] @@ MinOccursTag
+  def minOccursOp[A](op: AttrOp[A]): MinOccursOp[A] =
+    tag[MinOccursTag][AttrOp[A]](op)
   type RefOp[A] = AttrOp[A] @@ RefTag
+  def refOp[A](op: AttrOp[A]): RefOp[A] = tag[RefTag][AttrOp[A]](op)
   type NamespaceOp[A] = AttrOp[A] @@ NamespaceTag
+  def namespaceOp[A](op: AttrOp[A]): NamespaceOp[A] =
+    tag[NamespaceTag][AttrOp[A]](op)
   type ProcessContentsOp[A] = AttrOp[A] @@ ProcessContentsTag
+  def processContentsOp[A](op: AttrOp[A]): ProcessContentsOp[A] =
+    tag[ProcessContentsTag][AttrOp[A]](op)
   type DefaultOp[A] = AttrOp[A] @@ DefaultTag
+  def defaultOp[A](op: AttrOp[A]): DefaultOp[A] =
+    tag[DefaultTag][AttrOp[A]](op)
   type FixedOp[A] = AttrOp[A] @@ FixedTag
+  def fixedOp[A](op: AttrOp[A]): FixedOp[A] = tag[FixedTag][AttrOp[A]](op)
   type FormOp[A] = AttrOp[A] @@ FormTag
+  def formOp[A](op: AttrOp[A]): FormOp[A] = tag[FormTag][AttrOp[A]](op)
   type TypeOp[A] = AttrOp[A] @@ TypeTag
+  def typeOp[A](op: AttrOp[A]): TypeOp[A] = tag[TypeTag][AttrOp[A]](op)
   type UseOp[A] = AttrOp[A] @@ UseTag
+  def useOp[A](op: AttrOp[A]): UseOp[A] = tag[UseTag][AttrOp[A]](op)
   type NillableOp[A] = AttrOp[A] @@ NillableTag
+  def nillableOp[A](op: AttrOp[A]): NillableOp[A] =
+    tag[NillableTag][AttrOp[A]](op)
   type SubstitutionGroupOp[A] = AttrOp[A] @@ SubstitutionGroupTag
+  def substitutionGroupOp[A](op: AttrOp[A]): SubstitutionGroupOp[A] =
+    tag[SubstitutionGroupTag][AttrOp[A]](op)
   type RefererOp[A] = AttrOp[A] @@ RefererTag
+  def refererOp[A](op: AttrOp[A]): RefererOp[A] =
+    tag[RefererTag][AttrOp[A]](op)
   type XpathOp[A] = AttrOp[A] @@ XpathTag
+  def xpathOp[A](op: AttrOp[A]): XpathOp[A] = tag[XpathTag][AttrOp[A]](op)
 
+  type SchemaOp[A] = Op[A] @@ SchemaTag
   type AnnotationOp[A] = Op[A] @@ AnnotationTag
   type SimpleTypeOp[A] = Op[A] @@ SimpleTypeTag
   type ComplexTypeOp[A] = Op[A] @@ ComplexTypeTag
@@ -324,7 +406,14 @@ object fold {
     tag[SchemaTag][Op[A]](
       composeOps(
         foldAttributes(
-          Eval.later(Seq("id" -> id, "targetNamespace" -> targetNamespace))
+          Eval.later(
+            Seq(
+              "id" -> id,
+              "targetNamespace" -> targetNamespace,
+              "elementFormDefault" -> attrNop[A],
+              "attributeFormDefault" -> attrNop[A]
+            )
+          )
         )
       )(
         foldChild(
@@ -342,50 +431,54 @@ object fold {
     )
 
   def schema[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
     targetNamespace: => TargetNamespaceOp[A] =
-      tag[TargetNamespaceTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A]),
-    complexType: => ComplexTypeOp[A] = tag[ComplexTypeTag](nop[A]),
-    element: => ElementOp[A] = tag[ElementTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A])
+      tag[TargetNamespaceTag](attrNop0[A]("targetNamespace")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType")),
+    complexType: => ComplexTypeOp[A] =
+      tag[ComplexTypeTag](nop0[A]("complexType")),
+    element: => ElementOp[A] = tag[ElementTag](nop0[A]("element")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute"))
   ): SchemaOp[A] =
     tag[SchemaTag][Op[A]](
       a =>
         n =>
-          withNode(n) {
-            for {
-              _ <- findSchemaNs(n).flatMap(updateSchemaNs)
-              _ <- findAttributeFormDefault(n).flatMap(
-                _.fold(ok(()))(v => updateAttributeFormDefault(v))
-              )
-              _ <- findElementFormDefault(n).flatMap(
-                _.fold(ok(()))(v => updateElementFormDefault(v))
-              )
-              l <- xsdLabel(n)
-              res <- l match {
-                case "schema" =>
-                  schema0(
-                    id,
-                    targetNamespace,
-                    annotation,
-                    simpleType,
-                    complexType,
-                    element,
-                    attribute
-                  )(a)(n)
-                case l => error[A](s"`schema` tag was expected, found `$l`")
-              }
-            } yield res
-      }
+          for {
+            _ <- findSchemaNs(n).flatMap(updateSchemaNs)
+            _ <- findAttributeFormDefault(n).flatMap(
+              _.fold(ok(()))(v => updateAttributeFormDefault(v))
+            )
+            _ <- findElementFormDefault(n).flatMap(
+              _.fold(ok(()))(v => updateElementFormDefault(v))
+            )
+            l <- xsdLabel(n)
+            res <- l match {
+              case "schema" =>
+                schema0(
+                  id,
+                  targetNamespace,
+                  annotation,
+                  simpleType,
+                  complexType,
+                  element,
+                  attribute
+                )(a)(n)
+              case l => error[A](s"`schema` tag was expected, found `$l`")
+            }
+          } yield res
     )
 
-  def annotation[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-                    appinfo: => AppinfoOp[A] = tag[AppinfoTag](nop[A]),
-                    documentation: => DocumentationOp[A] =
-                      tag[DocumentationTag](nop[A])): AnnotationOp[A] =
-    tag[AnnotationTag][Op[A]](
+  def annotationOp[A](op: Op[A]): AnnotationOp[A] =
+    tag[AnnotationTag][Op[A]](op)
+
+  def annotation[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    appinfo: => AppinfoOp[A] = tag[AppinfoTag](nop0[A]("appinfo")),
+    documentation: => DocumentationOp[A] =
+      tag[DocumentationTag](nop0[A]("documentation"))
+  ): AnnotationOp[A] =
+    annotationOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id))))(
         foldChild(
           Eval
@@ -394,17 +487,20 @@ object fold {
       )
     )
 
+  def simpleTypeOp[A](op: Op[A]): SimpleTypeOp[A] =
+    tag[SimpleTypeTag][Op[A]](op)
+
   def simpleType[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    `final`: => FinalOp[A] = tag[FinalTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    list: => ListOp[A] = tag[ListTag](nop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    `final`: => FinalOp[A] = tag[FinalTag](attrNop0[A]("final")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    list: => ListOp[A] = tag[ListTag](nop0[A]("list")),
     restriction: => SimpleTypeRestrictionOp[A] =
-      tag[SimpleTypeRestrictionTag](nop[A]),
-    union: => UnionOp[A] = tag[UnionTag](nop[A])
+      tag[SimpleTypeRestrictionTag](nop0[A]("restriction")),
+    union: => UnionOp[A] = tag[UnionTag](nop0[A]("union"))
   ): SimpleTypeOp[A] =
-    tag[SimpleTypeTag][Op[A]](
+    simpleTypeOp(
       composeOps(
         foldAttributes(
           Eval.later(Seq("final" -> `final`, "id" -> id, "name" -> name))
@@ -423,13 +519,15 @@ object fold {
       )
     )
 
+  def listOp[A](op: Op[A]): ListOp[A] = tag[ListTag][Op[A]](op)
+
   def list[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    itemType: => ItemTypeOp[A] = tag[ItemTypeTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    itemType: => ItemTypeOp[A] = tag[ItemTypeTag](attrNop0[A]("itemType")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType"))
   ): ListOp[A] =
-    tag[ListTag][Op[A]](
+    listOp(
       composeOps(
         foldAttributes(Eval.later(Seq("id" -> id, "itemType" -> itemType)))
       )(
@@ -440,25 +538,35 @@ object fold {
       )
     )
 
+  def simpleTypeRestrictionOp[A](op: Op[A]): SimpleTypeRestrictionOp[A] =
+    tag[SimpleTypeRestrictionTag][Op[A]](op)
+
   def simpleTypeRestriction[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    base: => BaseOp[A] = tag[BaseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A]),
-    minExclusive: => MinExclusiveOp[A] = tag[MinExclusiveTag](nop[A]),
-    minInclusive: => MinInclusiveOp[A] = tag[MinInclusiveTag](nop[A]),
-    maxExclusive: => MaxExclusiveOp[A] = tag[MaxExclusiveTag](nop[A]),
-    maxInclusive: => MaxInclusiveOp[A] = tag[MaxInclusiveTag](nop[A]),
-    totalDigits: => TotalDigitsOp[A] = tag[TotalDigitsTag](nop[A]),
-    fractionDigits: => FractionDigitsOp[A] = tag[FractionDigitsTag](nop[A]),
-    length: => LengthOp[A] = tag[LengthTag](nop[A]),
-    minLength: => MinLengthOp[A] = tag[MinLengthTag](nop[A]),
-    maxLength: => MaxLengthOp[A] = tag[MaxLengthTag](nop[A]),
-    enumeration: => EnumerationOp[A] = tag[EnumerationTag](nop[A]),
-    whiteSpace: => WhiteSpaceOp[A] = tag[WhiteSpaceTag](nop[A]),
-    pattern: => PatternOp[A] = tag[PatternTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    base: => BaseOp[A] = tag[BaseTag](attrNop0[A]("base")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType")),
+    minExclusive: => MinExclusiveOp[A] =
+      tag[MinExclusiveTag](nop0[A]("minExclusive")),
+    minInclusive: => MinInclusiveOp[A] =
+      tag[MinInclusiveTag](nop0[A]("minInclusive")),
+    maxExclusive: => MaxExclusiveOp[A] =
+      tag[MaxExclusiveTag](nop0[A]("maxExclusive")),
+    maxInclusive: => MaxInclusiveOp[A] =
+      tag[MaxInclusiveTag](nop0[A]("maxInclusive")),
+    totalDigits: => TotalDigitsOp[A] =
+      tag[TotalDigitsTag](nop0[A]("totalDigits")),
+    fractionDigits: => FractionDigitsOp[A] =
+      tag[FractionDigitsTag](nop0[A]("fractionDigits")),
+    length: => LengthOp[A] = tag[LengthTag](nop0[A]("length")),
+    minLength: => MinLengthOp[A] = tag[MinLengthTag](nop0[A]("minLength")),
+    maxLength: => MaxLengthOp[A] = tag[MaxLengthTag](nop0[A]("maxLength")),
+    enumeration: => EnumerationOp[A] =
+      tag[EnumerationTag](nop0[A]("enumeration")),
+    whiteSpace: => WhiteSpaceOp[A] = tag[WhiteSpaceTag](nop0[A]("whiteSpace")),
+    pattern: => PatternOp[A] = tag[PatternTag](nop0[A]("pattern"))
   ): SimpleTypeRestrictionOp[A] =
-    tag[SimpleTypeRestrictionTag][Op[A]](
+    simpleTypeRestrictionOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "base" -> base))))(
         foldChild(
           Eval.later(
@@ -483,13 +591,16 @@ object fold {
       )
     )
 
+  def unionOp[A](op: Op[A]): UnionOp[A] = tag[UnionTag][Op[A]](op)
+
   def union[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    memberTypes: => MemberTypesOp[A] = tag[MemberTypesTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    memberTypes: => MemberTypesOp[A] =
+      tag[MemberTypesTag](attrNop0[A]("memberTypes")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType"))
   ): UnionOp[A] =
-    tag[UnionTag][Op[A]](
+    unionOp(
       composeOps(
         foldAttributes(
           Eval.later(Seq("id" -> id, "memberTypes" -> memberTypes))
@@ -502,23 +613,28 @@ object fold {
       )
     )
 
+  def complexTypeOp[A](op: Op[A]): ComplexTypeOp[A] =
+    tag[ComplexTypeTag][Op[A]](op)
+
   def complexType[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    `abstract`: => AbstractOp[A] = tag[AbstractTag](attrNop[A]),
-    block: => BlockOp[A] = tag[BlockTag](attrNop[A]),
-    `final`: => FinalOp[A] = tag[FinalTag](attrNop[A]),
-    mixed: => MixedOp[A] = tag[MixedTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleContent: => SimpleContentOp[A] = tag[SimpleContentTag](nop[A]),
-    complexContent: => ComplexContentOp[A] = tag[ComplexContentTag](nop[A]),
-    group: => GroupOp[A] = tag[GroupTag](nop[A]),
-    all: => AllOp[A] = tag[AllTag](nop[A]),
-    choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-    sequence: => SequenceOp[A] = tag[SequenceTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    `abstract`: => AbstractOp[A] = tag[AbstractTag](attrNop0[A]("abstract")),
+    block: => BlockOp[A] = tag[BlockTag](attrNop0[A]("block")),
+    `final`: => FinalOp[A] = tag[FinalTag](attrNop0[A]("final")),
+    mixed: => MixedOp[A] = tag[MixedTag](attrNop0[A]("mixed")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleContent: => SimpleContentOp[A] =
+      tag[SimpleContentTag](nop0[A]("simpleContent")),
+    complexContent: => ComplexContentOp[A] =
+      tag[ComplexContentTag](nop0[A]("complexContent")),
+    group: => GroupOp[A] = tag[GroupTag](nop0[A]("group")),
+    all: => AllOp[A] = tag[AllTag](nop0[A]("all")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute"))
   ): ComplexTypeOp[A] =
-    tag[ComplexTypeTag][Op[A]](
+    complexTypeOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -550,16 +666,19 @@ object fold {
       )
     )
 
+  def complexContentOp[A](op: Op[A]): ComplexContentOp[A] =
+    tag[ComplexContentTag][Op[A]](op)
+
   def complexContent[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    mixed: => MixedOp[A] = tag[MixedTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    mixed: => MixedOp[A] = tag[MixedTag](attrNop0[A]("mixed")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
     restriction: => ComplexContentRestrictionOp[A] =
-      tag[ComplexContentRestrictionTag](nop[A]),
+      tag[ComplexContentRestrictionTag](nop0[A]("restriction")),
     extension: => ComplexContentExtensionOp[A] =
-      tag[ComplexContentExtensionTag](nop[A])
+      tag[ComplexContentExtensionTag](nop0[A]("extension"))
   ): ComplexContentOp[A] =
-    tag[ComplexContentTag][Op[A]](
+    complexContentOp(
       composeOps(
         foldAttributes(Eval.later(Seq("id" -> id, "mixed" -> mixed)))
       )(
@@ -575,19 +694,26 @@ object fold {
       )
     )
 
-  def complexContentRestriction[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    base: => BaseOp[A] = tag[BaseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    group: => GroupOp[A] = tag[GroupTag](nop[A]),
-    all: => AllOp[A] = tag[AllTag](nop[A]),
-    choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-    sequence: => SequenceOp[A] = tag[SequenceTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A]),
-    attributeGroup: => AttributeGroupOp[A] = tag[AttributeGroupTag](nop[A]),
-    anyAttribute: => AnyAttributeOp[A] = tag[AnyAttributeTag](nop[A])
+  def complexContentRestrictionOp[A](
+    op: Op[A]
   ): ComplexContentRestrictionOp[A] =
-    tag[ComplexContentRestrictionTag][Op[A]](
+    tag[ComplexContentRestrictionTag][Op[A]](op)
+
+  def complexContentRestriction[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    base: => BaseOp[A] = tag[BaseTag](attrNop0[A]("base")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    group: => GroupOp[A] = tag[GroupTag](nop0[A]("group")),
+    all: => AllOp[A] = tag[AllTag](nop0[A]("all")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute")),
+    attributeGroup: => AttributeGroupOp[A] =
+      tag[AttributeGroupTag](nop0[A]("attributeGroup")),
+    anyAttribute: => AnyAttributeOp[A] =
+      tag[AnyAttributeTag](nop0[A]("anyAttribute"))
+  ): ComplexContentRestrictionOp[A] =
+    complexContentRestrictionOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "base" -> base))))(
         foldChild(
           Eval.later(
@@ -605,20 +731,25 @@ object fold {
         )
       )
     )
+
+  def complexContentExtensionOp[A](op: Op[A]): ComplexContentExtensionOp[A] =
+    tag[ComplexContentExtensionTag][Op[A]](op)
 
   def complexContentExtension[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    base: => BaseOp[A] = tag[BaseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    group: => GroupOp[A] = tag[GroupTag](nop[A]),
-    all: => AllOp[A] = tag[AllTag](nop[A]),
-    choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-    sequence: => SequenceOp[A] = tag[SequenceTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A]),
-    attributeGroup: => AttributeGroupOp[A] = tag[AttributeGroupTag](nop[A]),
-    anyAttribute: => AnyAttributeOp[A] = tag[AnyAttributeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    base: => BaseOp[A] = tag[BaseTag](attrNop0[A]("base")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    group: => GroupOp[A] = tag[GroupTag](nop0[A]("group")),
+    all: => AllOp[A] = tag[AllTag](nop0[A]("all")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute")),
+    attributeGroup: => AttributeGroupOp[A] =
+      tag[AttributeGroupTag](nop0[A]("attributeGroup")),
+    anyAttribute: => AnyAttributeOp[A] =
+      tag[AnyAttributeTag](nop0[A]("anyAttribute"))
   ): ComplexContentExtensionOp[A] =
-    tag[ComplexContentExtensionTag][Op[A]](
+    complexContentExtensionOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "base" -> base))))(
         foldChild(
           Eval.later(
@@ -637,18 +768,20 @@ object fold {
       )
     )
 
+  def groupOp[A](op: Op[A]): GroupOp[A] = tag[GroupTag][Op[A]](op)
+
   def group[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-    ref: => RefOp[A] = tag[RefTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    all: => AllOp[A] = tag[AllTag](nop[A]),
-    choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-    sequence: => SequenceOp[A] = tag[SequenceTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    ref: => RefOp[A] = tag[RefTag](attrNop0[A]("ref")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    all: => AllOp[A] = tag[AllTag](nop0[A]("all")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence"))
   ): GroupOp[A] =
-    tag[GroupTag][Op[A]](
+    groupOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -675,12 +808,16 @@ object fold {
       )
     )
 
-  def all[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-             maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-             minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-             annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-             element: => ElementOp[A] = tag[ElementTag](nop[A])): AllOp[A] =
-    tag[AllTag][Op[A]](
+  def allOp[A](op: Op[A]): AllOp[A] = tag[AllTag][Op[A]](op)
+
+  def all[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    element: => ElementOp[A] = tag[ElementTag](nop0[A]("element"))
+  ): AllOp[A] =
+    allOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -694,16 +831,20 @@ object fold {
       )
     )
 
-  def choice[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-                maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-                minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-                annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-                element: => ElementOp[A] = tag[ElementTag](nop[A]),
-                group: => GroupOp[A] = tag[GroupTag](nop[A]),
-                choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-                sequence: => SequenceOp[A] = tag[SequenceTag](nop[A]),
-                any: => AnyOp[A] = tag[AnyTag](nop[A])): ChoiceOp[A] =
-    tag[ChoiceTag][Op[A]](
+  def choiceOp[A](op: Op[A]): ChoiceOp[A] = tag[ChoiceTag][Op[A]](op)
+
+  def choice[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    element: => ElementOp[A] = tag[ElementTag](nop0[A]("element")),
+    group: => GroupOp[A] = tag[GroupTag](nop0[A]("group")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence")),
+    any: => AnyOp[A] = tag[AnyTag](nop0[A]("any"))
+  ): ChoiceOp[A] =
+    choiceOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -726,16 +867,20 @@ object fold {
       )
     )
 
-  def sequence[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-                  maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-                  minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-                  annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-                  element: => ElementOp[A] = tag[ElementTag](nop[A]),
-                  group: => GroupOp[A] = tag[GroupTag](nop[A]),
-                  choice: => ChoiceOp[A] = tag[ChoiceTag](nop[A]),
-                  sequence: => SequenceOp[A] = tag[SequenceTag](nop[A]),
-                  any: => AnyOp[A] = tag[AnyTag](nop[A])): SequenceOp[A] =
-    tag[SequenceTag][Op[A]](
+  def sequenceOp[A](op: Op[A]): SequenceOp[A] = tag[SequenceTag][Op[A]](op)
+
+  def sequence[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    element: => ElementOp[A] = tag[ElementTag](nop0[A]("element")),
+    group: => GroupOp[A] = tag[GroupTag](nop0[A]("group")),
+    choice: => ChoiceOp[A] = tag[ChoiceTag](nop0[A]("choice")),
+    sequence: => SequenceOp[A] = tag[SequenceTag](nop0[A]("sequence")),
+    any: => AnyOp[A] = tag[AnyTag](nop0[A]("any"))
+  ): SequenceOp[A] =
+    sequenceOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -757,17 +902,19 @@ object fold {
         )
       )
     )
+
+  def anyOp[A](op: Op[A]): AnyOp[A] = tag[AnyTag][Op[A]](op)
 
   def any[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-    namespace: => NamespaceOp[A] = tag[NamespaceTag](attrNop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    namespace: => NamespaceOp[A] = tag[NamespaceTag](attrNop0[A]("namespace")),
     processContents: => ProcessContentsOp[A] =
-      tag[ProcessContentsTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A])
+      tag[ProcessContentsTag](attrNop0[A]("processContents")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation"))
   ): AnyOp[A] =
-    tag[AnyTag][Op[A]](
+    anyOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -783,15 +930,18 @@ object fold {
       )(foldChild(Eval.later(Seq("annotation" -> annotation))))
     )
 
+  def simpleContentOp[A](op: Op[A]): SimpleContentOp[A] =
+    tag[SimpleContentTag][Op[A]](op)
+
   def simpleContent[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
     restriction: => SimpleContentRestrictionOp[A] =
-      tag[SimpleContentRestrictionTag](nop[A]),
+      tag[SimpleContentRestrictionTag](nop0[A]("restriction")),
     extension: => SimpleContentExtensionOp[A] =
-      tag[SimpleContentExtensionTag](nop[A])
+      tag[SimpleContentExtensionTag](nop0[A]("extension"))
   ): SimpleContentOp[A] =
-    tag[SimpleContentTag][Op[A]](
+    simpleContentOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id))))(
         foldChild(
           Eval.later(
@@ -805,28 +955,40 @@ object fold {
       )
     )
 
+  def simpleContentRestrictionOp[A](op: Op[A]): SimpleContentRestrictionOp[A] =
+    tag[SimpleContentRestrictionTag][Op[A]](op)
+
   def simpleContentRestriction[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    base: => BaseOp[A] = tag[BaseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A]),
-    minExclusive: => MinExclusiveOp[A] = tag[MinExclusiveTag](nop[A]),
-    minInclusive: => MinInclusiveOp[A] = tag[MinInclusiveTag](nop[A]),
-    maxExclusive: => MaxExclusiveOp[A] = tag[MaxExclusiveTag](nop[A]),
-    maxInclusive: => MaxInclusiveOp[A] = tag[MaxInclusiveTag](nop[A]),
-    totalDigits: => TotalDigitsOp[A] = tag[TotalDigitsTag](nop[A]),
-    fractionDigits: => FractionDigitsOp[A] = tag[FractionDigitsTag](nop[A]),
-    length: => LengthOp[A] = tag[LengthTag](nop[A]),
-    minLength: => MinLengthOp[A] = tag[MinLengthTag](nop[A]),
-    maxLength: => MaxLengthOp[A] = tag[MaxLengthTag](nop[A]),
-    enumeration: => EnumerationOp[A] = tag[EnumerationTag](nop[A]),
-    whiteSpace: => WhiteSpaceOp[A] = tag[WhiteSpaceTag](nop[A]),
-    pattern: => PatternOp[A] = tag[PatternTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A]),
-    attributeGroup: => AttributeGroupOp[A] = tag[AttributeGroupTag](nop[A]),
-    anyAttribute: => AnyAttributeOp[A] = tag[AnyAttributeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    base: => BaseOp[A] = tag[BaseTag](attrNop0[A]("base")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType")),
+    minExclusive: => MinExclusiveOp[A] =
+      tag[MinExclusiveTag](nop0[A]("minExclusive")),
+    minInclusive: => MinInclusiveOp[A] =
+      tag[MinInclusiveTag](nop0[A]("minInclusive")),
+    maxExclusive: => MaxExclusiveOp[A] =
+      tag[MaxExclusiveTag](nop0[A]("maxExclusive")),
+    maxInclusive: => MaxInclusiveOp[A] =
+      tag[MaxInclusiveTag](nop0[A]("maxInclusive")),
+    totalDigits: => TotalDigitsOp[A] =
+      tag[TotalDigitsTag](nop0[A]("totalDigits")),
+    fractionDigits: => FractionDigitsOp[A] =
+      tag[FractionDigitsTag](nop0[A]("fractionDigits")),
+    length: => LengthOp[A] = tag[LengthTag](nop0[A]("length")),
+    minLength: => MinLengthOp[A] = tag[MinLengthTag](nop0[A]("minLength")),
+    maxLength: => MaxLengthOp[A] = tag[MaxLengthTag](nop0[A]("maxLength")),
+    enumeration: => EnumerationOp[A] =
+      tag[EnumerationTag](nop0[A]("enumeration")),
+    whiteSpace: => WhiteSpaceOp[A] = tag[WhiteSpaceTag](nop0[A]("whiteSpace")),
+    pattern: => PatternOp[A] = tag[PatternTag](nop0[A]("pattern")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute")),
+    attributeGroup: => AttributeGroupOp[A] =
+      tag[AttributeGroupTag](nop0[A]("attributeGroup")),
+    anyAttribute: => AnyAttributeOp[A] =
+      tag[AnyAttributeTag](nop0[A]("anyAttribute"))
   ): SimpleContentRestrictionOp[A] =
-    tag[SimpleContentRestrictionTag][Op[A]](
+    simpleContentRestrictionOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "base" -> base))))(
         foldChild(
           Eval.later(
@@ -854,15 +1016,20 @@ object fold {
       )
     )
 
+  def simpleContentExtensionOp[A](op: Op[A]): SimpleContentExtensionOp[A] =
+    tag[SimpleContentExtensionTag][Op[A]](op)
+
   def simpleContentExtension[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    base: => BaseOp[A] = tag[BaseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A]),
-    attributeGroup: => AttributeGroupOp[A] = tag[AttributeGroupTag](nop[A]),
-    anyAttribute: => AnyAttributeOp[A] = tag[AnyAttributeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    base: => BaseOp[A] = tag[BaseTag](attrNop0[A]("base")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute")),
+    attributeGroup: => AttributeGroupOp[A] =
+      tag[AttributeGroupTag](nop0[A]("attributeGroup")),
+    anyAttribute: => AnyAttributeOp[A] =
+      tag[AnyAttributeTag](nop0[A]("anyAttribute"))
   ): SimpleContentExtensionOp[A] =
-    tag[SimpleContentExtensionTag][Op[A]](
+    simpleContentExtensionOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "base" -> base))))(
         foldChild(
           Eval.later(
@@ -877,19 +1044,21 @@ object fold {
       )
     )
 
+  def attributeOp[A](op: Op[A]): AttributeOp[A] = tag[AttributeTag][Op[A]](op)
+
   def attribute[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    default: => DefaultOp[A] = tag[DefaultTag](attrNop[A]),
-    fixed: => FixedOp[A] = tag[FixedTag](attrNop[A]),
-    form: => FormOp[A] = tag[FormTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    ref: => RefOp[A] = tag[RefTag](attrNop[A]),
-    `type`: => TypeOp[A] = tag[TypeTag](attrNop[A]),
-    use: => UseOp[A] = tag[UseTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    default: => DefaultOp[A] = tag[DefaultTag](attrNop0[A]("default")),
+    fixed: => FixedOp[A] = tag[FixedTag](attrNop0[A]("fixed")),
+    form: => FormOp[A] = tag[FormTag](attrNop0[A]("form")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    ref: => RefOp[A] = tag[RefTag](attrNop0[A]("ref")),
+    `type`: => TypeOp[A] = tag[TypeTag](attrNop0[A]("type")),
+    use: => UseOp[A] = tag[UseTag](attrNop0[A]("use")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType"))
   ): AttributeOp[A] =
-    tag[AttributeTag][Op[A]](
+    attributeOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -913,16 +1082,21 @@ object fold {
       )
     )
 
+  def attributeGroupOp[A](op: Op[A]): AttributeGroupOp[A] =
+    tag[AttributeGroupTag][Op[A]](op)
+
   def attributeGroup[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    ref: => RefOp[A] = tag[RefTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    attribute: => AttributeOp[A] = tag[AttributeTag](nop[A]),
-    attributeGroup: => AttributeGroupOp[A] = tag[AttributeGroupTag](nop[A]),
-    anyAttribute: => AnyAttributeOp[A] = tag[AnyAttributeTag](nop[A])
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    ref: => RefOp[A] = tag[RefTag](attrNop0[A]("ref")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute")),
+    attributeGroup: => AttributeGroupOp[A] =
+      tag[AttributeGroupTag](nop0[A]("attributeGroup")),
+    anyAttribute: => AnyAttributeOp[A] =
+      tag[AnyAttributeTag](nop0[A]("anyAttribute"))
   ): AttributeGroupOp[A] =
-    tag[AttributeGroupTag][Op[A]](
+    attributeGroupOp(
       composeOps(
         foldAttributes(
           Eval.later(Seq("id" -> id, "name" -> name, "ref" -> ref))
@@ -941,14 +1115,17 @@ object fold {
       )
     )
 
+  def anyAttributeOp[A](op: Op[A]): AnyAttributeOp[A] =
+    tag[AnyAttributeTag][Op[A]](op)
+
   def anyAttribute[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    namespace: => NamespaceOp[A] = tag[NamespaceTag](attrNop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    namespace: => NamespaceOp[A] = tag[NamespaceTag](attrNop0[A]("namespace")),
     processContents: => ProcessContentsOp[A] =
-      tag[ProcessContentsTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A])
+      tag[ProcessContentsTag](attrNop0[A]("processContents")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation"))
   ): AnyAttributeOp[A] =
-    tag[AnyAttributeTag][Op[A]](
+    anyAttributeOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -962,30 +1139,33 @@ object fold {
       )(foldChild(Eval.later(Seq("annotation" -> annotation))))
     )
 
+  def elementOp[A](op: Op[A]): ElementOp[A] = tag[ElementTag][Op[A]](op)
+
   def element[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    `abstract`: => AbstractOp[A] = tag[AbstractTag](attrNop[A]),
-    block: => BlockOp[A] = tag[BlockTag](attrNop[A]),
-    default: => DefaultOp[A] = tag[DefaultTag](attrNop[A]),
-    `final`: => FinalOp[A] = tag[FinalTag](attrNop[A]),
-    fixed: => FixedOp[A] = tag[FixedTag](attrNop[A]),
-    form: => FormOp[A] = tag[FormTag](attrNop[A]),
-    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop[A]),
-    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop[A]),
-    name: => NameOp[A] = tag[NameTag](attrNop[A]),
-    nillable: => NillableOp[A] = tag[NillableTag](attrNop[A]),
-    ref: => RefOp[A] = tag[RefTag](attrNop[A]),
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    `abstract`: => AbstractOp[A] = tag[AbstractTag](attrNop0[A]("abstract")),
+    block: => BlockOp[A] = tag[BlockTag](attrNop0[A]("block")),
+    default: => DefaultOp[A] = tag[DefaultTag](attrNop0[A]("default")),
+    `final`: => FinalOp[A] = tag[FinalTag](attrNop0[A]("final")),
+    fixed: => FixedOp[A] = tag[FixedTag](attrNop0[A]("fixed")),
+    form: => FormOp[A] = tag[FormTag](attrNop0[A]("form")),
+    maxOccurs: => MaxOccursOp[A] = tag[MaxOccursTag](attrNop0[A]("maxOccurs")),
+    minOccurs: => MinOccursOp[A] = tag[MinOccursTag](attrNop0[A]("minOccurs")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    nillable: => NillableOp[A] = tag[NillableTag](attrNop0[A]("nillable")),
+    ref: => RefOp[A] = tag[RefTag](attrNop0[A]("ref")),
     substitutionGroup: => SubstitutionGroupOp[A] =
-      tag[SubstitutionGroupTag](attrNop[A]),
-    `type`: => TypeOp[A] = tag[TypeTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop[A]),
-    complexType: => ComplexTypeOp[A] = tag[ComplexTypeTag](nop[A]),
-    unique: => UniqueOp[A] = tag[UniqueTag](nop[A]),
-    key: => KeyOp[A] = tag[KeyTag](nop[A]),
-    keyref: => KeyrefOp[A] = tag[KeyrefTag](nop[A])
+      tag[SubstitutionGroupTag](attrNop0[A]("substitutionGroup")),
+    `type`: => TypeOp[A] = tag[TypeTag](attrNop0[A]("type")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    simpleType: => SimpleTypeOp[A] = tag[SimpleTypeTag](nop0[A]("simpleType")),
+    complexType: => ComplexTypeOp[A] =
+      tag[ComplexTypeTag](nop0[A]("complexType")),
+    unique: => UniqueOp[A] = tag[UniqueTag](nop0[A]("unique")),
+    key: => KeyOp[A] = tag[KeyTag](nop0[A]("key")),
+    keyref: => KeyrefOp[A] = tag[KeyrefTag](nop0[A]("keyref"))
   ): ElementOp[A] =
-    tag[ElementTag][Op[A]](
+    elementOp(
       composeOps(
         foldAttributes(
           Eval.later(
@@ -1023,12 +1203,16 @@ object fold {
       )
     )
 
-  def unique[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-                name: => NameOp[A] = tag[NameTag](attrNop[A]),
-                annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-                selector: => SelectorOp[A] = tag[SelectorTag](nop[A]),
-                field: => FieldOp[A] = tag[FieldTag](nop[A])): UniqueOp[A] =
-    tag[UniqueTag][Op[A]](
+  def uniqueOp[A](op: Op[A]): UniqueOp[A] = tag[UniqueTag][Op[A]](op)
+
+  def unique[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    selector: => SelectorOp[A] = tag[SelectorTag](nop0[A]("selector")),
+    field: => FieldOp[A] = tag[FieldTag](nop0[A]("field"))
+  ): UniqueOp[A] =
+    uniqueOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "name" -> name))))(
         foldChild(
           Eval.later(
@@ -1042,12 +1226,16 @@ object fold {
       )
     )
 
-  def key[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-             name: => NameOp[A] = tag[NameTag](attrNop[A]),
-             annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-             selector: => SelectorOp[A] = tag[SelectorTag](nop[A]),
-             field: => FieldOp[A] = tag[FieldTag](nop[A])): KeyOp[A] =
-    tag[KeyTag][Op[A]](
+  def keyOp[A](op: Op[A]): KeyOp[A] = tag[KeyTag][Op[A]](op)
+
+  def key[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    selector: => SelectorOp[A] = tag[SelectorTag](nop0[A]("selector")),
+    field: => FieldOp[A] = tag[FieldTag](nop0[A]("field"))
+  ): KeyOp[A] =
+    keyOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "name" -> name))))(
         foldChild(
           Eval.later(
@@ -1061,13 +1249,17 @@ object fold {
       )
     )
 
-  def keyref[A](id: => IdOp[A] = tag[IdTag](attrNop[A]),
-                name: => NameOp[A] = tag[NameTag](attrNop[A]),
-                referer: => RefererOp[A] = tag[RefererTag](attrNop[A]),
-                annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A]),
-                selector: => SelectorOp[A] = tag[SelectorTag](nop[A]),
-                field: => FieldOp[A] = tag[FieldTag](nop[A])): KeyrefOp[A] =
-    tag[KeyrefTag][Op[A]](
+  def keyrefOp[A](op: Op[A]): KeyrefOp[A] = tag[KeyrefTag][Op[A]](op)
+
+  def keyref[A](
+    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+    referer: => RefererOp[A] = tag[RefererTag](attrNop0[A]("referer")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
+    selector: => SelectorOp[A] = tag[SelectorTag](nop0[A]("selector")),
+    field: => FieldOp[A] = tag[FieldTag](nop0[A]("field"))
+  ): KeyrefOp[A] =
+    keyrefOp(
       composeOps(
         foldAttributes(
           Eval.later(Seq("id" -> id, "name" -> name, "referer" -> referer))
@@ -1085,23 +1277,25 @@ object fold {
       )
     )
 
-  def selector[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    xpath: => XpathOp[A] = tag[XpathTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A])
-  ): SelectorOp[A] =
-    tag[SelectorTag][Op[A]](
+  def selectorOp[A](op: Op[A]): SelectorOp[A] = tag[SelectorTag][Op[A]](op)
+
+  def selector[A](id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+                  xpath: => XpathOp[A] = tag[XpathTag](attrNop0[A]("xpath")),
+                  annotation: => AnnotationOp[A] =
+                    tag[AnnotationTag](nop0[A]("annotation"))): SelectorOp[A] =
+    selectorOp(
       composeOps(
         foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath)))
       )(foldChild(Eval.later(Seq("annotation" -> annotation))))
     )
 
-  def field[A](
-    id: => IdOp[A] = tag[IdTag](attrNop[A]),
-    xpath: => XpathOp[A] = tag[XpathTag](attrNop[A]),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop[A])
-  ): FieldOp[A] =
-    tag[FieldTag][Op[A]](
+  def fieldOp[A](op: Op[A]): FieldOp[A] = tag[FieldTag][Op[A]](op)
+
+  def field[A](id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+               xpath: => XpathOp[A] = tag[XpathTag](attrNop0[A]("xpath")),
+               annotation: => AnnotationOp[A] =
+                 tag[AnnotationTag](nop0[A]("annotation"))): FieldOp[A] =
+    fieldOp(
       composeOps(
         foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath)))
       )(foldChild(Eval.later(Seq("annotation" -> annotation))))
@@ -1110,4 +1304,23 @@ object fold {
   def nop[A]: Op[A] = a => _ => ok(a)
 
   def attrNop[A]: AttrOp[A] = a => _ => ok(a)
+
+  private def nop0[A](name: String): Op[A] =
+    a =>
+      _ =>
+        for {
+          strictMode <- getStrictMode
+          res <- if (strictMode) error[A](s"Found unprocessed node `$name`")
+          else ok(a)
+        } yield res
+
+  private def attrNop0[A](name: String): AttrOp[A] =
+    a =>
+      _ =>
+        for {
+          strictMode <- getStrictMode
+          res <- if (strictMode)
+            error[A](s"Found unprocessed attribute `$name`")
+          else ok(a)
+        } yield res
 }

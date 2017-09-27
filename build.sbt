@@ -7,7 +7,7 @@ libraryDependencies ++= Seq(
   Dependencies.specs2,
   Dependencies.cats,
   Dependencies.shapeless
-)
+) ++ Dependencies.monocle
 
 scalacOptions ++= Seq(
   "-deprecation", // Emit warning and location for usages of deprecated APIs.
