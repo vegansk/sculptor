@@ -135,7 +135,7 @@ object fold {
       else ok(())
     } yield n.label
 
-  private def xsdChild(n: Node): Result[List[Node]] =
+  private[xsd] def xsdChild(n: Node): Result[List[Node]] =
     for {
       ns <- getSchemaNs
       elementFormDefault <- getElementFormDefault
@@ -174,16 +174,14 @@ object fold {
       } yield a
     }
 
-  private def foldChild[A](handlers: Handlers[Op, A]): Op[A] =
-    a =>
-      n =>
-        withNode(n) {
+  private[xsd] def foldChild[A](handlers: Handlers[Op, A]): Op[A] =
+    a0 =>
+      n0 =>
+        withNode(n0) {
           val res = for {
             h <- ok(Map(handlers.value: _*))
-            child <- xsdChild(n)
-            appendPathToError <- getAppendPathToError
-            path <- getPath
-            res <- child.foldLeftM(a) { (a, n) =>
+            child <- xsdChild(n0)
+            res <- child.foldLeftM(a0) { (a, n) =>
               h.get(n.label)
                 .fold(
                   error[A](s"Unknown element of type `${xml.fullName(n)}`")
@@ -1323,4 +1321,5 @@ object fold {
             error[A](s"Found unprocessed attribute `$name`")
           else ok(a)
         } yield res
+
 }

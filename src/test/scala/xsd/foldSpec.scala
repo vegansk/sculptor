@@ -2,34 +2,11 @@ package sculptor.xsd
 
 import org.specs2._
 import scala.xml._
+import cats._, cats.implicits._
 
 object foldSpec extends mutable.Specification {
 
-  object helper {
-
-    def xsd(n: Node): Node = {
-      <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-        {n}
-        </xs:schema>
-    }
-
-    def runState[A](s: fold.FoldState)(r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
-      r.value.run(s).value
-
-    def run[A](r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
-      runState(fold.FoldState(appendPathToError = true, strictMode = true))(r)
-
-    def checkFold[A](initial: A, expected: A)(op: fold.SchemaOp[A])(data: Node) = {
-      val res = run {
-        op(initial)(xsd(data))
-      }
-
-      res._2 must_=== Right(expected)
-    }
-
-  }
-
-  import helper._
+  import utils._
 
   "xsd fold" should {
 
@@ -105,6 +82,22 @@ object foldSpec extends mutable.Specification {
       ) must_=== Right(List(("name", "simpleTypeRestriction")))
     }
 
+    "handle children" >> {
+      val data =
+        <xs:simpleType name="simpleTypeRestriction">
+          <xs:restriction base="xs:integer" />
+        </xs:simpleType>
+      runState(
+        fold.FoldState(
+          schemaNs = Some("xs"),
+          elementFormDefault = fold.Qualified,
+          strictMode = true
+        )
+      )(
+        fold.xsdChild(xsd(data))
+      )._2.map(_.map(_.label)) must_=== Right(List("simpleType"))
+    }
+
     "fold simple type" >> {
 
       val simpleType =
@@ -118,7 +111,7 @@ object foldSpec extends mutable.Specification {
             _ => _ => fold.ok(true)
           }
         )
-      } (simpleType)
+      } (xsd(simpleType))
 
       checkFold(None, Some("simpleTypeRestriction")) {
         fold.schema(
@@ -129,10 +122,105 @@ object foldSpec extends mutable.Specification {
             }
           )
         )
-      } (simpleType)
+      } (xsd(simpleType))
 
     }
 
-  }
+    "fold tree structures" >> {
+      val data =
+        <xs:simpleType name="simpleTypeRestriction">
+          <xs:restriction>
+              <xs:simpleType>
+                  <xs:restriction base="xs:string">
+          {
+                      // <xs:enumeration value="A"/>
+                      // <xs:enumeration value="B"/>
+          }
+                  </xs:restriction>
+              </xs:simpleType>
+          </xs:restriction>
+        </xs:simpleType>
 
+      import ast._
+
+      def simpleType[A[?[_]] <: Ast[?], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
+        fold.simpleTypeOp[A[F]](
+          ast => node => for {
+            st <- fold.simpleType[SimpleType[F]](
+              name = simpleTypeName[F],
+              restriction = simpleTypeRestriction[F]
+            )(SimpleType[F]())(node)
+          } yield f(st)(ast)
+        )
+      }
+
+
+      def simpleTypeName[F[_]: Applicative] = fold.nameOp[SimpleType[F]](
+        ast => name => fold.ok(ast.copy[F](name = Applicative[F].pure(Some(name))))
+      )
+
+      def restrictionBase[F[_]: Applicative] = fold.baseOp[Restriction[F]](
+        ast => name => fold.ok(ast.copy[F](base = Applicative[F].pure(name)))
+      )
+
+      def restrictionSimpleType[F[_]: MonoidK: Applicative] = simpleType[Restriction, F] {
+        st => r => r.copy[F](simpleType = Applicative[F].pure(Some(st)))
+      }
+
+      def simpleTypeRestriction[F[_]: MonoidK: Applicative] = fold.simpleTypeRestrictionOp[SimpleType[F]](
+        ast => node => for {
+            str <- fold.simpleTypeRestriction(
+              base = restrictionBase[F],
+              simpleType = restrictionSimpleType[F]
+            )(Restriction[F]())(node)
+          } yield ast.copy[F](restriction = Applicative[F].pure(Some(str)))
+      )
+
+      def moduleSimpleType[F[_]: Alternative] = simpleType[Module, F] {
+        st => m => m.copy[F](
+          types = Alternative[F].combineK(m.types, Alternative[F].pure(List(st)))
+        )
+      }
+
+      checkFold[Module[Option]](
+        Module[Option](types = None),
+        Module[Option](
+          types = Some(
+            List(
+              SimpleType[Option](
+                name = Some(Some("simpleTypeRestriction")),
+                restriction = Some(
+                  Some(
+                    Restriction[Option](
+                      base = None,
+                      simpleType = Some(
+                        Some(
+                          SimpleType[Option](
+                            name = None,
+                            restriction = Some(
+                              Some(
+                                Restriction[Option](
+                                  base = Some("xs:string"),
+                                  simpleType = None
+                                )
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )(
+        fold.schema(
+          simpleType = moduleSimpleType[Option]
+        )
+      )(xsd(data))
+
+    }
+  }
 }
