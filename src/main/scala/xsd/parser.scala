@@ -1,312 +1,152 @@
 package sculptor.xsd
 
-import sculptor._
-import types._
-import scala.util.Try
+import sculptor.xsd.{fold => f, ast => a}
+import cats._, cats.implicits._, cats.instances._
 import scala.xml._
-import cats.implicits._
 
 object parser {
 
-  import helpers._
+  def apply[F[_]: Alternative]: impl[F] = new impl[F]
 
-  private def parseTypeName(name: String): ResultS[TypeT] = {
-    for {
-      ns <- getNs
-      pname <- liftE(prefixed(name))
-      typ <- {
-        pname match {
-          case (ns1, name) if ns1 === ns => {
-            name match {
-              case "integer" => right(TypeT(IntegerF()))
-              case "string" => right(TypeT(StringF()))
-              case "decimal" => right(TypeT(DecimalF()))
-              case "nonNegativeInteger" => right(TypeT(NonNegativeIntegerF()))
-              case "byte" => right(TypeT(ByteF()))
-              case "int" => right(TypeT(IntF()))
-              case "long" => right(TypeT(LongF()))
-              case "negativeInteger" => right(TypeT(NegativeIntegerF()))
-              case "nonPositiveInteger" => right(TypeT(NonPositiveIntegerF()))
-              case "positiveInteger" => right(TypeT(PositiveIntegerF()))
-              case "short" => right(TypeT(ShortF()))
-              case "unsignedLong" => right(TypeT(UnsignedLongF()))
-              case "unsignedInt" => right(TypeT(UnsignedIntF()))
-              case "unsignedShort" => right(TypeT(UnsignedShortF()))
-              case "unsignedByte" => right(TypeT(UnsignedByteF()))
-              case "any" => right(TypeT(AnyF()))
-              case "date" => right(TypeT(DateF()))
-              case "dateTime" => right(TypeT(DateTimeF()))
-              case "time" => right(TypeT(TimeF()))
-              case "duration" => right(TypeT(DurationF()))
-              case "boolean" => right(TypeT(BooleanF()))
-              case "double" => right(TypeT(DoubleF()))
-              case "float" => right(TypeT(FloatF()))
-              case _ => leftStr(s"Unknown xsd type $name")
-            }
-          }
-          //TODO: Namespaces!!!
-          case (_, name) => right(TypeT(TypeIdF(Ident(name))))
-        }
-      }
-    } yield typ
-  }
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  class impl[F[_]: Alternative] {
 
-  private def parseAnonType(node: Node): ResultS[TypeT] = {
-    node.child
-      .find(_.label match {
-        case "simpleType" | "complexType" => true
-        case _ => false
-      })
-      .fold(leftStr[TypeT]("Can't parse anonymous type")) { v =>
-        v.label match {
-          case "simpleType" => parseSimpleType0(v)
-          case "complexType" => parseComplexType0(v)
-          case _ => leftStr(s"Unknown anonymous type ${v.label}")
-        }
-      }
-  }
+    type Setter[S, A] = A => S => S
 
-  private def parseElement(node: Node): ResultS[TypeT] = {
-    withNode(node) {
-      for {
-        name <- attr("name")(node).map(Ident(_))
-        typ <- attrO("type")(node).flatMap(
-          t => t.fold(parseAnonType(node))(tname => parseTypeName(tname))
-        )
-      } yield TypeT(FieldF(name, typ))
+    private def pure[A](v: A) = Applicative[F].pure(v)
+
+    private def combineAlternative[A: Monoid](x: F[A], y: F[A]): F[A] = {
+      val zeroF = Monoid[A].empty.pure[F]
+      Alternative[F].map2(x.combineK(zeroF), y.combineK(zeroF))(
+        Monoid[A].combine
+      )
     }
-  }
 
-  private def parseRestrictedString(name: Option[Ident],
-                                    restriction: Node): ResultS[TypeT] = {
-    withNode(restriction) {
-      for {
-        minLength <- optElAttrAsNumber("minLength", "value")(restriction)
-        maxLength <- optElAttrAsNumber("maxLength", "value")(restriction)
-        regExp <- els("pattern")(restriction)
-          .flatMap(_.traverse(attr("value")(_)))
-        rs <- right(
-          RestrictedStringF(
-            baseType = TypeT(StringF()),
-            minLength = minLength,
-            maxLength = maxLength,
-            regExp = regExp
-          ): TypeF[TypeT]
-        )
-      } yield TypeT(name.fold(rs)(NamedTypeF(_, rs)))
-    }
-  }
+    object annotation {
 
-  private def parseRestrictedNumber(name: Option[Ident],
-                                    baseType: TypeT,
-                                    restriction: Node): ResultS[TypeT] = {
-    withNode(restriction) {
-      for {
-        minInclusive <- optElAttrAsNumber("minInclusive", "value")(restriction)
-        maxInclusive <- optElAttrAsNumber("maxInclusive", "value")(restriction)
-        minExclusive <- optElAttrAsNumber("minExclusive", "value")(restriction)
-        maxExclusive <- optElAttrAsNumber("maxExclusive", "value")(restriction)
-        totalDigits <- optElAttrAsNumber("totalDigits", "value")(restriction)
-        regExp <- els("pattern")(restriction)
-          .flatMap(_.traverse(attr("value")(_)))
-        rn <- right(
-          RestrictedNumberF(
-            baseType = baseType,
-            minInclusive = minInclusive,
-            maxInclusive = maxInclusive,
-            minExclusive = minExclusive,
-            maxExclusive = maxExclusive,
-            totalDigits = totalDigits,
-            regExp = regExp
-          ): TypeF[TypeT]
-        )
-      } yield TypeT(name.fold(rn)(NamedTypeF(_, rn)))
-    }
-  }
-
-  private def parseSimpleType0(node: Node): ResultS[TypeT] = {
-    withNode(node) {
-      for {
-        name <- attrO("name")(node).map(_.map(Ident(_)))
-        restriction <- el("restriction")(node)
-        base <- attr("base")(restriction).flatMap(parseTypeName(_))
-        `type` <- base match {
-          case TypeT(StringF()) =>
-            parseRestrictedString(name, restriction)
-          case t @ TypeT(
-                IntegerF() | DecimalF() | NonNegativeIntegerF() | ByteF() |
-                IntF() | LongF() | NegativeIntegerF() | NonPositiveIntegerF() |
-                PositiveIntegerF() | ShortF() | UnsignedLongF() |
-                UnsignedIntF() | UnsignedShortF() | UnsignedByteF()
-              ) =>
-            parseRestrictedNumber(name, t, restriction)
-          case typ => leftStr(s"Unknown base type: $typ")
-        }
-      } yield `type`
-    }
-  }
-
-  private def parseSimpleType(node: Node): ResultS[TypeT] = {
-    for {
-      `type` <- parseSimpleType0(node)
-      name <- {
-        `type`.unfix match {
-          case NamedTypeF(name, _) =>
-            right(name)
-          case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
-        }
-      }
-    } yield `type`
-  }
-
-  private def parseSimpleTypes(root: Node): ResultS[List[TypeT]] =
-    els("simpleType")(root).flatMap(_.traverse(parseSimpleType(_)))
-
-  private def toComplexTypeF(
-    f: List[TypeT] => SeqLike[TypeT]
-  ): Node => ResultS[ComplexTypeF[TypeT]] =
-    el =>
-      for {
-        body <- parseSeqBody(el)
-        t <- right(ComplexTypeF(f(body)))
-      } yield t
-
-  private def parseSeqChild(el: Node): ResultS[Option[TypeT]] = {
-    type Res = Option[TypeT]
-    withNode(el) {
-      // Use complexType body's fold here
-      withComplexBody(
-        // Else branch
-        //TODO: Namespaces!!!
-        _.label match {
-          case "element" => parseElement(el).map(_.some)
-          case "any" => right(TypeT(AnyF()).some)
-          case "annotation" => right(none[TypeT])
-          case v => leftStr[Res](s"Unknown sequence child type $v")
-        }
-      )(
-        el =>
-          toComplexTypeF(body => Sequence(body))(el).map(t => TypeT(t).some),
-        el => toComplexTypeF(body => Choice(body))(el).map(t => TypeT(t).some),
-        el => leftStr[Res](s"Type all cannot be used inside another sequence")
-      )(el)
-    }
-  }
-
-  private def parseSeqBody(el: Node): ResultS[List[TypeT]] =
-    xml
-      .childElems(el)
-      .map(parseSeqChild(_))
-      .foldMapM(_.map(_.toList))
-
-  private def parseComplexTypeBody(node: Node): ResultS[ComplexTypeF[TypeT]] =
-    withComplexTypeS(
-      toComplexTypeF(Sequence(_)),
-      toComplexTypeF(Choice(_)),
-      toComplexTypeF(All(_))
-    )(node)
-
-  private def parseComplexType0(node: Node): ResultS[TypeT] = {
-    withNode(node) {
-      for {
-        name <- attrO("name")(node).map(_.map(Ident(_)))
-        body <- parseComplexTypeBody(node)
-      } yield TypeT(name.fold(body: TypeF[TypeT])(NamedTypeF(_, body)))
-    }
-  }
-
-  private def parseComplexType(node: Node): ResultS[TypeT] = {
-    for {
-      `type` <- parseComplexType0(node)
-      name <- {
-        `type`.unfix match {
-          case NamedTypeF(name, _) => right(name)
-          case _ => leftStr[Ident](s"Can't get the name of type ${`type`}")
-        }
-      }
-    } yield `type`
-  }
-
-  private def parseComplexTypes(root: Node): ResultS[List[TypeT]] =
-    els("complexType")(root).flatMap(_.traverse(parseComplexType(_)))
-
-  private val XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema"
-
-  private def findNamespace(xsd: Node): ResultS[Option[String]] =
-    right(xml.getPrefix(XSD_NAMESPACE)(xsd))
-
-  private def compilePass(xsd: Node): Result[Module] = {
-    val r: ResultS[Module] = for {
-      ns <- findNamespace(xsd)
-      _ <- updateNs(ns)
-      simpleTypesT <- parseSimpleTypes(xsd)
-      complexTypesT <- parseComplexTypes(xsd)
-      types <- (simpleTypesT ++ complexTypesT).traverse {
-        _ match {
-          case t @ TypeT(NamedTypeF(f, _)) => right((f, t))
-          case t => leftStr[(Ident, TypeT)](s"Got anonymous type $t")
-        }
-      }
-    } yield ModuleF(None, types.toMap)
-
-    r.value.run(ParserState()).value match {
-      case (state, result) =>
-        result.leftMap(
-          e =>
-            new Exception(
-              s"$e (path: ${state.path.reverse.map(_.label).mkString(".")})",
-              e
+      val documentationOp = f.documentationOp[a.Annotation[F]] { node => ann =>
+        f.ok(
+          ann.copy(
+            documentation =
+              combineAlternative(ann.documentation, pure(List(node.text)))
           )
         )
-    }
-  }
-
-  private def linkComplexType(m: Module,
-                              ctName: Ident,
-                              ct: ComplexTypeF[TypeT]): Result[TypeT] = {
-    ct.body.body
-      .foldLeft(Right(TypeT(NamedTypeF(ctName, ct))): Result[TypeT]) {
-        (a, v) =>
-          v.unfix match {
-            case FieldF(name, TypeT(TypeIdF(ref))) =>
-              if ((m.types.contains(ref)))
-                a
-              else
-                Left(
-                  new Exception(
-                    s"Can't find the type ${ref.name} for the field ${ctName.name}.${name.name}"
-                  )
-                )
-            case _ => a
-          }
       }
-  }
 
-  private def linkType(m: Module, t: TypeT): Result[TypeT] = {
-    t.unfix match {
-      case NamedTypeF(name, ct: ComplexTypeF[TypeT]) =>
-        linkComplexType(m, name, ct)
-      case _ => Right(t)
+      def fromSetter[A[?[_]] <: a.AST[?]](
+        setter: Setter[A[F], a.Annotation[F]]
+      ) =
+        f.annotationOp[A[F]] { node => ast =>
+          for {
+            ann <- f.annotation(documentation = documentationOp)(node)(
+              a.Annotation.empty[F]
+            )
+          } yield setter(ann)(ast)
+        }
     }
+
+    object enumeration {
+      def fromSetter[A[?[_]] <: a.AST[?]](
+        setter: Setter[A[F], a.Enumeration[F]]
+      ) = f.enumerationOp[A[F]] { node => ast =>
+        for {
+          e <- f.enumeration(value = valueOp, annotation = annotationOp)(node)(
+            a.Enumeration.empty[F]
+          )
+        } yield setter(e)(ast)
+      }
+
+      def valueOp = f.valueOp[a.Enumeration[F]] { value => e =>
+        f.ok(e.copy(value = pure(value)))
+      }
+
+      def annotationOp = annotation.fromSetter[a.Enumeration] { ann => e =>
+        e.copy(annotation = pure(Some(ann)))
+      }
+    }
+
+    object simpleTypeRestriction {
+
+      def fromSetter[A[?[_]] <: a.AST[?]](
+        setter: Setter[A[F], a.SimpleTypeRestriction[F]]
+      ) = f.simpleTypeRestrictionOp[A[F]] { node => ast =>
+        for {
+          r <- f.simpleTypeRestriction(
+            base = baseOp,
+            whiteSpace = f.whiteSpaceOp(f.nop),
+            pattern = patternOp,
+            enumeration = enumerationOp
+          )(node)(a.SimpleTypeRestriction.empty[F])
+        } yield setter(r)(ast)
+      }
+
+      def baseOp = f.baseOp[a.SimpleTypeRestriction[F]] { base => r =>
+        f.ok(r.copy(base = pure(base)))
+      }
+
+      def patternOp = f.pattern[a.SimpleTypeRestriction[F]] {
+        f.valueOp { pattern => r =>
+          f.ok(r.copy(pattern = pure(Some(pattern))))
+        }
+      }
+
+      def enumerationOp = enumeration.fromSetter[a.SimpleTypeRestriction] {
+        e => r =>
+          r.copy(
+            enumeration = combineAlternative(r.enumeration, pure(List(e)))
+          )
+      }
+
+    }
+
+    object simpleType {
+      def fromSetter[A[?[_]] <: a.AST[?]](
+        setter: Setter[A[F], a.SimpleType[F]]
+      ) =
+        f.simpleTypeOp[A[F]] { node => ast =>
+          for {
+            st <- f.simpleType(
+              annotation = annotationOp,
+              name = nameOp,
+              restriction = restrictionOp
+            )(node)(a.SimpleType.empty[F])
+          } yield setter(st)(ast)
+        }
+
+      def nameOp = f.nameOp[a.SimpleType[F]] { name => st =>
+        f.ok(st.copy(name = pure(Some(name))))
+      }
+
+      def annotationOp = annotation.fromSetter[a.SimpleType] { ann => st =>
+        st.copy(annotation = pure(Some(ann)))
+      }
+
+      def restrictionOp = simpleTypeRestriction.fromSetter[a.SimpleType] {
+        r => st =>
+          st.copy(restriction = pure(Some(r)))
+      }
+
+    }
+
+    object schema {
+      def simpleTypeOp = simpleType.fromSetter[a.Schema] { st => s =>
+        s.copy(
+          types =
+            combineAlternative(s.types, pure(List(a.Type(a.Type.Simple(st)))))
+        )
+      }
+
+      def annotationOp = annotation.fromSetter[a.Schema] { ann => s =>
+        s.copy(annotation = pure(Some(ann)))
+      }
+    }
+
+    def parse(n: Node): f.Result[a.Schema[F]] =
+      f.schema[a.Schema[F]](
+        annotation = schema.annotationOp,
+        simpleType = schema.simpleTypeOp
+      )(n)(a.Schema.empty[F])
+
   }
 
-  private def linkPass(m: Module): Result[Module] = {
-    for {
-      t <- m.types.traverse(linkType(m, _))
-    } yield ModuleF(m.name, t)
-  }
-
-  def apply(xsd: Node): Result[Module] = {
-    for {
-      cm <- compilePass(xsd)
-      m <- linkPass(cm)
-    } yield m
-  }
-
-  def fromStream(reader: java.io.InputStream): Result[Module] = {
-    for {
-      xsd <- Try(XML.load(reader)).toEither
-      module <- this(xsd)
-    } yield module
-  }
 }

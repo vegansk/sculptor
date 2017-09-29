@@ -24,7 +24,7 @@ object foldSpec extends mutable.Specification {
       runState(
         fold.FoldState(appendPathToError = false, strictMode = true)
       )(
-        fold.schema()(())(xsd(data))
+        fold.schema()(xsd(data))(())
       )._2 must_=== Left("Found unprocessed node `simpleType`")
 
     }
@@ -118,7 +118,7 @@ object foldSpec extends mutable.Specification {
           simpleType = fold.simpleType(
             restriction = fold.simpleTypeRestrictionOp(fold.nop[Option[String]]),
             name = fold.nameOp {
-              _ => n => fold.ok(Some(n))
+              n => _ => fold.ok(Some(n))
             }
           )
         )
@@ -141,26 +141,26 @@ object foldSpec extends mutable.Specification {
           </xs:restriction>
         </xs:simpleType>
 
-      import ast._
+      import testAst._
 
-      def simpleType[A[?[_]] <: Ast[?], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
+      def simpleType[A[?[_]] <: AST[?], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
         fold.simpleTypeOp[A[F]](
-          ast => node => for {
+          node => ast => for {
             st <- fold.simpleType[SimpleType[F]](
               name = simpleTypeName[F],
               restriction = simpleTypeRestriction[F]
-            )(SimpleType[F]())(node)
+            )(node)(SimpleType[F]())
           } yield f(st)(ast)
         )
       }
 
 
       def simpleTypeName[F[_]: Applicative] = fold.nameOp[SimpleType[F]](
-        ast => name => fold.ok(ast.copy[F](name = Applicative[F].pure(Some(name))))
+        name => ast => fold.ok(ast.copy[F](name = Applicative[F].pure(Some(name))))
       )
 
       def restrictionBase[F[_]: Applicative] = fold.baseOp[Restriction[F]](
-        ast => name => fold.ok(ast.copy[F](base = Applicative[F].pure(name)))
+        name => ast => fold.ok(ast.copy[F](base = Applicative[F].pure(name)))
       )
 
       def restrictionSimpleType[F[_]: MonoidK: Applicative] = simpleType[Restriction, F] {
@@ -168,11 +168,11 @@ object foldSpec extends mutable.Specification {
       }
 
       def simpleTypeRestriction[F[_]: MonoidK: Applicative] = fold.simpleTypeRestrictionOp[SimpleType[F]](
-        ast => node => for {
+        node => ast => for {
             str <- fold.simpleTypeRestriction(
               base = restrictionBase[F],
               simpleType = restrictionSimpleType[F]
-            )(Restriction[F]())(node)
+            )(node)(Restriction[F]())
           } yield ast.copy[F](restriction = Applicative[F].pure(Some(str)))
       )
 

@@ -1,6 +1,5 @@
 package sculptor.xsd
 
-import sculptor.types._
 import scala.util.Try
 import scala.xml._
 import cats.implicits._, cats.data._

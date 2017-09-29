@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-    <xs:complexType name="rec_t">
-        <xs:sequence>
-            <xs:element name="str" type="rstr_t"/>
-            <xs:element name="int" type="rint_t"/>
-        </xs:sequence>
-    </xs:complexType>
-</xs:schema>
