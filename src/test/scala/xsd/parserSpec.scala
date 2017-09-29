@@ -97,9 +97,7 @@ object parserSpec extends mutable.Specification {
         }
       }
 
-      println(result._2)
-      // It'll be true when the parser will be finished :-)
-      result._2.isRight must_=== false
+      result._2.isRight must_=== true
     }
 
   }

@@ -606,6 +606,18 @@ object fold {
     value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
   ): WhiteSpaceOp[A] = whiteSpaceOp(tagValue(value = value))
 
+  def minLengthOp[A](op: Op[A]): MinLengthOp[A] = tag[MinLengthTag][Op[A]](op)
+
+  def minLength[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): MinLengthOp[A] = minLengthOp(tagValue(value = value))
+
+  def maxLengthOp[A](op: Op[A]): MaxLengthOp[A] = tag[MaxLengthTag][Op[A]](op)
+
+  def maxLength[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): MaxLengthOp[A] = maxLengthOp(tagValue(value = value))
+
   def patternOp[A](op: Op[A]): PatternOp[A] = tag[PatternTag][Op[A]](op)
 
   def pattern[A](
