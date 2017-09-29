@@ -1,8 +1,7 @@
 package sculptor.xsd
 
-import scala.util.Try
 import scala.xml._
-import cats.implicits._, cats.data._
+import cats.data._
 
 private[xsd] object helpers {
 
@@ -34,88 +33,4 @@ private[xsd] object helpers {
       _ <- popNode
     } yield r
   }
-
-  def prefixed(name: String): Result[(Option[String], String)] =
-    name.split(":", 2).toList.splitAt(1) match {
-      case (name :: _, Nil) => (None, name).pure[Result]
-      case (prefix :: _, name :: _) => (Some(prefix), name).pure[Result]
-      case _ => Left(new Exception("Can't make empty string prefixed"))
-    }
-
-  def parseNumber(v: String): Either[Throwable, Number] =
-    Either.catchNonFatal(BigDecimal(v))
-
-  def attr(name: String)(node: Node): ResultS[String] =
-    liftE(xml.getAttr(name)(node))
-  def attrO(name: String)(node: Node): ResultS[Option[String]] =
-    right(xml.getAttrO(name)(node))
-  def el(name: String)(node: Node): ResultS[Node] =
-    getNs.flatMap(ns => liftE(xml.getByName(name, ns)(node)))
-  def elO(name: String)(node: Node): ResultS[Option[Node]] =
-    getNs.flatMap(ns => right(xml.getByNameO(name, ns)(node)))
-  def els(name: String)(node: Node): ResultS[List[Node]] =
-    getNs.flatMap(ns => right(xml.findByName(name, ns)(node)))
-  def intAttr(name: String)(node: Node): ResultS[Int] =
-    attr(name)(node).flatMap(v => liftE(Try(Integer.parseInt(v)).toEither))
-  def optElAttrAsNumber(name: String, attrName: String)(
-    node: Node
-  ): ResultS[Option[Number]] =
-    OptionT(elO(name)(node))
-      .semiflatMap(attr(attrName)(_))
-      .semiflatMap(v => liftE(parseNumber(v)))
-      .value
-
-  def withComplexBody[A](whenUnknown: Node => A)(
-    whenSequence: Node => A,
-    whenChoice: Node => A,
-    whenAll: Node => A
-  ): Node => A = _ match {
-    //TODO: Namespaces!!!
-    case el if el.label === "sequence" => whenSequence(el)
-    case el if el.label === "choice" => whenChoice(el)
-    case el if el.label === "all" => whenAll(el)
-    case el => whenUnknown(el)
-  }
-
-  def withComplexBodyO[A](whenSequence: Node => A,
-                          whenChoice: Node => A,
-                          whenAll: Node => A): Node => Option[A] =
-    withComplexBody(_ => none[A])(
-      whenSequence(_).some,
-      whenChoice(_).some,
-      whenAll(_).some
-    )
-
-  def withComplexBodyS[A](
-    whenSequence: Node => ResultS[A],
-    whenChoice: Node => ResultS[A],
-    whenAll: Node => ResultS[A]
-  )(node: Node): ResultS[A] =
-    withComplexBody(
-      el => leftStr[A](s"Unknown body type ${el.label} for complexType")
-    )(whenSequence, whenChoice, whenAll)(node)
-
-  def withComplexType[A](whenUnknown: => A)(
-    whenSequence: Node => A,
-    whenChoice: Node => A,
-    whenAll: Node => A
-  )(node: Node): A = {
-    xml
-      .childElems(node)
-      .collectFirst(
-        Function.unlift(withComplexBodyO(whenSequence, whenChoice, whenAll))
-      )
-      .getOrElse(whenUnknown)
-  }
-
-  def withComplexTypeS[A](
-    whenSequence: Node => ResultS[A],
-    whenChoice: Node => ResultS[A],
-    whenAll: Node => ResultS[A]
-  )(node: Node): ResultS[A] =
-    withComplexType(leftStr[A]("Can't find the body of the complexType"))(
-      whenSequence,
-      whenChoice,
-      whenAll
-    )(node)
 }
