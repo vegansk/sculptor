@@ -1,129 +1,107 @@
 package sculptor.xsd
 
 import org.specs2._
-import sculptor._
-import types._
-import scala.xml.XML
+import cats.implicits._
 
 object parserSpec extends mutable.Specification {
 
-  def field(name: String, `type`: TypeF[TypeT]): TypeT =
-    TypeT(FieldF(Ident(name), TypeT(`type`)))
-
-  val rstr_t = NamedTypeF(
-    Ident("rstr_t"),
-    RestrictedStringF(
-      TypeT(StringF()),
-      Some(1),
-      Some(10),
-      List("[a-z]+", "[abc]+")
-    )
-  )
-
-  val rint_t = NamedTypeF(Ident("rint_t"), RestrictedNumberF(TypeT(IntegerF())))
-
-  val rec_t = NamedTypeF(
-    Ident("rec_t"),
-    ComplexTypeF(
-      Sequence(
-        List(
-          field("str", StringF()),
-          field("int", IntegerF()),
-          field(
-            "anonDecimal",
-            RestrictedNumberF(TypeT(DecimalF()), minExclusive = Some(0))
-          ),
-          field(
-            "subRec",
-            ComplexTypeF(Sequence(List(field("subEl", StringF()))))
-          ),
-          TypeT(
-            ComplexTypeF(
-              Sequence(
-                List(field("seqStr", StringF()), field("seqInt", IntegerF()))
-              )
-            )
-          ),
-          TypeT(
-            ComplexTypeF(
-              Choice(
-                List(field("seqStr", StringF()), field("seqInt", IntegerF()))
-              )
-            )
-          )
-        )
-      )
-    )
-  )
-
-  val rec2_t = NamedTypeF(
-    Ident("rec2_t"),
-    ComplexTypeF(All(List(field("str", StringF()), field("int", IntegerF()))))
-  )
+  import utils._
+  import ast._
 
   "xsd parser" should {
 
-    "parse valid xsd" >> {
-
-      val xsd =
-        getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_01.xsd")
-
-      val module = parser(XML.load(xsd))
-      module.isRight must_== true
-      val types = module.map(_.types).getOrElse(Map())
-      types(rstr_t.name) must_== TypeT(rstr_t)
-      types(rint_t.name) must_== TypeT(rint_t)
-      types(rec_t.name) must_== TypeT(rec_t)
-      types(rec2_t.name) must_== TypeT(rec2_t)
-
+    "parse empty schema" >> {
+      checkParser(
+        Schema.empty[Option]
+      ) {
+        parser[Option].parse {
+          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+          </xs:schema>
+        }
+      }
     }
 
-    "link known types" >> {
-      val xsd =
-        getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_02.xsd")
+    "parse schema annotation" >> {
 
-      parser(XML.load(xsd)) must_== Right(
-        ModuleF(
-          None,
-          Map(
-            rstr_t.name -> TypeT(rstr_t),
-            rint_t.name -> TypeT(rint_t),
-            Ident("rec_t") ->
-              TypeT(
-                NamedTypeF(
-                  Ident("rec_t"),
-                  ComplexTypeF(
-                    Sequence(
-                      List[TypeT](
-                        field("str", TypeIdF(rstr_t.name)),
-                        field("int", TypeIdF(rint_t.name))
-                      )
-                    )
-                  )
-                )
-              )
-          )
+      checkParser(
+        Schema[Option](
+          Some(Some(Annotation(Some(List("test"))))),
+          None
         )
-      )
-
+      ) {
+        parser[Option].parse {
+          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+            <xs:annotation>
+              <xs:documentation>test</xs:documentation>
+            </xs:annotation>
+          </xs:schema>
+        }
+      }
     }
 
-    "issue an error about unknown types" >> {
-      val xsd =
-        getClass.getClassLoader.getResourceAsStream("xsd/parserSpec_03.xsd")
+    "parse simpleType with pattern set" >> {
+      val result = run {
+        parser[Option].parse {
+          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+            <xs:simpleType name="test_t">
+            <xs:annotation>
+            <xs:documentation>test</xs:documentation>
+            </xs:annotation>
+            <xs:restriction base="xs:string">
+            <xs:whiteSpace value="collapse"/>
+            <xs:pattern value="[0-9]+"/>
+            </xs:restriction>
+            </xs:simpleType>
+            </xs:schema>
+        }
+      }
 
-      val err = parser(XML.load(xsd))
-      err.isLeft must_== true
+      result._2.isRight must_=== true
     }
 
-    "be able to parse fes-1.0 schema" >> {
-      val xsd =
-        getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
+    "parse simpleType with enumerations" >> {
+      val result = run {
+        parser[Option].parse {
+          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+            <xs:simpleType name="test_t">
+                <xs:annotation>
+                    <xs:documentation>test</xs:documentation>
+                </xs:annotation>
+                <xs:restriction base="xs:string">
+                  <xs:enumeration value="V1">
+                    <xs:annotation>
+                      <xs:documentation>V1 value</xs:documentation>
+                    </xs:annotation>
+                  </xs:enumeration>
+                  <xs:enumeration value="V2">
+                    <xs:annotation>
+                      <xs:documentation>V2 value</xs:documentation>
+                    </xs:annotation>
+                  </xs:enumeration>
+                </xs:restriction>
+            </xs:simpleType>
+          </xs:schema>
+        }
+      }
 
-      val err = parser(XML.load(xsd))
-      println(err)
-      err.isLeft must_== true
+      result._2.isRight must_=== true
     }
+
+    "parse fes-1.0 schema" >> {
+      import scala.xml._
+      val result = run {
+        parser[Option].parse {
+          XML.load(
+            getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
+          )
+        }
+      }
+
+      println(result._2)
+      // It'll be true when the parser will be finished :-)
+      result._2.isRight must_=== false
+    }
+
   }
 
 }

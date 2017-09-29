@@ -31,9 +31,9 @@ object fold {
 
   type Result[A] = EitherT[FS, String, A]
 
-  type Op[A] = A => Node => Result[A]
+  type Op[A] = Node => A => Result[A]
 
-  type AttrOp[A] = A => String => Result[A]
+  type AttrOp[A] = String => A => Result[A]
 
   private type Handlers[F[_], A] = Eval[Seq[Tuple2[String, F[A]]]]
 
@@ -150,11 +150,11 @@ object fold {
     } yield res
 
   def composeOps[A](x: Op[A])(y: Op[A]): Op[A] =
-    a =>
-      n =>
+    n =>
+      a =>
         for {
-          a1 <- x(a)(n)
-          a2 <- y(a1)(n)
+          a1 <- x(n)(a)
+          a2 <- y(n)(a1)
         } yield a2
 
   def handleError[A](res: Result[A]): Result[A] =
@@ -175,8 +175,8 @@ object fold {
     }
 
   private[xsd] def foldChild[A](handlers: Handlers[Op, A]): Op[A] =
-    a0 =>
-      n0 =>
+    n0 =>
+      a0 =>
         withNode(n0) {
           val res = for {
             h <- ok(Map(handlers.value: _*))
@@ -185,7 +185,7 @@ object fold {
               h.get(n.label)
                 .fold(
                   error[A](s"Unknown element of type `${xml.fullName(n)}`")
-                )(_(a)(n))
+                )(_(n)(a))
             }
           } yield res
           handleError(res)
@@ -209,8 +209,8 @@ object fold {
     } yield res
 
   private def foldAttributes[A](handlers: Handlers[AttrOp, A]): Op[A] =
-    a =>
-      n =>
+    n =>
+      a =>
         withNode(n) {
           val res = for {
             h <- ok(Map(handlers.value: _*))
@@ -218,7 +218,7 @@ object fold {
             res <- attrs.foldLeftM(a) { (a, attr) =>
               h.get(attr.key)
                 .fold(error[A](s"Unknown attribute `${attr.prefixedKey}`"))(
-                  _(a)(attr.value.text)
+                  _(attr.value.text)(a)
                 )
             }
           } yield res
@@ -290,6 +290,7 @@ object fold {
   trait FieldTag
   trait RefererTag
   trait XpathTag
+  trait ValueTag
 
   type IdOp[A] = AttrOp[A] @@ IdTag
   def idOp[A](op: AttrOp[A]): IdOp[A] = tag[IdTag][AttrOp[A]](op)
@@ -351,6 +352,8 @@ object fold {
     tag[RefererTag][AttrOp[A]](op)
   type XpathOp[A] = AttrOp[A] @@ XpathTag
   def xpathOp[A](op: AttrOp[A]): XpathOp[A] = tag[XpathTag][AttrOp[A]](op)
+  type ValueOp[A] = AttrOp[A] @@ ValueTag
+  def valueOp[A](op: AttrOp[A]): ValueOp[A] = tag[ValueTag][AttrOp[A]](op)
 
   type SchemaOp[A] = Op[A] @@ SchemaTag
   type AnnotationOp[A] = Op[A] @@ AnnotationTag
@@ -360,6 +363,8 @@ object fold {
   type AttributeOp[A] = Op[A] @@ AttributeTag
   type AppinfoOp[A] = Op[A] @@ AppinfoTag
   type DocumentationOp[A] = Op[A] @@ DocumentationTag
+  def documentationOp[A](op: Op[A]): DocumentationOp[A] =
+    tag[DocumentationTag][Op[A]](op)
   type ListOp[A] = Op[A] @@ ListTag
   type SimpleTypeRestrictionOp[A] = Op[A] @@ SimpleTypeRestrictionTag
   type UnionOp[A] = Op[A] @@ UnionTag
@@ -440,8 +445,8 @@ object fold {
     attribute: => AttributeOp[A] = tag[AttributeTag](nop0[A]("attribute"))
   ): SchemaOp[A] =
     tag[SchemaTag][Op[A]](
-      a =>
-        n =>
+      n =>
+        a =>
           for {
             _ <- findSchemaNs(n).flatMap(updateSchemaNs)
             _ <- findAttributeFormDefault(n).flatMap(
@@ -461,7 +466,7 @@ object fold {
                   complexType,
                   element,
                   attribute
-                )(a)(n)
+                )(n)(a)
               case l => error[A](s"`schema` tag was expected, found `$l`")
             }
           } yield res
@@ -588,6 +593,36 @@ object fold {
         )
       )
     )
+
+  def tagValue[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): Op[A] =
+    foldAttributes(Eval.later(Seq("value" -> value)))
+
+  def whiteSpaceOp[A](op: Op[A]): WhiteSpaceOp[A] =
+    tag[WhiteSpaceTag][Op[A]](op)
+
+  def whiteSpace[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): WhiteSpaceOp[A] = whiteSpaceOp(tagValue(value = value))
+
+  def patternOp[A](op: Op[A]): PatternOp[A] = tag[PatternTag][Op[A]](op)
+
+  def pattern[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): PatternOp[A] = patternOp(tagValue(value = value))
+
+  def enumerationOp[A](op: Op[A]): EnumerationOp[A] =
+    tag[EnumerationTag][Op[A]](op)
+
+  def enumeration[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value")),
+    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation"))
+  ): EnumerationOp[A] = enumerationOp(
+    composeOps(foldAttributes(Eval.later(Seq("value" -> value))))(
+      foldChild(Eval.later(Seq("annotation" -> annotation)))
+    )
+  )
 
   def unionOp[A](op: Op[A]): UnionOp[A] = tag[UnionTag][Op[A]](op)
 
@@ -1299,13 +1334,13 @@ object fold {
       )(foldChild(Eval.later(Seq("annotation" -> annotation))))
     )
 
-  def nop[A]: Op[A] = a => _ => ok(a)
+  def nop[A]: Op[A] = _ => a => ok(a)
 
-  def attrNop[A]: AttrOp[A] = a => _ => ok(a)
+  def attrNop[A]: AttrOp[A] = _ => a => ok(a)
 
   private def nop0[A](name: String): Op[A] =
-    a =>
-      _ =>
+    _ =>
+      a =>
         for {
           strictMode <- getStrictMode
           res <- if (strictMode) error[A](s"Found unprocessed node `$name`")
@@ -1313,8 +1348,8 @@ object fold {
         } yield res
 
   private def attrNop0[A](name: String): AttrOp[A] =
-    a =>
-      _ =>
+    _ =>
+      a =>
         for {
           strictMode <- getStrictMode
           res <- if (strictMode)
