@@ -143,7 +143,7 @@ object foldSpec extends mutable.Specification {
 
       import testAst._
 
-      def simpleType[A[?[_]] <: AST[?], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
+      def simpleType[A[_[_]], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
         fold.simpleTypeOp[A[F]](
           node => ast => for {
             st <- fold.simpleType[SimpleType[F]](

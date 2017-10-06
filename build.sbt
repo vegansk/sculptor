@@ -2,11 +2,14 @@ import Sculptor._
 
 scalaVersion := Version.scala212
 
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+
 libraryDependencies ++= Seq(
   Dependencies.scalaXml,
   Dependencies.specs2,
   Dependencies.cats,
-  Dependencies.shapeless
+  Dependencies.shapeless,
+  Dependencies.pprint
 ) ++ Dependencies.monocle
 
 scalacOptions ++= Seq(
