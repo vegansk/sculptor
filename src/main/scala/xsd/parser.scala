@@ -34,9 +34,7 @@ object parser {
         )
       }
 
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.Annotation[F]]
-      ) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Annotation[F]]) =
         f.annotationOp[A[F]] { node => ast =>
           for {
             ann <- f.annotation(documentation = documentationOp)(node)(
@@ -47,15 +45,14 @@ object parser {
     }
 
     object enumeration {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.Enumeration[F]]
-      ) = f.enumerationOp[A[F]] { node => ast =>
-        for {
-          e <- f.enumeration(value = valueOp, annotation = annotationOp)(node)(
-            a.Enumeration.empty[F]
-          )
-        } yield setter(e)(ast)
-      }
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Enumeration[F]]) =
+        f.enumerationOp[A[F]] { node => ast =>
+          for {
+            e <- f.enumeration(value = valueOp, annotation = annotationOp)(
+              node
+            )(a.Enumeration.empty[F])
+          } yield setter(e)(ast)
+        }
 
       def valueOp = f.valueOp[a.Enumeration[F]] { value => e =>
         f.ok(e.copy(value = pure(value)))
@@ -68,7 +65,7 @@ object parser {
 
     object simpleTypeRestriction {
 
-      def fromSetter[A[?[_]] <: a.AST[?]](
+      def fromSetter[A[_[_]]](
         setter: Setter[A[F], a.SimpleTypeRestriction[F]]
       ) = f.simpleTypeRestrictionOp[A[F]] { node => ast =>
         for {
@@ -114,9 +111,7 @@ object parser {
     }
 
     object simpleType {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.SimpleType[F]]
-      ) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.SimpleType[F]]) =
         f.simpleTypeOp[A[F]] { node => ast =>
           for {
             st <- f.simpleType(
@@ -148,9 +143,7 @@ object parser {
     }
 
     object attribute {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.Attribute[F]]
-      ) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Attribute[F]]) =
         f.attributeOp[A[F]] { node => ast =>
           for {
             v <- f.attribute(
@@ -190,7 +183,7 @@ object parser {
     }
 
     object any {
-      def fromSetter[A[?[_]] <: a.AST[?]](setter: Setter[A[F], a.Any[F]]) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Any[F]]) =
         f.anyOp[A[F]] { node => ast =>
           for {
             v <- f.any(
@@ -220,7 +213,7 @@ object parser {
     }
 
     object choice {
-      def fromSetter[A[?[_]] <: a.AST[?]](setter: Setter[A[F], a.Choice[F]]) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Choice[F]]) =
         f.choiceOp[A[F]] { node => ast =>
           for {
             ch <- f.choice(
@@ -271,21 +264,20 @@ object parser {
     }
 
     object sequence {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.Sequence[F]]
-      ) = f.sequenceOp[A[F]] { node => ast =>
-        for {
-          seq <- f.sequence(
-            element = elementOp,
-            choice = choiceOp,
-            sequence = sequenceOp,
-            minOccurs = minOccursOp,
-            maxOccurs = maxOccursOp,
-            annotation = annotationOp,
-            any = anyOp
-          )(node)(a.Sequence.empty[F])
-        } yield setter(seq)(ast)
-      }
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Sequence[F]]) =
+        f.sequenceOp[A[F]] { node => ast =>
+          for {
+            seq <- f.sequence(
+              element = elementOp,
+              choice = choiceOp,
+              sequence = sequenceOp,
+              minOccurs = minOccursOp,
+              maxOccurs = maxOccursOp,
+              annotation = annotationOp,
+              any = anyOp
+            )(node)(a.Sequence.empty[F])
+          } yield setter(seq)(ast)
+        }
 
       def choiceOp = choice.fromSetter[a.Sequence] { v => ast =>
         ast.copy(
@@ -330,7 +322,7 @@ object parser {
     }
 
     object complexContentExtension {
-      def fromSetter[A[?[_]] <: a.AST[?]](
+      def fromSetter[A[_[_]]](
         setter: Setter[A[F], a.ComplexContentExtension[F]]
       ) = f.complexContentExtensionOp[A[F]] { node => ast =>
         for {
@@ -358,16 +350,15 @@ object parser {
     }
 
     object complexContent {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.ComplexContent[F]]
-      ) = f.complexContentOp[A[F]] { node => ast =>
-        for {
-          el <- f.complexContent(
-            annotation = annotationOp,
-            extension = extensionOp
-          )(node)(a.ComplexContent.empty[F])
-        } yield setter(el)(ast)
-      }
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.ComplexContent[F]]) =
+        f.complexContentOp[A[F]] { node => ast =>
+          for {
+            el <- f.complexContent(
+              annotation = annotationOp,
+              extension = extensionOp
+            )(node)(a.ComplexContent.empty[F])
+          } yield setter(el)(ast)
+        }
 
       def annotationOp = annotation.fromSetter[a.ComplexContent] {
         ann => ast =>
@@ -381,24 +372,23 @@ object parser {
     }
 
     object complexType {
-      def fromSetter[A[?[_]] <: a.AST[?]](
-        setter: Setter[A[F], a.ComplexType[F]]
-      ) = f.complexTypeOp[A[F]] { node => ast =>
-        for {
-          el <- f.complexType(
-            name = nameOp,
-            annotation = annotationOp,
-            complexContent = complexContentOp,
-            attribute = attributeOp,
-            sequence = sequenceOp,
-            choice = choiceOp,
-            mixed = mixedOp,
-            block = blockOp,
-            `abstract` = abstractOp,
-            `final` = finalOp
-          )(node)(a.ComplexType.empty[F])
-        } yield setter(el)(ast)
-      }
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.ComplexType[F]]) =
+        f.complexTypeOp[A[F]] { node => ast =>
+          for {
+            el <- f.complexType(
+              name = nameOp,
+              annotation = annotationOp,
+              complexContent = complexContentOp,
+              attribute = attributeOp,
+              sequence = sequenceOp,
+              choice = choiceOp,
+              mixed = mixedOp,
+              block = blockOp,
+              `abstract` = abstractOp,
+              `final` = finalOp
+            )(node)(a.ComplexType.empty[F])
+          } yield setter(el)(ast)
+        }
 
       def nameOp = f.nameOp[a.ComplexType[F]] { name => ast =>
         f.ok(ast.copy(name = pure(Some(name))))
@@ -447,7 +437,7 @@ object parser {
     }
 
     object element {
-      def fromSetter[A[?[_]] <: a.AST[?]](setter: Setter[A[F], a.Element[F]]) =
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.Element[F]]) =
         f.elementOp[A[F]] { node => ast =>
           for {
             el <- f.element(
@@ -500,23 +490,21 @@ object parser {
       def simpleTypeOp = simpleType.fromSetter[a.Schema] { st => s =>
         s.copy(
           types =
-            combineAlternative(s.types, pure(List(a.Type(a.Type.Simple(st)))))
+            combineAlternative(s.types, pure(List(Coproduct[a.Type[F]](st))))
         )
       }
 
       def complexTypeOp = complexType.fromSetter[a.Schema] { ct => ast =>
         ast.copy(
-          types = combineAlternative(
-            ast.types,
-            pure(List(a.Type(a.Type.Complex(ct))))
-          )
+          types =
+            combineAlternative(ast.types, pure(List(Coproduct[a.Type[F]](ct))))
         )
       }
 
       def elementOp = element.fromSetter[a.Schema] { el => s =>
         s.copy(
           types =
-            combineAlternative(s.types, pure(List(a.Type(a.Type.Elem(el)))))
+            combineAlternative(s.types, pure(List(Coproduct[a.Type[F]](el))))
         )
       }
 
