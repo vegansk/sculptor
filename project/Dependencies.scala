@@ -11,26 +11,39 @@ object Dependencies {
     val monocle = "1.5.0-cats-M1"
     val pprint = "0.5.3"
     val kindProjector = "0.9.4"
+    val paiges = "0.2.0"
   }
 
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % Versions.scalaXml
-  val specs2 = "org.specs2" %% "specs2-core" % Versions.specs2 % "test"
+  val specs2 = "org.specs2" %% "specs2-core" % Versions.specs2
   val cats = "org.typelevel" %% "cats-core" % Versions.cats
   val shapeless = "com.chuusai" %% "shapeless" % Versions.shapeless
   val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % Versions.monocle
   val monocleMacro = "com.github.julien-truffaut" %% "monocle-macro" % Versions.monocle
-  val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint % "test"
+  val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint
   val kindProjector = "org.spire-math" %% "kind-projector" % Versions.kindProjector
+  val paigesCore = "org.typelevel" %% "paiges-core" % Versions.paiges
+  val paigesCats = "org.typelevel" %% "paiges-cats" % Versions.paiges
 
-  val core = Seq(
+  val xsd = Seq(
     scalaXml,
     cats,
     shapeless,
     monocleCore,
-    monocleMacro,
-
+    monocleMacro
+  ) ++ Seq(
     specs2,
     pprint
-  )
+  ).map(_ % "test")
 
+  val iots = Seq(
+    scalaXml,
+    cats,
+    shapeless,
+    paigesCore,
+    paigesCats
+  ) ++ Seq(
+    specs2,
+    pprint
+  ).map(_ % "test")
 }

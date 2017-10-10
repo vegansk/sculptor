@@ -362,6 +362,8 @@ object fold {
   type ElementOp[A] = Op[A] @@ ElementTag
   type AttributeOp[A] = Op[A] @@ AttributeTag
   type AppinfoOp[A] = Op[A] @@ AppinfoTag
+  def appinfoOp[A](op: Op[A]): AppinfoOp[A] =
+    tag[AppinfoTag][Op[A]](op)
   type DocumentationOp[A] = Op[A] @@ DocumentationTag
   def documentationOp[A](op: Op[A]): DocumentationOp[A] =
     tag[DocumentationTag][Op[A]](op)

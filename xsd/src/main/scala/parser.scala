@@ -1,7 +1,7 @@
 package sculptor.xsd
 
 import sculptor.xsd.{fold => f, ast => a}
-import cats._, cats.implicits._, cats.instances._
+import cats._, cats.implicits._
 import scala.xml._
 import shapeless._
 
@@ -34,12 +34,22 @@ object parser {
         )
       }
 
+      val appinfoOp = f.appinfoOp[a.Annotation[F]] { node => ann =>
+        f.ok(
+          ann.copy(
+            appinfo =
+              combineAlternative(ann.appinfo, pure(Some(List(node.text))))
+          )
+        )
+      }
+
       def fromSetter[A[_[_]]](setter: Setter[A[F], a.Annotation[F]]) =
         f.annotationOp[A[F]] { node => ast =>
           for {
-            ann <- f.annotation(documentation = documentationOp)(node)(
-              a.Annotation.empty[F]
-            )
+            ann <- f.annotation(
+              appinfo = appinfoOp,
+              documentation = documentationOp
+            )(node)(a.Annotation.empty[F])
           } yield setter(ann)(ast)
         }
     }
@@ -521,6 +531,8 @@ object parser {
         element = schema.elementOp
       )(n)(a.Schema.empty[F])
 
+    def run(n: Node): Either[String, a.Schema[F]] =
+      parse(n).value.run(f.FoldState()).value._2
   }
 
 }

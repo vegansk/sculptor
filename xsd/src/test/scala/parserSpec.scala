@@ -25,7 +25,7 @@ object parserSpec extends mutable.Specification {
 
       checkParser(
         Schema[Option](
-          Some(Some(Annotation(Some(List("test"))))),
+          Some(Some(Annotation[Option](Some(List("test")), Some(Some(List("appTest")))))),
           None
         )
       ) {
@@ -33,6 +33,7 @@ object parserSpec extends mutable.Specification {
           <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
             <xs:annotation>
               <xs:documentation>test</xs:documentation>
+              <xs:appinfo>appTest</xs:appinfo>
             </xs:annotation>
           </xs:schema>
         }

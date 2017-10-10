@@ -13,15 +13,15 @@ object astSpec extends mutable.Specification {
 
     import Validated._
 
-    val goodAnnotation = Annotation[Option](Some(List("test")))
+    val goodAnnotation = Annotation[Option](Some(List("test")), None)
 
     "build Annotation" >> {
 
-      val badAnnotation = Annotation[Option](None)
+      val badAnnotation = Annotation.empty[Option]
       Annotation.build(badAnnotation).isInvalid must_=== true
 
       Annotation.build(goodAnnotation) must_=== valid(
-        Annotation[Id](List("test"))
+        Annotation[Id](List("test"), None)
       )
     }
 
