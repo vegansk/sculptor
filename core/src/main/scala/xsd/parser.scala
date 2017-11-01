@@ -81,7 +81,7 @@ object parser {
       }
 
       def baseOp = f.baseOp[a.SimpleTypeRestriction[F]] { base => r =>
-        f.ok(r.copy(base = pure(base)))
+        f.ok(r.copy(base = pure(a.QName.fromString(base))))
       }
 
       def patternOp = f.pattern[a.SimpleTypeRestriction[F]] {
@@ -340,7 +340,7 @@ object parser {
       }
 
       def baseOp = f.baseOp[a.ComplexContentExtension[F]] { base => ast =>
-        f.ok(ast.copy(base = pure(base)))
+        f.ok(ast.copy(base = pure(a.QName.fromString(base))))
       }
 
       def sequenceOp: f.SequenceOp[a.ComplexContentExtension[F]] =
