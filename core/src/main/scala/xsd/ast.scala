@@ -10,7 +10,7 @@ object ast {
   final case class QName(name: String, ns: Option[String])
   object QName {
     def fromString(name: String): QName = name.split(":") match {
-      case Array(name, ns) => QName(name, ns.some)
+      case Array(ns, name) => QName(name, ns.some)
       case _ => QName(name, none[String])
     }
   }

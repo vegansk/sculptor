@@ -70,6 +70,13 @@ object astSpec extends mutable.Specification {
       )
     }
 
+    "parse qname" >> {
+
+      QName.fromString("test") must_=== QName("test", None)
+      QName.fromString("xsd:test") must_=== QName("test", "xsd".some)
+
+    }
+
   }
 
 }
