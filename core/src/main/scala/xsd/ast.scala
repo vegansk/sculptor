@@ -7,6 +7,14 @@ import shapeless.{Id => _, _}
 
 object ast {
 
+  final case class QName(name: String, ns: Option[String])
+  object QName {
+    def fromString(name: String): QName = name.split(":") match {
+      case Array(name, ns) => QName(name, ns.some)
+      case _ => QName(name, none[String])
+    }
+  }
+
   type SrcF[A] = Option[A]
   type DstF[A] = Id[A]
   type BuildResult[A] = ValidatedNel[String, A]
@@ -64,7 +72,7 @@ object ast {
   }
 
   final case class SimpleTypeRestriction[F[_]](
-    base: F[String],
+    base: F[QName],
     pattern: F[Option[String]],
     minLength: F[Option[String]],
     maxLength: F[Option[String]],
@@ -251,7 +259,7 @@ object ast {
 
   final case class ComplexContentExtension[F[_]](
     annotation: F[Option[Annotation[F]]],
-    base: F[String],
+    base: F[QName],
     sequence: F[Option[Sequence[F]]]
   ) extends AST[F]
 

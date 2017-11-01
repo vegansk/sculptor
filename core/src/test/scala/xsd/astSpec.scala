@@ -44,7 +44,7 @@ object astSpec extends mutable.Specification {
     }
 
     val goodSimpleTypeRestriction = SimpleTypeRestriction[Option](
-      base = Option("base"),
+      base = Option(QName("base", None)),
       pattern = Option("pattern".some),
       minLength = Option("minLength".some),
       maxLength = Option("maxLength".some),
@@ -58,7 +58,7 @@ object astSpec extends mutable.Specification {
 
       SimpleTypeRestriction.build(goodSimpleTypeRestriction) must_=== valid(
         SimpleTypeRestriction[Id](
-          base = "base",
+          base = QName("base", None),
           pattern = "pattern".some,
           minLength = "minLength".some,
           maxLength = "maxLength".some,
