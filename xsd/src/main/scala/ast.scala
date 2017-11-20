@@ -42,16 +42,18 @@ object ast {
 
   sealed trait AST[F[_]]
 
-  final case class Annotation[F[_]](documentation: F[List[String]])
+  final case class Annotation[F[_]](documentation: F[List[String]],
+                                    appinfo: F[Option[List[String]]])
       extends AST[F]
   object Annotation extends Builder("Annotation") {
     def empty[F[_]: MonoidK](): Annotation[F] =
-      apply(MonoidK[F].empty)
+      apply(MonoidK[F].empty, MonoidK[F].empty)
 
     def build(src: Annotation[SrcF]): BuildResultId[Annotation] = {
       (
-        value("documentation")(src.documentation) :: HNil
-      ).tupled.map(Annotation.apply[DstF])
+        value("documentation")(src.documentation),
+        optional("appinfo")(src.appinfo)
+      ).mapN(Annotation.apply[DstF])
     }
   }
 

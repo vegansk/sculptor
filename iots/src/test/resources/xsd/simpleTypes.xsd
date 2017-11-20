@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:annotation>
+        <xs:documentation>This schema contains simple types definitions</xs:documentation>
+    </xs:annotation>
+    <xs:complexType name="UndefinedValue">
+        <xs:annotation>
+            <xs:appinfo>export const UndefinedValueType = t.undefined
+export type UndefinedValue = undefined</xs:appinfo>
+            <xs:documentation>Empty complex type is the equivalent of undefined type</xs:documentation>
+        </xs:annotation>
+    </xs:complexType>
+</xs:schema>

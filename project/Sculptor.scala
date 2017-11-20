@@ -73,14 +73,24 @@ object Sculptor {
       addCompilerPlugin(Dependencies.kindProjector)
     )
 
-    val core: PC = _.configure(common)
+    val xsd: PC = _.configure(common)
       .settings(
-        libraryDependencies ++= Dependencies.core
+        libraryDependencies ++= Dependencies.xsd
+      )
+
+    val iots: PC = _.configure(common)
+      .settings(
+        libraryDependencies ++= Dependencies.iots
       )
   }
 
-  lazy val core = project
-    .in(file("core"))
-    .configure(Config.core)
+  lazy val xsd = project
+    .in(file("xsd"))
+    .configure(Config.xsd)
+
+  lazy val iots = project
+    .in(file("iots"))
+    .dependsOn(xsd)
+    .configure(Config.iots)
 
 }
