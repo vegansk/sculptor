@@ -3,7 +3,6 @@ package sculptor.xsd
 import sculptor.xsd.{fold => f, ast => a}
 import cats._, cats.implicits._
 import scala.xml._
-import shapeless._
 
 object parser {
 
@@ -239,8 +238,7 @@ object parser {
 
       def choiceOp: f.ChoiceOp[a.Choice[F]] = choice.fromSetter { v => ast =>
         ast.copy(
-          body =
-            combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+          body = combineAlternative(ast.body, pure(List(a.Body.choice[F](v))))
         )
       }
 
@@ -248,7 +246,7 @@ object parser {
         v => ast =>
           ast.copy(
             body =
-              combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+              combineAlternative(ast.body, pure(List(a.Body.element[F](v))))
           )
       }
 
@@ -256,7 +254,7 @@ object parser {
         v => ast =>
           ast.copy(
             body =
-              combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+              combineAlternative(ast.body, pure(List(a.Body.sequence[F](v))))
           )
       }
 
@@ -291,22 +289,20 @@ object parser {
 
       def choiceOp = choice.fromSetter[a.Sequence] { v => ast =>
         ast.copy(
-          body =
-            combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+          body = combineAlternative(ast.body, pure(List(a.Body.choice[F](v))))
         )
       }
 
       def anyOp = any.fromSetter[a.Sequence] { v => ast =>
         ast.copy(
-          body =
-            combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+          body = combineAlternative(ast.body, pure(List(a.Body.any[F](v))))
         )
       }
 
       def sequenceOp: f.SequenceOp[a.Sequence[F]] = fromSetter { v => ast =>
         ast.copy(
           body =
-            combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+            combineAlternative(ast.body, pure(List(a.Body.sequence[F](v))))
         )
       }
 
@@ -314,7 +310,7 @@ object parser {
         v => ast =>
           ast.copy(
             body =
-              combineAlternative(ast.body, pure(List(Coproduct[a.Body[F]](v))))
+              combineAlternative(ast.body, pure(List(a.Body.element[F](v))))
           )
       }
 
@@ -500,21 +496,23 @@ object parser {
       def simpleTypeOp = simpleType.fromSetter[a.Schema] { st => s =>
         s.copy(
           types =
-            combineAlternative(s.types, pure(List(Coproduct[a.Type[F]](st))))
+            combineAlternative(s.types, pure(List(a.Type.simpleType[F](st))))
         )
       }
 
       def complexTypeOp = complexType.fromSetter[a.Schema] { ct => ast =>
         ast.copy(
-          types =
-            combineAlternative(ast.types, pure(List(Coproduct[a.Type[F]](ct))))
+          types = combineAlternative(
+            ast.types,
+            pure(List(a.Type.complexType[F](ct)))
+          )
         )
       }
 
       def elementOp = element.fromSetter[a.Schema] { el => s =>
         s.copy(
           types =
-            combineAlternative(s.types, pure(List(Coproduct[a.Type[F]](el))))
+            combineAlternative(s.types, pure(List(a.Type.element[F](el))))
         )
       }
 

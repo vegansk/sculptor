@@ -3,7 +3,6 @@ package sculptor.xsd
 import cats._
 import cats.data._
 import cats.implicits._
-import shapeless.{Id => _, _}
 
 object ast {
 
@@ -163,25 +162,30 @@ object ast {
     }
   }
 
-  type Body[F[_]] =
-    Element[F] :+: Sequence[F] :+: Choice[F] :+: Any[F] :+: CNil
+  sealed trait Body[F[_]]
 
   object Body {
-    object buildImpl extends Poly1 {
-      implicit val element: Case.Aux[Element[SrcF], BuildResultId[Body]] = at(
-        Element.build(_).map(Coproduct[Body[DstF]](_))
-      )
-      implicit val sequence: Case.Aux[Sequence[SrcF], BuildResultId[Body]] =
-        at(Sequence.build(_).map(Coproduct[Body[DstF]](_)))
-      implicit val choice: Case.Aux[Choice[SrcF], BuildResultId[Body]] = at(
-        Choice.build(_).map(Coproduct[Body[DstF]](_))
-      )
-      implicit val any: Case.Aux[Any[SrcF], BuildResultId[Body]] = at(
-        Any.build(_).map(Coproduct[Body[DstF]](_))
-      )
+    final case class element[F[_]](value: Element[F]) extends Body[F]
+    final case class sequence[F[_]](value: Sequence[F]) extends Body[F]
+    final case class choice[F[_]](value: Choice[F]) extends Body[F]
+    final case class any[F[_]](value: Any[F]) extends Body[F]
+
+    def fold[F[_], A](el: Element[F] => A,
+                      seq: Sequence[F] => A,
+                      ch: Choice[F] => A,
+                      any0: Any[F] => A): Body[F] => A = _ match {
+      case element(v) => el(v)
+      case sequence(v) => seq(v)
+      case choice(v) => ch(v)
+      case any(v) => any0(v)
     }
 
-    def build(src: Body[SrcF]): BuildResultId[Body] = src.fold(buildImpl)
+    def build: Body[SrcF] => BuildResultId[Body] = fold(
+      Element.build(_).map(element(_): Body[DstF]),
+      Sequence.build(_).map(sequence(_)),
+      Choice.build(_).map(choice(_)),
+      Any.build(_).map(any(_))
+    )
   }
 
   final case class Sequence[F[_]](annotation: F[Option[Annotation[F]]],
@@ -382,24 +386,26 @@ object ast {
     }
   }
 
-  type Type[F[_]] = SimpleType[F] :+: ComplexType[F] :+: Element[F] :+: CNil
+  sealed trait Type[F[_]]
 
   object Type {
-    object buildImpl extends Poly1 {
-      implicit val simpleType
-        : Case.Aux[SimpleType[SrcF], BuildResultId[Type]] = at(
-        SimpleType.build(_).map(Coproduct[Type[DstF]](_))
-      )
-      implicit val complexType
-        : Case.Aux[ComplexType[SrcF], BuildResultId[Type]] = at(
-        ComplexType.build(_).map(Coproduct[Type[DstF]](_))
-      )
-      implicit val element: Case.Aux[Element[SrcF], BuildResultId[Type]] = at(
-        Element.build(_).map(Coproduct[Type[DstF]](_))
-      )
+    final case class simpleType[F[_]](value: SimpleType[F]) extends Type[F]
+    final case class complexType[F[_]](value: ComplexType[F]) extends Type[F]
+    final case class element[F[_]](value: Element[F]) extends Type[F]
+
+    def fold[F[_], A](st: SimpleType[F] => A,
+                      ct: ComplexType[F] => A,
+                      el: Element[F] => A): Type[F] => A = _ match {
+      case simpleType(v) => st(v)
+      case complexType(v) => ct(v)
+      case element(v) => el(v)
     }
 
-    def build(src: Type[SrcF]): BuildResultId[Type] = src.fold(buildImpl)
+    def build: Type[SrcF] => BuildResultId[Type] = fold(
+      SimpleType.build(_).map(simpleType(_): Type[DstF]),
+      ComplexType.build(_).map(complexType(_)),
+      Element.build(_).map(element(_))
+    )
   }
 
   final case class Schema[F[_]](annotation: F[Option[Annotation[F]]],
