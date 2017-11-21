@@ -25,7 +25,6 @@ object integrationSpec extends mutable.Specification {
         (xsdO: Schema[Option]) => {
           val xsd = Schema.build(xsdO)
 
-          // pprint.pprintln(xsd, height = 2000)
           xsd.toEither must beRight
         }
       )
