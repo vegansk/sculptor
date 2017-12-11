@@ -6,12 +6,21 @@ import cats.implicits._
 
 object ast {
 
-  final case class QName(name: String, ns: Option[String])
+  final case class QName(name: String, ns: Option[String]) {
+    override def toString(): String = {
+      this match {
+        case QName(n, None) => n
+        case QName(n, Some(ns)) => s"$ns:$n"
+      }
+    }
+  }
+
   object QName {
     def fromString(name: String): QName = name.split(":") match {
       case Array(ns, name) => QName(name, ns.some)
       case _ => QName(name, none[String])
     }
+
   }
 
   type SrcF[A] = Option[A]
@@ -162,7 +171,7 @@ object ast {
     }
   }
 
-  sealed trait Body[F[_]]
+  sealed trait Body[F[_]] extends AST[F]
 
   object Body {
     final case class element[F[_]](value: Element[F]) extends Body[F]

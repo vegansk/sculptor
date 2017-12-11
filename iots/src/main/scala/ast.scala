@@ -1,6 +1,7 @@
 package sculptor
 package iots
 
+import cats._
 import cats.data.{NonEmptyList => NEL}
 
 object ast {
@@ -19,12 +20,29 @@ object ast {
     final case class custom(name: QName) extends TypeName
   }
 
-  final case class FieldDecl(name: Ident, `type`: TypeName, optional: Boolean)
+  sealed trait FieldConstraint
+  object FieldConstraint {
+    object Optional extends FieldConstraint
+    object Nullable extends FieldConstraint
+    object OptionalNullable extends FieldConstraint
+    object Required extends FieldConstraint
+
+    implicit val FieldConstraintEq: Eq[FieldConstraint] =
+      Eq.fromUniversalEquals[FieldConstraint]
+  }
+
+  final case class FieldDecl(name: Ident,
+                             `type`: TypeName,
+                             constraint: FieldConstraint,
+                             array: Boolean)
+
+  final case class TypeRef(`type`: TypeName, constName: QName)
 
   sealed trait TypeDecl
 
   final case class ComplexTypeDecl(name: Ident,
                                    constName: Ident,
+                                   baseType: Option[TypeRef],
                                    exported: Boolean,
                                    fields: NEL[FieldDecl])
       extends TypeDecl
@@ -35,6 +53,11 @@ object ast {
                             constName: Ident,
                             exported: Boolean,
                             members: NEL[EnumMemberDecl])
+      extends TypeDecl
+
+  final case class NewtypeDecl(name: Ident,
+                               constName: Ident,
+                               baseType: TypeRef)
       extends TypeDecl
 
   final case class TypesDecl(value: NEL[TypeDecl])

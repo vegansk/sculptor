@@ -38,7 +38,7 @@ object generatorSpec extends mutable.Specification
 
     "handle field declaration" >> {
 
-      val f = FieldDecl(Ident("theField"), TypeName.std(Ident("string")), true)
+      val f = FieldDecl(Ident("theField"), TypeName.std(Ident("string")), FieldConstraint.Required, false)
       fieldDecl(f) must beEqvTo(Doc.text("theField: t.string"))
 
     }
@@ -46,11 +46,12 @@ object generatorSpec extends mutable.Specification
     val ct = ComplexTypeDecl(
       Ident("Test"),
       Ident("TestType"),
+      None,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeName.std(Ident("number")), true),
-        FieldDecl(Ident("str"), TypeName.std(Ident("string")), false),
-        FieldDecl(Ident("date"), TypeName.custom(QName.of(Ident("T"), Ident("date"))), false)
+        FieldDecl(Ident("id"), TypeName.std(Ident("number")), FieldConstraint.Optional, false),
+        FieldDecl(Ident("str"), TypeName.std(Ident("string")), FieldConstraint.Required, false),
+        FieldDecl(Ident("date"), TypeName.custom(QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false)
       )
     )
 
