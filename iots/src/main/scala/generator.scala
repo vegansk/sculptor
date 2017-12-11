@@ -84,7 +84,9 @@ object generator {
       val requiredFields = {
         val prefix = interface + text("({")
         val suffix = text("})")
-        val fields = ct.fields.filter(_.optional === false).map(fieldDecl _)
+        val fields = ct.fields
+          .filter(_.constraint === FieldConstraint.Required)
+          .map(fieldDecl _)
         intercalate(comma + line, fields)
           .tightBracketBy(prefix, suffix)
       }
@@ -92,7 +94,9 @@ object generator {
       val optionalFields = {
         val prefix = partial + text("({")
         val suffix = text("})")
-        val fields = ct.fields.filter(_.optional === true).map(fieldDecl _)
+        val fields = ct.fields
+          .filter(_.constraint =!= FieldConstraint.Required)
+          .map(fieldDecl _)
         intercalate(comma + line, fields)
           .tightBracketBy(prefix, suffix)
       }
@@ -136,9 +140,12 @@ object generator {
     def enumDecl(e: EnumDecl): Doc =
       stack(List(enumTypeDecl(e), enumConstDecl(e)))
 
+    def newtypeDecl(e: NewtypeDecl): Doc = ???
+
     def typeDecl(t: TypeDecl): Doc = t match {
       case v: ComplexTypeDecl => complexTypeDecl(v)
       case v: EnumDecl => enumDecl(v)
+      case v: NewtypeDecl => newtypeDecl(v)
     }
 
     def typesDecl(t: TypesDecl): Doc =
