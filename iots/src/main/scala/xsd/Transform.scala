@@ -128,7 +128,8 @@ object Transform {
       NewtypeDecl(
         Ident(newtypeTypeName(name)),
         Ident(newtypeTypeConstName(name)),
-        baseRef
+        baseRef,
+        true
       )
 
   def simpleType(t: x.SimpleType[SrcF]): Result[TypeDecl] =
@@ -242,7 +243,7 @@ object Transform {
     (name, `type`, minOccurs, maxOccurs, nullable) =>
       for {
         config <- getConfig
-        t <- typeName(`type`.getOrElse(x.QName("anyType", config.xsdNs)))
+        t <- typeRef(`type`.getOrElse(x.QName("anyType", config.xsdNs)))
         result <- transformField(minOccurs, maxOccurs, nullable)(
           FieldDecl(Ident(fieldName(name)), t, FieldConstraint.Required, false)
         )
@@ -329,7 +330,7 @@ object Transform {
     attr match {
       case x.Attribute(_, Some(name), _, _, Some(typ), use) =>
         for {
-          t <- typeName(x.QName.fromString(typ))
+          t <- typeRef(x.QName.fromString(typ))
         } yield
           FieldDecl(
             Ident(fieldName(name)),
@@ -385,7 +386,8 @@ object Transform {
       NewtypeDecl(
         Ident(newtypeTypeName(name)),
         Ident(newtypeTypeConstName(name)),
-        `type`
+        `type`,
+        true
       )
 
   def complexType(t: x.ComplexType[SrcF]): Result[TypeDecl] =

@@ -1,5 +1,6 @@
 package sculptor
 package iots
+package generator
 
 import org.specs2._
 import cats.implicits._
@@ -15,13 +16,21 @@ object generatorSpec extends mutable.Specification
     import ast._
     import testing.paiges._
 
-    val gen = generator(
+    val gen = generator.create(
       generator.Config(
         Ident("t"),
         Ident("T")
       )
     )
     import gen._
+
+    def mkRef(t: TypeName): TypeRef = TypeRef(
+      t,
+      t match {
+        case TypeName.std(v) => QName.of(Ident("t"), v)
+        case TypeName.custom(QName(v)) => QName(NEL.fromListUnsafe(v.init ++ List(Ident(v.last.value + "Type"))))
+      }
+    )
 
     "handle qualified name" >> {
 
@@ -31,14 +40,14 @@ object generatorSpec extends mutable.Specification
 
     "handle type names" >> {
 
-      typeName(TypeName.std(Ident("string"))) must beEqvTo(Doc.text("t.string"))
-      typeName(TypeName.custom(QName.of(Ident("package"), Ident("string")))) must beEqvTo(Doc.text("package.string"))
+      typeConst(mkRef(TypeName.std(Ident("string")))) must beEqvTo(Doc.text("t.string"))
+      typeConst(mkRef(TypeName.custom(QName.of(Ident("package"), Ident("string"))))) must beEqvTo(Doc.text("package.stringType"))
 
     }
 
     "handle field declaration" >> {
 
-      val f = FieldDecl(Ident("theField"), TypeName.std(Ident("string")), FieldConstraint.Required, false)
+      val f = FieldDecl(Ident("theField"), mkRef(TypeName.std(Ident("string"))), FieldConstraint.Required, false)
       fieldDecl(f) must beEqvTo(Doc.text("theField: t.string"))
 
     }
@@ -49,9 +58,9 @@ object generatorSpec extends mutable.Specification
       None,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeName.std(Ident("number")), FieldConstraint.Optional, false),
-        FieldDecl(Ident("str"), TypeName.std(Ident("string")), FieldConstraint.Required, false),
-        FieldDecl(Ident("date"), TypeName.custom(QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false)
+        FieldDecl(Ident("id"), mkRef(TypeName.std(Ident("number"))), FieldConstraint.Optional, false),
+        FieldDecl(Ident("str"), mkRef(TypeName.std(Ident("string"))), FieldConstraint.Required, false),
+        FieldDecl(Ident("date"), mkRef(TypeName.custom(QName.of(Ident("T"), Ident("date")))), FieldConstraint.Required, false)
       )
     )
 
@@ -60,7 +69,7 @@ object generatorSpec extends mutable.Specification
       complexTypeConstDecl(ct) must beEqvTo(
         Doc.text(
           "export const TestType = t.intersection([" +
-            "t.interface({str: t.string, date: T.date}), " +
+            "t.interface({str: t.string, date: T.dateType}), " +
             "t.partial({id: t.number})" +
             "], \"Test\")"
         )
