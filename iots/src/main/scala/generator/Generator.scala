@@ -226,7 +226,8 @@ class Generator(config: Config) {
   def moduleDecl(m: ModuleDecl): Doc =
     intercalate(
       line + line,
-      m.imports.map(importsDecl _).toList ++
+      config.header.map(text _).toList ++
+        m.imports.map(importsDecl _).toList ++
         List(inlineMkStringEnum) ++
         m.types.map(typesDecl _).toList
     )

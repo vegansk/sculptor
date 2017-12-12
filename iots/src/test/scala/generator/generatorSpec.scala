@@ -19,7 +19,7 @@ object generatorSpec extends mutable.Specification
     val gen = generator.create(
       generator.Config(
         Ident("t"),
-        Ident("T")
+        "/* header */".some
       )
     )
     import gen._
@@ -133,6 +133,7 @@ import * as T from "core/utils/types""""
     "handle module declaration" >> {
 
       moduleDecl(module) must beEqvTo(
+        Doc.text("/* header */") + Doc.line * 2 +
         importsDecl(imports) + Doc.line * 2 +
           inlineMkStringEnum + Doc.line * 2 +
           complexTypeDecl(ct) + Doc.line * 2 +
