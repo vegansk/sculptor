@@ -24,14 +24,6 @@ object generatorSpec extends mutable.Specification
     )
     import gen._
 
-    def mkRef(t: TypeName): TypeRef = TypeRef(
-      t,
-      t match {
-        case TypeName.std(v) => QName.of(Ident("t"), v)
-        case TypeName.custom(QName(v)) => QName(NEL.fromListUnsafe(v.init ++ List(Ident(v.last.value + "Type"))))
-      }
-    )
-
     "handle qualified name" >> {
 
       val expr = QName(NEL.of(Ident("a"), Ident("b"), Ident("c")))
@@ -40,14 +32,14 @@ object generatorSpec extends mutable.Specification
 
     "handle type names" >> {
 
-      typeConst(mkRef(TypeName.std(Ident("string")))) must beEqvTo(Doc.text("t.string"))
-      typeConst(mkRef(TypeName.custom(QName.of(Ident("package"), Ident("string"))))) must beEqvTo(Doc.text("package.stringType"))
+      typeConst(TypeRef.std(Ident("string"))) must beEqvTo(Doc.text("t.string"))
+      typeConst(TypeRef.external(QName.of(Ident("p"), Ident("string")), QName.of(Ident("p"), Ident("stringType")))) must beEqvTo(Doc.text("p.stringType"))
 
     }
 
     "handle field declaration" >> {
 
-      val f = FieldDecl(Ident("theField"), mkRef(TypeName.std(Ident("string"))), FieldConstraint.Required, false)
+      val f = FieldDecl(Ident("theField"), TypeRef.std(Ident("string")), FieldConstraint.Required, false)
       fieldDecl(f) must beEqvTo(Doc.text("theField: t.string"))
 
     }
@@ -58,9 +50,9 @@ object generatorSpec extends mutable.Specification
       None,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), mkRef(TypeName.std(Ident("number"))), FieldConstraint.Optional, false),
-        FieldDecl(Ident("str"), mkRef(TypeName.std(Ident("string"))), FieldConstraint.Required, false),
-        FieldDecl(Ident("date"), mkRef(TypeName.custom(QName.of(Ident("T"), Ident("date")))), FieldConstraint.Required, false)
+        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false),
+        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false),
+        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false)
       )
     )
 
@@ -69,7 +61,7 @@ object generatorSpec extends mutable.Specification
       complexTypeConstDecl(ct) must beEqvTo(
         Doc.text(
           "export const TestType = t.intersection([" +
-            "t.interface({str: t.string, date: T.dateType}), " +
+            "t.interface({str: t.string, date: T.date}), " +
             "t.partial({id: t.number})" +
             "], \"Test\")"
         )
@@ -116,7 +108,7 @@ object generatorSpec extends mutable.Specification
     }
 
     val imports = ImportsDecl(
-      NEL.of(
+      List(
         ImportDecl(Ident("t"), "io-ts"),
         ImportDecl(Ident("T"), "core/utils/types")
       )

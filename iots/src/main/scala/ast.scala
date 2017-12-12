@@ -14,10 +14,11 @@ object ast {
       QName(new NEL(x, xs.toList))
   }
 
-  sealed trait TypeName
-  object TypeName {
-    final case class std(name: Ident) extends TypeName
-    final case class custom(name: QName) extends TypeName
+  sealed trait TypeRef
+  object TypeRef {
+    final case class std(name: Ident) extends TypeRef
+    final case class defined(name: Ident, constName: Ident) extends TypeRef
+    final case class external(name: QName, constName: QName) extends TypeRef
   }
 
   sealed trait FieldConstraint
@@ -30,8 +31,6 @@ object ast {
     implicit val FieldConstraintEq: Eq[FieldConstraint] =
       Eq.fromUniversalEquals[FieldConstraint]
   }
-
-  final case class TypeRef(`type`: TypeName, constName: QName)
 
   final case class FieldDecl(name: Ident,
                              `type`: TypeRef,
@@ -67,7 +66,7 @@ object ast {
 
   final case class ImportDecl(name: Ident, path: Path)
 
-  final case class ImportsDecl(value: NEL[ImportDecl])
+  final case class ImportsDecl(value: List[ImportDecl])
 
   final case class ModuleDecl(imports: Option[ImportsDecl],
                               types: Option[TypesDecl])

@@ -68,12 +68,16 @@ class Generator(config: Config) {
         )
       )
 
-  def typeConst(t: TypeRef): Doc =
-    qName(t.constName)
+  def typeConst(t: TypeRef): Doc = t match {
+    case TypeRef.std(v) => qName(QName.of(config.iotsNs, v))
+    case TypeRef.defined(_, v) => ident(v)
+    case TypeRef.external(_, v) => qName(v)
+  }
 
-  def typeName(t: TypeRef): Doc = t.`type` match {
-    case TypeName.std(v) => ident(v)
-    case TypeName.custom(v) => qName(v)
+  def typeName(t: TypeRef): Doc = t match {
+    case TypeRef.std(v) => ident(v)
+    case TypeRef.defined(v, _) => ident(v)
+    case TypeRef.external(v, _) => qName(v)
   }
 
   def typeExpr(f: FieldDecl): Doc = {
