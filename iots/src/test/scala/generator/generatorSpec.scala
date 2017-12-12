@@ -109,7 +109,7 @@ object generatorSpec extends mutable.Specification
 
       enumConstDecl(e) must beEqvTo(
         Doc.text(
-          """export const TestEnumType = T.mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
+          """export const TestEnumType = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
         )
       )
 
@@ -142,6 +142,7 @@ import * as T from "core/utils/types""""
 
       moduleDecl(module) must beEqvTo(
         importsDecl(imports) + Doc.line * 2 +
+          inlineMkStringEnum + Doc.line * 2 +
           complexTypeDecl(ct) + Doc.line * 2 +
           enumDecl(e)
       )

@@ -144,10 +144,6 @@ class Generator(config: Config) {
       .tightBracketBy(prefix, suffix)
   }
 
-  private val mkStringEnum: Doc = qName(
-    QName.of(config.iotsExtraNs, Ident("mkStringEnum"))
-  )
-
   def enumConstDecl(e: EnumDecl): Doc =
     exportPrefix(e.exported) +
       spread(
@@ -155,7 +151,7 @@ class Generator(config: Config) {
           const,
           ident(e.constName),
           eqSign,
-          mkStringEnum + char('<') + ident(e.name) +
+          text("mkStringEnum") + char('<') + ident(e.name) +
             text(">(") + ident(e.name) + comma +
             space + strLit(e.name.value) + char(')')
         )
@@ -174,6 +170,30 @@ class Generator(config: Config) {
 
   def newtypeDecl(t: NewtypeDecl): Doc =
     stack(List(newtypeConstDecl(t), newtypeTypeDecl(t)))
+
+  lazy val getStringEnumValuesImpl: Doc = text(
+    """function getStringEnumValues(o: object): string[] {
+  return Object.keys(o)
+    .map(_ => (o as { [n: string]: any })[_])
+    .filter(v => typeof v === "string")
+}"""
+  )
+
+  lazy val mkStringEnumImpl: Doc = {
+    val t = config.iotsNs.value
+    text(s"""function mkStringEnum<E>(e: object, name: string): $t.Type<E> {
+  const values = getStringEnumValues(e)
+  const newType: $t.Type<E> = {
+    _A: $t._A,
+    name,
+    validate: (v, c) => values.indexOf(v) >= 0 ? $t.success<E>(v) : $t.failure<E>(v, c)
+  }
+  return newType
+}""")
+  }
+
+  lazy val inlineMkStringEnum: Doc =
+    stack(List(getStringEnumValuesImpl, mkStringEnumImpl))
 
   def typeDecl(t: TypeDecl): Doc = t match {
     case v: ComplexTypeDecl => complexTypeDecl(v)
@@ -203,6 +223,7 @@ class Generator(config: Config) {
     intercalate(
       line + line,
       m.imports.map(importsDecl _).toList ++
+        List(inlineMkStringEnum) ++
         m.types.map(typesDecl _).toList
     )
 }
