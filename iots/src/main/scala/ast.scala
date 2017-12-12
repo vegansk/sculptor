@@ -31,12 +31,12 @@ object ast {
       Eq.fromUniversalEquals[FieldConstraint]
   }
 
+  final case class TypeRef(`type`: TypeName, constName: QName)
+
   final case class FieldDecl(name: Ident,
-                             `type`: TypeName,
+                             `type`: TypeRef,
                              constraint: FieldConstraint,
                              array: Boolean)
-
-  final case class TypeRef(`type`: TypeName, constName: QName)
 
   sealed trait TypeDecl
 
@@ -57,7 +57,8 @@ object ast {
 
   final case class NewtypeDecl(name: Ident,
                                constName: Ident,
-                               baseType: TypeRef)
+                               baseType: TypeRef,
+                               exported: Boolean)
       extends TypeDecl
 
   final case class TypesDecl(value: NEL[TypeDecl])

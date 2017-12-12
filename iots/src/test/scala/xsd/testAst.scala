@@ -10,6 +10,14 @@ object testAst {
   import ast._
   import testing.utils._
 
+  def mkRef(t: TypeName): TypeRef = TypeRef(
+    t,
+    t match {
+      case TypeName.std(v) => QName.of(Ident("t"), v)
+      case TypeName.custom(QName(v)) => QName(NEL.fromListUnsafe(v.init ++ List(Ident(v.last.value + "Type"))))
+    }
+  )
+
   object simpleTypeToEnum {
     lazy val src = parseXsdTypes(
       <xs:simpleType name="test_et">
@@ -49,11 +57,11 @@ object testAst {
          NEL.of(
           FieldDecl(
             Ident("id"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false),
           FieldDecl(
             Ident("org"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false))
       )
   }
@@ -87,23 +95,23 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value1"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false),
           FieldDecl(
             Ident("value2"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false),
           FieldDecl(
             Ident("value3"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false),
           FieldDecl(
             Ident("value4"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false),
           FieldDecl(
             Ident("value5"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false))
       )
     lazy val dst = List(outerType)
@@ -130,11 +138,11 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("x"),
-            TypeName.std(Ident("number")),
+            mkRef(TypeName.std(Ident("number"))),
             FieldConstraint.Required, false),
           FieldDecl(
             Ident("y"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false))
       )
   }
@@ -157,11 +165,11 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("num"),
-            TypeName.std(Ident("number")),
+            mkRef(TypeName.std(Ident("number"))),
             FieldConstraint.Optional, false),
           FieldDecl(
             Ident("str"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false))
       )
   }
@@ -191,7 +199,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false))
       )
   }
@@ -210,7 +218,8 @@ object testAst {
         TypeRef(
           TypeName.std(Ident("number")),
           QName.of(Ident("t"), Ident("number"))
-        )
+        ),
+        true
       )
   }
 
@@ -240,7 +249,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("id"),
-            TypeName.std(Ident("number")),
+            mkRef(TypeName.std(Ident("number"))),
             FieldConstraint.Required, false))
       )
 
@@ -253,7 +262,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
-            TypeName.custom(QName.of(Ident("TestValue"))),
+            mkRef(TypeName.custom(QName.of(Ident("TestValue")))),
             FieldConstraint.Required, false))
       )
 
@@ -279,11 +288,11 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, false),
           FieldDecl(
             Ident("id"),
-            TypeName.std(Ident("number")),
+            mkRef(TypeName.std(Ident("number"))),
             FieldConstraint.Required, false))
       )
   }
@@ -310,23 +319,23 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("optional"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, false),
           FieldDecl(
             Ident("nullable"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Nullable, false),
           FieldDecl(
             Ident("array"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Required, true),
           FieldDecl(
             Ident("optionalNullable"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.OptionalNullable, false),
           FieldDecl(
             Ident("optionalArray"),
-            TypeName.std(Ident("string")),
+            mkRef(TypeName.std(Ident("string"))),
             FieldConstraint.Optional, true))
       )
   }
