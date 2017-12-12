@@ -78,7 +78,7 @@ object Transform {
       t <- types()
     } yield
       ModuleDecl(
-        ImportsDecl(NEL.of(c.iotsModule, c.iotsExtraModule) ++ c.imports).some,
+        ImportsDecl(c.imports).some,
         NEL.fromList(t).map(TypesDecl(_))
       )
 
@@ -146,7 +146,6 @@ object Transform {
     for {
       config <- getConfig
       ns = config.xsdNs
-      iots = Ident(config.iotsModule.name.value)
       name <- if (`type`.ns === ns) {
         `type`.name match {
           case "string" => ok("string")
@@ -158,33 +157,31 @@ object Transform {
           case "nonNegativeInteger" => ok("number")
           case "positiveInteger" => ok("number")
           case "decimal" => ok("number")
-          case "date" => ok("Date") // TODO: Custom type!
           case "dateTime" => ok("Date") // TODO: Custom type!
           case "anyType" => ok("any")
           case _ => Errors.unknownType[String](`type`)
         }
       } else Errors.unknownType[String](`type`)
-    } yield TypeRef(TypeName.std(Ident(name)), QName.of(iots, Ident(name)))
+    } yield TypeRef.std(Ident(name))
 
   def typeRef(`type`: x.QName): Result[TypeRef] =
     for {
       config <- getConfig
-      result <- `type` match {
-        case _ @x.QName(_, ns) if ns === config.xsdNs =>
-          stdTypeRef(`type`)
-        case x.QName(t, None) =>
-          ok(
-            TypeRef(
-              TypeName.custom(QName.of(Ident(complexTypeName(t)))),
-              QName.of(Ident(complexTypeConstName(t)))
+      result <- config.externalTypes
+        .find(_.xsdName === `type`)
+        .fold[Result[TypeRef]](`type` match {
+          case x.QName(_, ns) if ns === config.xsdNs =>
+            stdTypeRef(`type`)
+          case x.QName(t, None) =>
+            ok(
+              TypeRef.defined(
+                Ident(complexTypeName(t)),
+                Ident(complexTypeConstName(t))
+              )
             )
-          )
-        case _ => Errors.unknownType[TypeRef](`type`)
-      }
+          case _ => Errors.unknownType[TypeRef](`type`)
+        })(t => ok(TypeRef.external(t.name, t.constName)))
     } yield result
-
-  def typeName(`type`: x.QName): Result[TypeName] =
-    typeRef(`type`).map(_.`type`)
 
   object fieldConstraint {
     def unapply(

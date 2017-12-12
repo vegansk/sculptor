@@ -21,6 +21,7 @@ object ast {
       case _ => QName(name, none[String])
     }
 
+    implicit lazy val QNameEq: Eq[QName] = Eq.fromUniversalEquals[QName]
   }
 
   type SrcF[A] = Option[A]

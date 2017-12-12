@@ -4,7 +4,6 @@ package xsd
 
 import org.specs2._
 import cats._
-import cats.data.{NonEmptyList => NEL}
 import cats.implicits._
 
 object transformSpec extends mutable.Specification
@@ -19,10 +18,12 @@ object transformSpec extends mutable.Specification
     import testAst._
 
     val config = Config(
-      ImportDecl(Ident("t"), "io-ts"),
-      ImportDecl(Ident("T"), "core/types"),
-      Nil,
-      "xs".some
+      List(
+        ImportDecl(Ident("t"), "io-ts"),
+        ImportDecl(Ident("T"), "core/types")
+      ),
+      "xs".some,
+      Nil
     )
 
     def schema(t: x.Type[Id]*): x.Schema[Id] = x.Schema[Id](
@@ -48,10 +49,7 @@ object transformSpec extends mutable.Specification
 
       val m = transform(schema()).value(cfg).right.get
 
-      m.imports.get.value must_=== NEL.of(
-        config.iotsModule,
-        config.iotsExtraModule,
-      ) ++ cfg.imports
+      m.imports.get.value must_=== cfg.imports
     }
 
     "transform simple type to enum declaration" >> {

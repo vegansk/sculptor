@@ -15,10 +15,18 @@ object integrationSpec extends mutable.Specification {
   import ast._
 
   val xsdConfig = XsdConfig(
-    ImportDecl(Ident("t"), "io-ts"),
-    ImportDecl(Ident("T"), "core/types"),
-    Nil,
-    "xsd".some
+    List(
+      ImportDecl(Ident("t"), "io-ts"),
+      ImportDecl(Ident("T"), "core/types")
+    ),
+    "xsd".some,
+    List(
+      ExternatType(
+        x.QName.fromString("xsd:date"),
+        QName.of(Ident("Date")),
+        QName.of(Ident("T"), Ident("date"))
+      )
+    )
   )
 
   val genConfig = GenConfig(
