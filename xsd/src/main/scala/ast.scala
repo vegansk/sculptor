@@ -35,9 +35,7 @@ object ast {
 
     def value[A](fName: String)(a: SrcF[A]): BuildResult[A] =
       a.toValidNel(s"Required field $name.$fName not set")
-    def optional[A](
-      fName: String
-    )(a: SrcF[Option[A]]): BuildResult[Option[A]] =
+    def optional[A](fName: String)(a: SrcF[Option[A]]): BuildResult[Option[A]] =
       Validated.valid(a.flatten)
     def innerOptional[F[_[_]]](fName: String, f: F[SrcF] => BuildResultId[F])(
       a: SrcF[Option[F[SrcF]]]
@@ -306,9 +304,7 @@ object ast {
     def build(src: ComplexContent[SrcF]): BuildResultId[ComplexContent] = {
       (
         innerOptional("annotation", Annotation.build)(src.annotation),
-        innerOptional("extension", ComplexContentExtension.build)(
-          src.extension
-        )
+        innerOptional("extension", ComplexContentExtension.build)(src.extension)
       ).mapN(ComplexContent.apply[DstF])
     }
   }

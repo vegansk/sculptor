@@ -726,9 +726,7 @@ object fold {
       tag[ComplexContentExtensionTag](nop0[A]("extension"))
   ): ComplexContentOp[A] =
     complexContentOp(
-      composeOps(
-        foldAttributes(Eval.later(Seq("id" -> id, "mixed" -> mixed)))
-      )(
+      composeOps(foldAttributes(Eval.later(Seq("id" -> id, "mixed" -> mixed))))(
         foldChild(
           Eval.later(
             Seq(
@@ -1275,13 +1273,12 @@ object fold {
 
   def keyOp[A](op: Op[A]): KeyOp[A] = tag[KeyTag][Op[A]](op)
 
-  def key[A](
-    id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
-    name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
-    annotation: => AnnotationOp[A] = tag[AnnotationTag](nop0[A]("annotation")),
-    selector: => SelectorOp[A] = tag[SelectorTag](nop0[A]("selector")),
-    field: => FieldOp[A] = tag[FieldTag](nop0[A]("field"))
-  ): KeyOp[A] =
+  def key[A](id: => IdOp[A] = tag[IdTag](attrNop0[A]("id")),
+             name: => NameOp[A] = tag[NameTag](attrNop0[A]("name")),
+             annotation: => AnnotationOp[A] =
+               tag[AnnotationTag](nop0[A]("annotation")),
+             selector: => SelectorOp[A] = tag[SelectorTag](nop0[A]("selector")),
+             field: => FieldOp[A] = tag[FieldTag](nop0[A]("field"))): KeyOp[A] =
     keyOp(
       composeOps(foldAttributes(Eval.later(Seq("id" -> id, "name" -> name))))(
         foldChild(
@@ -1331,9 +1328,9 @@ object fold {
                   annotation: => AnnotationOp[A] =
                     tag[AnnotationTag](nop0[A]("annotation"))): SelectorOp[A] =
     selectorOp(
-      composeOps(
-        foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath)))
-      )(foldChild(Eval.later(Seq("annotation" -> annotation))))
+      composeOps(foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath))))(
+        foldChild(Eval.later(Seq("annotation" -> annotation)))
+      )
     )
 
   def fieldOp[A](op: Op[A]): FieldOp[A] = tag[FieldTag][Op[A]](op)
@@ -1343,9 +1340,9 @@ object fold {
                annotation: => AnnotationOp[A] =
                  tag[AnnotationTag](nop0[A]("annotation"))): FieldOp[A] =
     fieldOp(
-      composeOps(
-        foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath)))
-      )(foldChild(Eval.later(Seq("annotation" -> annotation))))
+      composeOps(foldAttributes(Eval.later(Seq("id" -> id, "xpath" -> xpath))))(
+        foldChild(Eval.later(Seq("annotation" -> annotation)))
+      )
     )
 
   def nop[A]: Op[A] = _ => a => ok(a)

@@ -77,10 +77,7 @@ object Transform {
       _ <- setUnparsedTypes(xsd.types)
       t <- types()
     } yield
-      ModuleDecl(
-        ImportsDecl(c.imports).some,
-        NEL.fromList(t).map(TypesDecl(_))
-      )
+      ModuleDecl(ImportsDecl(c.imports).some, NEL.fromList(t).map(TypesDecl(_)))
 
   def unfoldM[M[_], A, B](
     seed: A
@@ -114,12 +111,7 @@ object Transform {
         .fromList(l)
         .fold(Errors.cantTransform[NEL[EnumMemberDecl]](t))(ok(_))
     } yield
-      EnumDecl(
-        Ident(enumName(name)),
-        Ident(enumConstName(name)),
-        true,
-        members
-      )
+      EnumDecl(Ident(enumName(name)), Ident(enumConstName(name)), true, members)
 
   def simpleTypeNewtype(name: String, base: x.QName): Result[TypeDecl] =
     for {
@@ -234,9 +226,7 @@ object Transform {
       }
     } yield f.copy(constraint = fc, array = array)
 
-  def bodyField(
-    body: x.Body[SrcF]
-  ): BodyFieldHandler[Result[List[FieldDecl]]] =
+  def bodyField(body: x.Body[SrcF]): BodyFieldHandler[Result[List[FieldDecl]]] =
     (name, `type`, minOccurs, maxOccurs, nullable) =>
       for {
         config <- getConfig
@@ -256,10 +246,8 @@ object Transform {
         result <- fields.traverse(transformField(minOccurs, maxOccurs, false))
       } yield result
 
-  def bodyChoice(
-    b: x.Body[SrcF],
-    typeName: String
-  ): BodyChoiceHandler[Result[List[FieldDecl]]] =
+  def bodyChoice(b: x.Body[SrcF],
+                 typeName: String): BodyChoiceHandler[Result[List[FieldDecl]]] =
     (choice, minOccurs, maxOccurs) =>
       for {
         fields <- choice.body.extract.flatTraverse(bodyToFields(typeName))
@@ -306,9 +294,7 @@ object Transform {
       } yield result
     }
 
-  def bodyToFields(
-    typeName: String
-  )(b: x.Body[SrcF]): Result[List[FieldDecl]] =
+  def bodyToFields(typeName: String)(b: x.Body[SrcF]): Result[List[FieldDecl]] =
     for {
       folds <- getFold
       result <- folds.body(

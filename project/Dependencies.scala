@@ -3,7 +3,7 @@ import Keys._
 
 object Dependencies {
   object Versions {
-    val scala212 = "2.12.3"
+    val scala212 = "2.12.4"
     val scalaXml = "1.0.6"
     val specs2 = "3.9.2"
     val cats = "1.0.0-MF"
