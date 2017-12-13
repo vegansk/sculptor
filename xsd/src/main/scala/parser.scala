@@ -113,9 +113,7 @@ object parser {
 
       def enumerationOp = enumeration.fromSetter[a.SimpleTypeRestriction] {
         e => r =>
-          r.copy(
-            enumeration = combineAlternative(r.enumeration, pure(List(e)))
-          )
+          r.copy(enumeration = combineAlternative(r.enumeration, pure(List(e))))
       }
     }
 
@@ -242,12 +240,10 @@ object parser {
         )
       }
 
-      def elementOp: f.ElementOp[a.Choice[F]] = element.fromSetter {
-        v => ast =>
-          ast.copy(
-            body =
-              combineAlternative(ast.body, pure(List(a.Body.element[F](v))))
-          )
+      def elementOp: f.ElementOp[a.Choice[F]] = element.fromSetter { v => ast =>
+        ast.copy(
+          body = combineAlternative(ast.body, pure(List(a.Body.element[F](v))))
+        )
       }
 
       def sequenceOp: f.SequenceOp[a.Choice[F]] = sequence.fromSetter {
@@ -301,8 +297,7 @@ object parser {
 
       def sequenceOp: f.SequenceOp[a.Sequence[F]] = fromSetter { v => ast =>
         ast.copy(
-          body =
-            combineAlternative(ast.body, pure(List(a.Body.sequence[F](v))))
+          body = combineAlternative(ast.body, pure(List(a.Body.sequence[F](v))))
         )
       }
 
@@ -366,9 +361,8 @@ object parser {
           } yield setter(el)(ast)
         }
 
-      def annotationOp = annotation.fromSetter[a.ComplexContent] {
-        ann => ast =>
-          ast.copy(annotation = pure(Some(ann)))
+      def annotationOp = annotation.fromSetter[a.ComplexContent] { ann => ast =>
+        ast.copy(annotation = pure(Some(ann)))
       }
 
       def extensionOp = complexContentExtension.fromSetter[a.ComplexContent] {
@@ -436,9 +430,7 @@ object parser {
       }
 
       def attributeOp = attribute.fromSetter[a.ComplexType] { v => ast =>
-        ast.copy(
-          attributes = combineAlternative(ast.attributes, pure(List(v)))
-        )
+        ast.copy(attributes = combineAlternative(ast.attributes, pure(List(v))))
       }
     }
 
@@ -502,17 +494,14 @@ object parser {
 
       def complexTypeOp = complexType.fromSetter[a.Schema] { ct => ast =>
         ast.copy(
-          types = combineAlternative(
-            ast.types,
-            pure(List(a.Type.complexType[F](ct)))
-          )
+          types =
+            combineAlternative(ast.types, pure(List(a.Type.complexType[F](ct))))
         )
       }
 
       def elementOp = element.fromSetter[a.Schema] { el => s =>
         s.copy(
-          types =
-            combineAlternative(s.types, pure(List(a.Type.element[F](el))))
+          types = combineAlternative(s.types, pure(List(a.Type.element[F](el))))
         )
       }
 
