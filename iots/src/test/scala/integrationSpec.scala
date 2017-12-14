@@ -25,6 +25,11 @@ object integrationSpec extends mutable.Specification {
         x.QName.fromString("xsd:date"),
         QName.of(Ident("Date")),
         QName.of(Ident("T"), Ident("date"))
+      ),
+      ExternatType(
+        x.QName("official_info_t", None),
+        QName.of(Ident("fake")),
+        QName.of(Ident("fake"))
       )
     )
   )
@@ -58,5 +63,4 @@ object integrationSpec extends mutable.Specification {
       true must_=== true
     }
   }
-
 }

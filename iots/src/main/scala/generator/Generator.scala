@@ -61,9 +61,9 @@ class Generator(config: Config) {
       spread(
         List(
           text("interface"),
-          ident(ct.name),
+          ident(ct.`type`.name),
           text("extends"),
-          typeOfExpr(ct.constName),
+          typeOfExpr(ct.`type`.constName),
           text("{}")
         )
       )
@@ -104,9 +104,9 @@ class Generator(config: Config) {
 
   def complexTypeConstDecl(ct: ComplexTypeDecl): Doc = {
     val prefix = exportPrefix(ct.exported) +
-      spread(List(const, ident(ct.constName), eqSign, intersection)) +
+      spread(List(const, ident(ct.`type`.constName), eqSign, intersection)) +
       text("([")
-    val suffix = text("],") + space + char('"') + text(ct.name.value) + text(
+    val suffix = text("],") + space + char('"') + text(ct.`type`.name.value) + text(
       "\")"
     )
 
@@ -141,7 +141,7 @@ class Generator(config: Config) {
 
   def enumTypeDecl(e: EnumDecl): Doc = {
     val prefix = exportPrefix(e.exported) +
-      spread(List(text("enum"), ident(e.name), text("{")))
+      spread(List(text("enum"), ident(e.`type`.name), text("{")))
     val suffix = char('}')
 
     intercalate(comma + line, e.members.map(enumMemberDecl _).toList)
@@ -153,11 +153,11 @@ class Generator(config: Config) {
       spread(
         List(
           const,
-          ident(e.constName),
+          ident(e.`type`.constName),
           eqSign,
-          text("mkStringEnum") + char('<') + ident(e.name) +
-            text(">(") + ident(e.name) + comma +
-            space + strLit(e.name.value) + char(')')
+          text("mkStringEnum") + char('<') + ident(e.`type`.name) +
+            text(">(") + ident(e.`type`.name) + comma +
+            space + strLit(e.`type`.name.value) + char(')')
         )
       )
 
@@ -166,11 +166,13 @@ class Generator(config: Config) {
 
   def newtypeConstDecl(t: NewtypeDecl): Doc =
     exportPrefix(t.exported) +
-      spread(List(const, ident(t.constName), eqSign, typeConst(t.baseType)))
+      spread(
+        List(const, ident(t.`type`.constName), eqSign, typeConst(t.baseType))
+      )
 
   def newtypeTypeDecl(t: NewtypeDecl): Doc =
     exportPrefix(t.exported) +
-      spread(List(`type`, ident(t.name), eqSign, typeName(t.baseType)))
+      spread(List(`type`, ident(t.`type`.name), eqSign, typeName(t.baseType)))
 
   def newtypeDecl(t: NewtypeDecl): Doc =
     stack(List(newtypeConstDecl(t), newtypeTypeDecl(t)))

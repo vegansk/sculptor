@@ -22,8 +22,6 @@ lazy val root = project.in(file("."))
         IotsImport("T", "../src/types"),
       ),
       types = List(
-        IotsType("xsd:date", "Date", "T.date"),
-        IotsType("xsd:dateTime", "Date", "T.date"),
         IotsType("xs:date", "Date", "T.date"),
         IotsType("xs:dateTime", "Date", "T.date")
       ),
@@ -34,7 +32,6 @@ lazy val root = project.in(file("."))
     iotsTargetDirectory := file("src_generated"),
 
     iotsXsdFiles := Seq(
-      file("xsd") / "fes-1.0.xsd",
       file("xsd") / "polaris-1.0.xsd"
     ),
 

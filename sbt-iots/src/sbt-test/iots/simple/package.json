@@ -4,7 +4,7 @@
   "description": "io-ts generator test for sculptor project",
   "main": "build/index.js",
   "scripts": {
-    "start": "node build/index.js",
+    "start": "node build/src/index.js",
     "build": "node node_modules/typescript/lib/tsc.js",
     "clean": "rm -rf build"
   },

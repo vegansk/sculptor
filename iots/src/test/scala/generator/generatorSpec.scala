@@ -45,8 +45,7 @@ object generatorSpec extends mutable.Specification
     }
 
     val ct = ComplexTypeDecl(
-      Ident("Test"),
-      Ident("TestType"),
+      TypeRef.definedFrom("Test", "TestType"),
       None,
       true,
       NEL.of(
@@ -78,8 +77,7 @@ object generatorSpec extends mutable.Specification
     }
 
     val e = EnumDecl(
-      Ident("TestEnum"),
-      Ident("TestEnumType"),
+      TypeRef.definedFrom("TestEnum", "TestEnumType"),
       true,
       NEL.of(
         EnumMemberDecl(Ident("V_01"), "01"),

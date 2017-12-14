@@ -21,8 +21,7 @@ object testAst {
 
     lazy val dst =
       EnumDecl(
-      Ident("TestEt"),
-      Ident("TestEtType"),
+      TypeRef.definedFrom("TestEt", "TestEtType"),
       true,
       NEL.of(
         EnumMemberDecl(Ident("V_01"), "01"),
@@ -42,8 +41,7 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("IdT"),
-        Ident("IdTType"),
+        TypeRef.definedFrom("IdT", "IdTType"),
         None,
         true,
          NEL.of(
@@ -80,8 +78,7 @@ object testAst {
 
     lazy val outerType =
       ComplexTypeDecl(
-        Ident("TypeT"),
-        Ident("TypeTType"),
+        TypeRef.definedFrom("TypeT", "TypeTType"),
         None,
         true,
         NEL.of(
@@ -123,8 +120,7 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("TestElem"),
-        Ident("TestElemType"),
+        TypeRef.definedFrom("TestElem", "TestElemType"),
         None,
         true,
         NEL.of(
@@ -150,8 +146,7 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("Test"),
-        Ident("TestType"),
+        TypeRef.definedFrom("Test", "TestType"),
         None,
         true,
         NEL.of(
@@ -181,9 +176,8 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("ChildT"),
-        Ident("ChildTType"),
-        TypeRef.defined(Ident("BaseT"), Ident("BaseTType")).some,
+        TypeRef.definedFrom("ChildT", "ChildTType"),
+        TypeRef.definedFrom("BaseT", "BaseTType").some,
         true,
         NEL.of(
           FieldDecl(
@@ -202,8 +196,7 @@ object testAst {
 
     lazy val dst =
       NewtypeDecl(
-        Ident("DecimalT"),
-        Ident("DecimalTType"),
+        TypeRef.definedFrom("DecimalT", "DecimalTType"),
         TypeRef.std(Ident("number")),
         true
       )
@@ -228,8 +221,7 @@ object testAst {
 
     val anonType =
       ComplexTypeDecl(
-        Ident("TestValue"),
-        Ident("TestValueType"),
+        TypeRef.definedFrom("TestValue", "TestValueType"),
         None,
         true,
         NEL.of(
@@ -241,8 +233,7 @@ object testAst {
 
     val elType =
       ComplexTypeDecl(
-        Ident("Test"),
-        Ident("TestType"),
+        TypeRef.definedFrom("Test", "TestType"),
         None,
         true,
         NEL.of(
@@ -267,8 +258,7 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("Test"),
-        Ident("TestType"),
+        TypeRef.definedFrom("Test", "TestType"),
         None,
         true,
         NEL.of(
@@ -298,8 +288,7 @@ object testAst {
 
     lazy val dst =
       ComplexTypeDecl(
-        Ident("Test"),
-        Ident("TestType"),
+        TypeRef.definedFrom("Test", "TestType"),
         None,
         true,
         NEL.of(
@@ -324,5 +313,27 @@ object testAst {
             TypeRef.std(Ident("string")),
             FieldConstraint.Optional, true))
       )
+  }
+
+  object cyclicDependencies {
+    lazy val src = parseXsdTypes(
+      Seq(
+        <xs:complexType name="t1">
+          <xs:sequence>
+            <xs:element name="t2" type="t2"/>
+          </xs:sequence>
+        </xs:complexType>,
+        <xs:complexType name="t2">
+          <xs:sequence>
+            <xs:element name="t3" type="t3"/>
+          </xs:sequence>
+        </xs:complexType>,
+        <xs:complexType name="t3">
+          <xs:sequence>
+            <xs:element name="t1" type="t1"/>
+          </xs:sequence>
+        </xs:complexType>
+      )
+    )
   }
 }

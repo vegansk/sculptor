@@ -23,7 +23,13 @@ object transformSpec extends mutable.Specification
         ImportDecl(Ident("T"), "core/types")
       ),
       "xs".some,
-      Nil
+      List(
+        ExternatType(
+          x.QName("t1", None),
+          QName.of(Ident("fake")),
+          QName.of(Ident("fake"))
+        )
+      )
     )
 
     def schema(t: x.Type[Id]*): x.Schema[Id] = x.Schema[Id](
@@ -100,6 +106,12 @@ object transformSpec extends mutable.Specification
     "transform complex type fields constraints" >> {
       val m = transformSchema(complexTypeFieldsConstraints.src)
       m.types.get.value.head must_=== complexTypeFieldsConstraints.dst
+    }
+
+    "detect cyclic dependencies" >> {
+      val _ = transformSchema(cyclicDependencies.src:_*)
+      // m.types.get.value.head must_=== complexTypeFieldsConstraints.dst
+      true must_=== true
     }
 
   }

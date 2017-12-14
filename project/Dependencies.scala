@@ -6,6 +6,7 @@ object Dependencies {
     val sbt = "1.0.4"
     val scala212 = "2.12.4"
     val scalaXml = "1.0.6"
+    val scalaGraph = "1.12.1"
     val specs2 = "3.9.2"
     val cats = "1.0.0-RC1"
     val catsEffect = "0.5"
@@ -17,6 +18,8 @@ object Dependencies {
   }
 
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % Versions.scalaXml
+  val scalaGraphCore = "org.scala-graph" %% "graph-core" % Versions.scalaGraph
+  val scalaGraphDot = "org.scala-graph" %% "graph-dot" % Versions.scalaGraph
   val specs2 = "org.specs2" %% "specs2-core" % Versions.specs2
   val specs2ScalaCheck = "org.specs2" %% "specs2-scalacheck" % Versions.specs2
   val cats = "org.typelevel" %% "cats-core" % Versions.cats
@@ -39,6 +42,7 @@ object Dependencies {
 
   val iots = Seq(
     scalaXml,
+    scalaGraphCore,
     cats,
     catsEffect,
     shapeless,
