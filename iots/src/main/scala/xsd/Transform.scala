@@ -5,6 +5,7 @@ package xsd
 import cats._
 import cats.implicits._
 import cats.data.{NonEmptyList => NEL, _}
+import scalax.collection.{State => _, _}, GraphEdge._
 
 import sculptor.xsd.{ast => x}
 import ast._
@@ -13,9 +14,12 @@ object Transform {
 
   import Fold._
 
+  type Dependencies = List[DiEdge[TypeRef.defined]]
+
   final case class TransformState(config: Config,
                                   fold: Fold,
-                                  unparsedTypes: List[x.Type[SrcF]] = Nil)
+                                  unparsedTypes: List[x.Type[SrcF]],
+                                  dependencies: Dependencies)
 
   type Result[A] = EitherT[State[TransformState, ?], String, A]
 
@@ -39,6 +43,16 @@ object Transform {
       lst <- getTransformState.map(_.unparsedTypes)
       _ <- setUnparsedTypes(lst.drop(1))
     } yield lst.headOption
+  def addDependency(`type`: TypeRef.defined,
+                    toType: TypeRef.defined): Result[Unit] = {
+    EitherT.liftF(
+      State.modify[TransformState](
+        s => s.copy(dependencies = DiEdge(`type`, toType) :: s.dependencies)
+      )
+    )
+  }
+  def getDependencies: Result[Dependencies] =
+    getTransformState.map(_.dependencies)
 
   def toCamelCase(v: String, firstUpperCase: Boolean): String = {
     def camel(firstUpper: Boolean, v: String): String =
@@ -71,11 +85,32 @@ object Transform {
 
   def fieldName(v: String): String = toCamelCase(v, false)
 
+  def sortTypes(types: Map[TypeRef.defined, TypeDecl]): Result[List[TypeDecl]] =
+    types.size match {
+      case v if v < 2 => ok(types.values.toList)
+      case _ =>
+        for {
+          deps <- getDependencies
+          graph = Graph(deps: _*)
+          sorted <- graph.topologicalSort
+            .map(_.toList.map(_.value))
+            .fold[Result[List[TypeDecl]]](
+              _ => error(s"Found cyclic dependency: ${graph.findCycle}"),
+              _.traverse { ref =>
+                types
+                  .get(ref)
+                  .fold[Result[TypeDecl]](error(s"Can't sort type $ref"))(ok(_))
+              }
+            )
+        } yield sorted.reverse
+    }
+
   def schema(xsd: x.Schema[SrcF]): Result[ModuleDecl] =
     for {
       c <- getConfig
       _ <- setUnparsedTypes(xsd.types)
-      t <- types()
+      t0 <- types()
+      t <- sortTypes(t0)
     } yield
       ModuleDecl(ImportsDecl(c.imports).some, NEL.fromList(t).map(TypesDecl(_)))
 
@@ -91,10 +126,22 @@ object Transform {
       }
     }
 
-  def types(): Result[List[TypeDecl]] =
+  def types(): Result[Map[TypeRef.defined, TypeDecl]] =
     unfoldM(()) { _ =>
-      popUnparsedType.map(_.traverse(`type`)).flatten.map(_.map(((), _)))
-    }
+      popUnparsedType
+        .map(_.traverse(`type`))
+        .flatten
+        .map(_.map(((), _)))
+    }.map { l =>
+        l.map { t =>
+          t match {
+            case ComplexTypeDecl(n, _, _, _) => (n, t)
+            case NewtypeDecl(n, _, _) => (n, t)
+            case EnumDecl(n, _, _) => (n, t)
+          }
+        }
+      }
+      .map(_.toMap)
 
   lazy val `type`: x.Type[SrcF] => Result[TypeDecl] =
     x.Type.fold(simpleType, complexType, element)
@@ -111,18 +158,19 @@ object Transform {
         .fromList(l)
         .fold(Errors.cantTransform[NEL[EnumMemberDecl]](t))(ok(_))
     } yield
-      EnumDecl(Ident(enumName(name)), Ident(enumConstName(name)), true, members)
-
-  def simpleTypeNewtype(name: String, base: x.QName): Result[TypeDecl] =
-    for {
-      baseRef <- typeRef(base)
-    } yield
-      NewtypeDecl(
-        Ident(newtypeTypeName(name)),
-        Ident(newtypeTypeConstName(name)),
-        baseRef,
-        true
+      EnumDecl(
+        TypeRef.definedFrom(enumName(name), enumConstName(name)),
+        true,
+        members
       )
+
+  def simpleTypeNewtype(name: String, base: x.QName): Result[TypeDecl] = {
+    val `type` =
+      TypeRef.definedFrom(newtypeTypeName(name), newtypeTypeConstName(name))
+    for {
+      baseRef <- typeRef(`type`)(base)
+    } yield NewtypeDecl(`type`, baseRef, true)
+  }
 
   def simpleType(t: x.SimpleType[SrcF]): Result[TypeDecl] =
     for {
@@ -156,7 +204,7 @@ object Transform {
       } else Errors.unknownType[String](`type`)
     } yield TypeRef.std(Ident(name))
 
-  def typeRef(`type`: x.QName): Result[TypeRef] =
+  def typeRef(forType: TypeRef.defined)(`type`: x.QName): Result[TypeRef] =
     for {
       config <- getConfig
       result <- config.externalTypes
@@ -164,13 +212,13 @@ object Transform {
         .fold[Result[TypeRef]](`type` match {
           case x.QName(_, ns) if ns === config.xsdNs =>
             stdTypeRef(`type`)
-          case x.QName(t, None) =>
-            ok(
-              TypeRef.defined(
-                Ident(complexTypeName(t)),
-                Ident(complexTypeConstName(t))
-              )
-            )
+          case x.QName(t, None) => {
+            val `type` =
+              TypeRef.definedFrom(complexTypeName(t), complexTypeConstName(t))
+            for {
+              _ <- addDependency(forType, `type`)
+            } yield `type`
+          }
           case _ => Errors.unknownType[TypeRef](`type`)
         })(t => ok(TypeRef.external(t.name, t.constName)))
     } yield result
@@ -226,11 +274,15 @@ object Transform {
       }
     } yield f.copy(constraint = fc, array = array)
 
-  def bodyField(body: x.Body[SrcF]): BodyFieldHandler[Result[List[FieldDecl]]] =
+  def bodyField(
+    `type0`: TypeRef.defined
+  )(body: x.Body[SrcF]): BodyFieldHandler[Result[List[FieldDecl]]] =
     (name, `type`, minOccurs, maxOccurs, nullable) =>
       for {
         config <- getConfig
-        t <- typeRef(`type`.getOrElse(x.QName("anyType", config.xsdNs)))
+        t <- typeRef(`type0`)(
+          `type`.getOrElse(x.QName("anyType", config.xsdNs))
+        )
         result <- transformField(minOccurs, maxOccurs, nullable)(
           FieldDecl(Ident(fieldName(name)), t, FieldConstraint.Required, false)
         )
@@ -238,33 +290,35 @@ object Transform {
 
   def bodySequence(
     b: x.Body[SrcF],
-    typeName: String
+    `type`: TypeRef.defined
   ): BodySequenceHandler[Result[List[FieldDecl]]] =
     (seq, minOccurs, maxOccurs) =>
       for {
-        fields <- seq.body.extract.flatTraverse(bodyToFields(typeName))
+        fields <- seq.body.extract.flatTraverse(bodyToFields(`type`))
         result <- fields.traverse(transformField(minOccurs, maxOccurs, false))
       } yield result
 
-  def bodyChoice(b: x.Body[SrcF],
-                 typeName: String): BodyChoiceHandler[Result[List[FieldDecl]]] =
+  def bodyChoice(
+    b: x.Body[SrcF],
+    `type`: TypeRef.defined
+  ): BodyChoiceHandler[Result[List[FieldDecl]]] =
     (choice, minOccurs, maxOccurs) =>
       for {
-        fields <- choice.body.extract.flatTraverse(bodyToFields(typeName))
+        fields <- choice.body.extract.flatTraverse(bodyToFields(`type`))
         result <- fields.traverse(transformField(minOccurs, maxOccurs, false))
       } yield result.map(_.copy(constraint = FieldConstraint.Optional))
 
   def bodyAnonComplexType(
     b: x.Body[SrcF],
-    typeName: String
+    `type`: TypeRef.defined
   ): BodyAnonComplexTypeHandler[Result[List[FieldDecl]]] =
     (name, ct, minOccurs, maxOccurs, nullable) => {
-      val anonTypeName = typeName + "_" + name
+      val anonTypeName = `type`.name.value + "_" + name
       for {
         _ <- pushUnparsedType(
           x.Type.complexType(ct.copy[SrcF](name = anonTypeName.some))
         )
-        result <- bodyField(b)(
+        result <- bodyField(`type`)(b)(
           name,
           x.QName.fromString(anonTypeName).some,
           minOccurs,
@@ -276,15 +330,15 @@ object Transform {
 
   def bodyAnonSimpleType(
     b: x.Body[SrcF],
-    typeName: String
+    `type`: TypeRef.defined
   ): BodyAnonSimpleTypeHandler[Result[List[FieldDecl]]] =
     (name, st, minOccurs, maxOccurs, nullable) => {
-      val anonTypeName = typeName + "_" + name
+      val anonTypeName = `type`.name.value + "_" + name
       for {
         _ <- pushUnparsedType(
           x.Type.simpleType(st.copy[SrcF](name = anonTypeName.some))
         )
-        result <- bodyField(b)(
+        result <- bodyField(`type`)(b)(
           name,
           x.QName.fromString(anonTypeName).some,
           minOccurs,
@@ -294,26 +348,28 @@ object Transform {
       } yield result
     }
 
-  def bodyToFields(typeName: String)(b: x.Body[SrcF]): Result[List[FieldDecl]] =
+  def bodyToFields(
+    `type`: TypeRef.defined
+  )(b: x.Body[SrcF]): Result[List[FieldDecl]] =
     for {
       folds <- getFold
       result <- folds.body(
-        bodyField(b),
-        bodySequence(b, typeName),
-        bodyChoice(b, typeName),
-        bodyAnonComplexType(b, typeName),
-        bodyAnonSimpleType(b, typeName),
+        bodyField(`type`)(b),
+        bodySequence(b, `type`),
+        bodyChoice(b, `type`),
+        bodyAnonComplexType(b, `type`),
+        bodyAnonSimpleType(b, `type`),
         Errors.cantTransform
       )(b)
     } yield result
 
   def attrToField(
-    t: x.ComplexType[SrcF]
-  )(attr: x.Attribute[SrcF]): Result[FieldDecl] =
+    `type`: TypeRef.defined
+  )(t: x.ComplexType[SrcF])(attr: x.Attribute[SrcF]): Result[FieldDecl] =
     attr match {
       case x.Attribute(_, Some(name), _, _, Some(typ), use) =>
         for {
-          t <- typeRef(x.QName.fromString(typ))
+          t <- typeRef(`type`)(x.QName.fromString(typ))
         } yield
           FieldDecl(
             Ident(fieldName(name)),
@@ -329,10 +385,10 @@ object Transform {
       case _ => Errors.cantTransform(t)
     }
 
-  def attrsToFields(
+  def attrsToFields(`type`: TypeRef.defined)(
     t: x.ComplexType[SrcF]
   )(attrs: List[x.Attribute[SrcF]]): Result[List[FieldDecl]] =
-    attrs.traverse(attrToField(t))
+    attrs.traverse(attrToField(`type`)(t))
 
   def bodyListToType(
     t: x.ComplexType[SrcF],
@@ -340,38 +396,31 @@ object Transform {
     allOptional: Boolean
   )(name: String,
     b: List[x.Body[SrcF]],
-    attrs: List[x.Attribute[SrcF]]): Result[TypeDecl] =
+    attrs: List[x.Attribute[SrcF]]): Result[TypeDecl] = {
+    val `type` =
+      TypeRef.definedFrom(complexTypeName(name), complexTypeConstName(name))
     for {
-      l0 <- b.flatTraverse(bodyToFields(name))
+      l0 <- b.flatTraverse(bodyToFields(`type`))
       l <- ok(
         if (allOptional) l0.map(_.copy(constraint = FieldConstraint.Optional))
         else l0
       )
-      al <- attrsToFields(t)(attrs)
+      al <- attrsToFields(`type`)(t)(attrs)
       fields <- NEL
         .fromList(l ++ al)
         .fold(Errors.cantTransform[NEL[FieldDecl]](t))(ok(_))
-      baseRef <- baseNameO.traverse(typeRef)
-    } yield
-      ComplexTypeDecl(
-        Ident(complexTypeName(name)),
-        Ident(complexTypeConstName(name)),
-        baseRef,
-        true,
-        fields
-      )
+      baseRef <- baseNameO.traverse(typeRef(`type`))
+    } yield ComplexTypeDecl(`type`, baseRef, true, fields)
+  }
 
-  def complexTypeAny(name: String, any: x.Any[SrcF]): Result[TypeDecl] =
+  def complexTypeAny(name: String, any: x.Any[SrcF]): Result[TypeDecl] = {
+    val type0 =
+      TypeRef.definedFrom(newtypeTypeName(name), newtypeTypeConstName(name))
     for {
       config <- getConfig
-      `type` <- typeRef(x.QName("anyType", config.xsdNs))
-    } yield
-      NewtypeDecl(
-        Ident(newtypeTypeName(name)),
-        Ident(newtypeTypeConstName(name)),
-        `type`,
-        true
-      )
+      `type` <- typeRef(type0)(x.QName("anyType", config.xsdNs))
+    } yield NewtypeDecl(type0, `type`, true)
+  }
 
   def complexType(t: x.ComplexType[SrcF]): Result[TypeDecl] =
     getFold flatMap { fold =>

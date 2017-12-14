@@ -25,6 +25,9 @@ object ast {
     final case class std(name: Ident) extends TypeRef
     final case class defined(name: Ident, constName: Ident) extends TypeRef
     final case class external(name: QName, constName: QName) extends TypeRef
+
+    def definedFrom(name: String, constName: String): defined =
+      defined(Ident(name), Ident(constName))
   }
 
   sealed trait FieldConstraint
@@ -45,8 +48,7 @@ object ast {
 
   sealed trait TypeDecl
 
-  final case class ComplexTypeDecl(name: Ident,
-                                   constName: Ident,
+  final case class ComplexTypeDecl(`type`: TypeRef.defined,
                                    baseType: Option[TypeRef],
                                    exported: Boolean,
                                    fields: NEL[FieldDecl])
@@ -54,14 +56,12 @@ object ast {
 
   final case class EnumMemberDecl(name: Ident, value: String)
 
-  final case class EnumDecl(name: Ident,
-                            constName: Ident,
+  final case class EnumDecl(`type`: TypeRef.defined,
                             exported: Boolean,
                             members: NEL[EnumMemberDecl])
       extends TypeDecl
 
-  final case class NewtypeDecl(name: Ident,
-                               constName: Ident,
+  final case class NewtypeDecl(`type`: TypeRef.defined,
                                baseType: TypeRef,
                                exported: Boolean)
       extends TypeDecl
