@@ -16,7 +16,7 @@ private[xsd] object helpers {
   def right[A](v: A): ResultS[A] = EitherT.rightT(v)
   def left[A](v: => Throwable): ResultS[A] = EitherT.leftT(v)
   def leftStr[A](s: => String): ResultS[A] = EitherT.leftT(new Exception(s))
-  def liftS[A](s: ParserStateS[A]): ResultS[A] = EitherT.liftT(s)
+  def liftS[A](s: ParserStateS[A]): ResultS[A] = EitherT.liftF(s)
   def liftE[A](e: Result[A]): ResultS[A] = EitherT(State.pure(e))
 
   def getNs: ResultS[Option[String]] = liftS(State.get[ParserState].map(_.ns))

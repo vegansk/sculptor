@@ -16,7 +16,7 @@ package object xsd {
 
   def ok[A](v: A): Result[A] = EitherT.rightT(v)
   def error[A](err: String): Result[A] = EitherT.leftT(err)
-  def getConfig: Result[Config] = EitherT.liftT(Kleisli.ask[Id, Config])
+  def getConfig: Result[Config] = EitherT.liftF(Kleisli.ask[Id, Config])
 
   def transform(xsd: x.Schema[Id]): Result[ModuleDecl] = {
     def transfState[A](s: State[TransformState, A]): State[Config, A] =

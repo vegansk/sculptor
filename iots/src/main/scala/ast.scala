@@ -2,6 +2,7 @@ package sculptor
 package iots
 
 import cats._
+import cats.implicits._
 import cats.data.{NonEmptyList => NEL}
 
 object ast {
@@ -12,6 +13,11 @@ object ast {
   object QName {
     def of(x: Ident, xs: Ident*): QName =
       QName(new NEL(x, xs.toList))
+    def fromString(s: String): QName =
+      NEL
+        .fromList(s.split("\\.").toList.map(Ident(_)))
+        .map(QName(_))
+        .getOrElse(QName.of(Ident(s)))
   }
 
   sealed trait TypeRef

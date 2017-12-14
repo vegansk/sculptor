@@ -41,7 +41,7 @@ object fold {
 
   def error[A](err: String): Result[A] = EitherT.leftT(err)
 
-  def liftS[A](s: FS[A]): Result[A] = EitherT.liftT(s)
+  def liftS[A](s: FS[A]): Result[A] = EitherT.liftF(s)
 
   def getSchemaNs: Result[Option[String]] =
     liftS(State.get[FoldState].map(_.schemaNs))

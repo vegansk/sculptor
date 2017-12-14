@@ -3,12 +3,13 @@ import Keys._
 
 object Dependencies {
   object Versions {
+    val sbt = "1.0.4"
     val scala212 = "2.12.4"
     val scalaXml = "1.0.6"
     val specs2 = "3.9.2"
-    val cats = "1.0.0-MF"
+    val cats = "1.0.0-RC1"
+    val catsEffect = "0.5"
     val shapeless = "2.3.2"
-    val monocle = "1.5.0-cats-M1"
     val pprint = "0.5.3"
     val kindProjector = "0.9.4"
     val paiges = "0.2.0"
@@ -19,9 +20,8 @@ object Dependencies {
   val specs2 = "org.specs2" %% "specs2-core" % Versions.specs2
   val specs2ScalaCheck = "org.specs2" %% "specs2-scalacheck" % Versions.specs2
   val cats = "org.typelevel" %% "cats-core" % Versions.cats
+  val catsEffect = "org.typelevel" %% "cats-effect" % Versions.catsEffect
   val shapeless = "com.chuusai" %% "shapeless" % Versions.shapeless
-  val monocleCore = "com.github.julien-truffaut" %% "monocle-core" % Versions.monocle
-  val monocleMacro = "com.github.julien-truffaut" %% "monocle-macro" % Versions.monocle
   val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint
   val kindProjector = "org.spire-math" %% "kind-projector" % Versions.kindProjector
   val paigesCore = "org.typelevel" %% "paiges-core" % Versions.paiges
@@ -31,9 +31,7 @@ object Dependencies {
   val xsd = Seq(
     scalaXml,
     cats,
-    shapeless,
-    monocleCore,
-    monocleMacro
+    shapeless
   ) ++ Seq(
     specs2,
     pprint
@@ -42,6 +40,7 @@ object Dependencies {
   val iots = Seq(
     scalaXml,
     cats,
+    catsEffect,
     shapeless,
     paigesCore,
     paigesCats

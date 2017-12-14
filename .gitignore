@@ -3,3 +3,7 @@ target
 *.class
 *.log
 .ensime*
+.frontend
+node_modules/
+build/
+src_generated/

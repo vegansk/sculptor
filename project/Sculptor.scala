@@ -73,15 +73,28 @@ object Sculptor {
       addCompilerPlugin(Dependencies.kindProjector)
     )
 
+    val plugin: PC = _.settings(
+      sbtPlugin := true,
+      sbtVersion := Dependencies.Versions.sbt
+    )
+
     val xsd: PC = _.configure(common)
       .settings(
+        name := "sculptor-xsd",
         libraryDependencies ++= Dependencies.xsd
       )
 
     val iots: PC = _.configure(common)
       .settings(
+        name := "sculptor-iots",
         libraryDependencies ++= Dependencies.iots
       )
+
+    val sbtIots: PC = _.configure(common, plugin)
+      .settings(
+        name := "sbt-sculptor-iots",
+      )
+
   }
 
   lazy val xsd = project
@@ -92,5 +105,10 @@ object Sculptor {
     .in(file("iots"))
     .dependsOn(xsd)
     .configure(Config.iots)
+
+  lazy val sbtIots = project
+    .in(file("sbt-iots"))
+    .configure(Config.sbtIots)
+    .dependsOn(iots)
 
 }

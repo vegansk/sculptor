@@ -7,10 +7,10 @@ import cats._
 
 object utils {
 
-  import sculptor.xsd.{ast => x, schemaAst}
+  import sculptor.xsd.{ast => x, parseSchema}
 
   def parseXsd(xsd: Node): x.Schema[Id] =
-    schemaAst(xsd).getOrElse(sys.error("Can't parse schema"))
+    parseSchema(xsd).map(_.ast).getOrElse(sys.error("Can't parse schema"))
 
   def xsd(child: NodeSeq): Node =
     <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">

@@ -2,7 +2,6 @@ image: vegansk/ubuntu-java-nodejs
 
 variables:
   COURSIER_CACHE: cache/.coursier-cache
-  SBT_OPTS: -Dsbt.override.build.repos=true
 
 cache:
   paths:
