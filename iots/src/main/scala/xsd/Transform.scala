@@ -22,14 +22,14 @@ object Transform {
   def ok[A](v: A): Result[A] = EitherT.rightT(v)
   def error[A](err: String): Result[A] = EitherT.leftT(err)
   def getTransformState: Result[TransformState] =
-    EitherT.liftT(State.get[TransformState])
+    EitherT.liftF(State.get[TransformState])
   def getFold: Result[Fold] =
     getTransformState.map(_.fold)
   def getConfig: Result[Config] = getTransformState.map(_.config)
   def setUnparsedTypes(t: List[x.Type[SrcF]]): Result[Unit] =
-    EitherT.liftT(State.modify[TransformState](s => s.copy(unparsedTypes = t)))
+    EitherT.liftF(State.modify[TransformState](s => s.copy(unparsedTypes = t)))
   def pushUnparsedType(t: x.Type[SrcF]): Result[Unit] =
-    EitherT.liftT(
+    EitherT.liftF(
       State.modify[TransformState](
         s => s.copy(unparsedTypes = t :: s.unparsedTypes)
       )

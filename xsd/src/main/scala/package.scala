@@ -6,17 +6,23 @@ import cats.implicits._
 
 import scala.xml._
 
+package xsd {
+  import ast.Schema
+
+  final case class ParseResult(schemaNs: Option[String], ast: Schema[Id])
+}
+
 package object xsd {
 
-  def schemaAst(n: Node): ValidatedNel[String, ast.Schema[Id]] = {
-    parser[Option]
+  def parseSchema(n: Node): ValidatedNel[String, ParseResult] = {
+    val (state, res) = parser[Option]
       .parse(n)
       .value
       .run(fold.FoldState())
       .value
-      ._2
-      .toValidatedNel
-      .andThen(ast.Schema.build(_))
+
+    res.toValidatedNel
+      .andThen(ast.Schema.build(_).map(ParseResult(state.schemaNs, _)))
   }
 
 }
