@@ -110,7 +110,7 @@ object transformSpec extends mutable.Specification
 
     "detect cyclic dependencies" >> {
       val _ = transformSchema(cyclicDependencies.src:_*)
-      // m.types.get.value.head must_=== complexTypeFieldsConstraints.dst
+      // This will never be reached on error
       true must_=== true
     }
 

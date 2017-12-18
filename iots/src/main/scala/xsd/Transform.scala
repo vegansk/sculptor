@@ -47,7 +47,8 @@ object Transform {
                     toType: TypeRef.defined): Result[Unit] = {
     EitherT.liftF(
       State.modify[TransformState](
-        s => s.copy(dependencies = DiEdge(`type`, toType) :: s.dependencies)
+        // The order is reversed because we need descending topological sort
+        s => s.copy(dependencies = DiEdge(toType, `type`) :: s.dependencies)
       )
     )
   }
@@ -102,7 +103,7 @@ object Transform {
                   .fold[Result[TypeDecl]](error(s"Can't sort type $ref"))(ok(_))
               }
             )
-        } yield sorted.reverse
+        } yield sorted
     }
 
   def schema(xsd: x.Schema[SrcF]): Result[ModuleDecl] =
@@ -131,17 +132,8 @@ object Transform {
       popUnparsedType
         .map(_.traverse(`type`))
         .flatten
-        .map(_.map(((), _)))
-    }.map { l =>
-        l.map { t =>
-          t match {
-            case ComplexTypeDecl(n, _, _, _) => (n, t)
-            case NewtypeDecl(n, _, _) => (n, t)
-            case EnumDecl(n, _, _) => (n, t)
-          }
-        }
-      }
-      .map(_.toMap)
+        .map(_.map(t => ((), (t.`type`, t))))
+    }.map(_.toMap)
 
   lazy val `type`: x.Type[SrcF] => Result[TypeDecl] =
     x.Type.fold(simpleType, complexType, element)

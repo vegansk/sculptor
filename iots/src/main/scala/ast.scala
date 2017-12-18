@@ -46,7 +46,9 @@ object ast {
                              constraint: FieldConstraint,
                              array: Boolean)
 
-  sealed trait TypeDecl
+  sealed trait TypeDecl {
+    def `type`: TypeRef.defined
+  }
 
   final case class ComplexTypeDecl(`type`: TypeRef.defined,
                                    baseType: Option[TypeRef],
