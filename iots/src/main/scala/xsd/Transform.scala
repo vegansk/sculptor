@@ -423,6 +423,7 @@ object Transform {
           (name, ch, attrs) =>
             bodyListToType(t, None, true)(name, ch.body, attrs),
           complexTypeAny,
+          simpleTypeNewtype,
           Errors.cantTransform
         )(t)
     }

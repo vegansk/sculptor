@@ -127,6 +127,7 @@ class Generator(config: Config) {
     intercalate(
       comma + line,
       List(
+        ct.baseType.map(typeConst _),
         fields(interface, requiredConstraints.contains),
         fields(partial, requiredConstraints.contains(_).unary_!)
       ).foldMap(_.toList)

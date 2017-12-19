@@ -42,6 +42,8 @@ object Fold {
      /*attrs: */ List[x.Attribute[SrcF]]) => A
   type ComplexTypeAnyHandler[A] =
     ( /*name: String*/ String, /*any: */ x.Any[SrcF]) => A
+  type ComplexTypeAliasHandler[A] =
+    ( /*name: */ String, /*base: */ x.QName) => A
   type ComplexTypeHandler[A] = x.ComplexType[SrcF] => A
 
   type ElementComplexTypeHandler[A] =
@@ -168,6 +170,7 @@ final class Fold(config: Config) {
     onSequence: ComplexTypeSequenceHandler[A],
     onChoice: ComplexTypeChoiceHandler[A],
     onAny: ComplexTypeAnyHandler[A],
+    onAlias: ComplexTypeAliasHandler[A],
     default: ComplexTypeHandler[A]
   )(t: x.ComplexType[SrcF]): A = t match {
     case x.ComplexType(
@@ -205,7 +208,7 @@ final class Fold(config: Config) {
         ) =>
       seqO match {
         case Some(seq) => onSequence(name, baseName.some, seq, attrs)
-        case _ => default(t)
+        case _ => onAlias(name, baseName)
       }
     case x.ComplexType(
         _,

@@ -114,6 +114,11 @@ object transformSpec extends mutable.Specification
       true must_=== true
     }
 
+    "transform complex type extension to alias" >> {
+      val m = transformSchema(complexTypeAlias.src)
+      m.types.get.value.head must_=== complexTypeAlias.dst
+    }
+
   }
 
 }
