@@ -336,4 +336,21 @@ object testAst {
       )
     )
   }
+
+  object complexTypeAlias {
+    lazy val src = parseXsdTypes(
+      <xs:complexType name="alias_t">
+        <xs:complexContent>
+          <xs:extension base="type_t"/>
+        </xs:complexContent>
+      </xs:complexType>
+    ).head
+
+    lazy val dst =
+      NewtypeDecl(
+        TypeRef.definedFrom("AliasT", "AliasTType"),
+        TypeRef.definedFrom("TypeT", "TypeTType"),
+        true
+      )
+  }
 }
