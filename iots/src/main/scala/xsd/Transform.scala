@@ -183,6 +183,7 @@ object Transform {
           case "string" => ok("string")
           case "base64Binary" => ok("string") // TODO: Custom type!
           case "anyURI" => ok("string") // TODO: Custom type!
+          case "boolean" => ok("boolean")
           case "int" => ok("number")
           case "long" => ok("number")
           case "integer" => ok("number")
