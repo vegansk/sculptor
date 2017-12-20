@@ -19,7 +19,7 @@ lazy val root = project.in(file("."))
     iotsConfig := IotsConfig(
       imports = List(
         IotsImport("iots", "io-ts"),
-        IotsImport("T", "../src/types"),
+        IotsImport("T", "core/types"),
       ),
       types = List(
         IotsType("xs:date", "Date", "T.date"),
@@ -32,7 +32,8 @@ lazy val root = project.in(file("."))
     iotsTargetDirectory := file("src_generated"),
 
     iotsXsdFiles := Seq(
-      file("xsd") / "polaris-1.0.xsd"
+      file("xsd") / "polaris-1.0.xsd",
+      file("xsd") / "fes-2.0.xsd"
     ),
 
     npmStart := npmStartImpl.dependsOn(iotsGenerate, npmBuild).value
