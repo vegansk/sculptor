@@ -20,6 +20,7 @@ object nativeGeneratorSpec extends mutable.Specification
       generator.Config(
         Ident("t"),
         "/* header */".some,
+        true,
         true
       )
     )
@@ -30,10 +31,11 @@ object nativeGeneratorSpec extends mutable.Specification
       TypeRef.definedFrom("Base", "BaseType").some,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false),
-        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false),
-        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false)
-      )
+        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false, None),
+        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None),
+        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false, None)
+      ),
+      None
     )
 
     "produce native interface declarations" >> {

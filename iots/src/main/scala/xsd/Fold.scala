@@ -11,13 +11,15 @@ object Fold {
   type SimpleTypeEnumHandler[A] =
     ( /*name: */ String, /*values: */ List[x.Enumeration[SrcF]]) => A
   type SimpleTypeNewtypeHandler[A] =
-    ( /*name: */ String, /*base: */ x.QName) => A
+    ( /*name: */ String, /*base: */ x.QName,
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
   type SimpleTypeHandler[A] = x.SimpleType[SrcF] => A
 
   type BodyFieldHandler[A] =
     ( /*name: */ String, /*`type`: */ Option[x.QName],
      /*minOccurs: */ Option[Int],
-     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean) => A
+     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean,
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
   type BodySequenceHandler[A] =
     ( /*seq: */ x.Sequence[SrcF], /*minOccurs: */ Option[Int],
      /*maxOccurs: */ Option[Int]) => A
@@ -27,11 +29,13 @@ object Fold {
   type BodyAnonComplexTypeHandler[A] =
     ( /*name: */ String, /*ct: */ x.ComplexType[SrcF],
      /*minOccurs: */ Option[Int],
-     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean) => A
+     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean,
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
   type BodyAnonSimpleTypeHandler[A] =
     ( /*name: */ String, /*st: */ x.SimpleType[SrcF],
      /*minOccurs: */ Option[Int],
-     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean) => A
+     /*maxOccurs: */ Option[Int], /*nullable: */ Boolean,
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
   type BodyHandler[A] = x.Body[SrcF] => A
 
   type ComplexTypeSequenceHandler[A] =
@@ -43,7 +47,8 @@ object Fold {
   type ComplexTypeAnyHandler[A] =
     ( /*name: String*/ String, /*any: */ x.Any[SrcF]) => A
   type ComplexTypeAliasHandler[A] =
-    ( /*name: */ String, /*base: */ x.QName) => A
+    ( /*name: */ String, /*base: */ x.QName,
+     /**/ Option[x.Annotation[SrcF]]) => A
   type ComplexTypeHandler[A] = x.ComplexType[SrcF] => A
 
   type ElementComplexTypeHandler[A] =
@@ -75,12 +80,12 @@ final class Fold(config: Config) {
           ) =>
         onEnum(name, values)
       case x.SimpleType(
-          _,
+          ann,
           Some(name),
           _,
           Some(x.SimpleTypeRestriction(base, _, _, _, Nil))
           ) =>
-        onNewtype(name, base)
+        onNewtype(name, base, ann)
       case _ => default(t)
     }
 
@@ -110,7 +115,7 @@ final class Fold(config: Config) {
       (el: x.Element[SrcF]) => {
         el match {
           case x.Element(
-              _,
+              ann,
               Some(name),
               None,
               None,
@@ -124,10 +129,11 @@ final class Fold(config: Config) {
               typ.map(x.QName.fromString _),
               minOccurs,
               maxOccurs,
-              nullable
+              nullable,
+              ann
             )
           case x.Element(
-              _,
+              ann,
               Some(name),
               Some(ct),
               None,
@@ -136,9 +142,9 @@ final class Fold(config: Config) {
               occurs(maxOccurs),
               isNullable(nullable)
               ) =>
-            onAnonComplexType(name, ct, minOccurs, maxOccurs, nullable)
+            onAnonComplexType(name, ct, minOccurs, maxOccurs, nullable, ann)
           case x.Element(
-              _,
+              ann,
               Some(name),
               None,
               Some(st),
@@ -147,7 +153,7 @@ final class Fold(config: Config) {
               occurs(maxOccurs),
               isNullable(nullable)
               ) =>
-            onAnonSimpleType(name, st, minOccurs, maxOccurs, nullable)
+            onAnonSimpleType(name, st, minOccurs, maxOccurs, nullable, ann)
           case _ => default(b)
         }
       },
@@ -208,7 +214,7 @@ final class Fold(config: Config) {
         ) =>
       seqO match {
         case Some(seq) => onSequence(name, baseName.some, seq, attrs)
-        case _ => onAlias(name, baseName)
+        case _ => onAlias(name, baseName, t.annotation)
       }
     case x.ComplexType(
         _,

@@ -20,6 +20,7 @@ object generatorSpec extends mutable.Specification
       generator.Config(
         Ident("t"),
         "/* header */".some,
+        false,
         false
       )
     )
@@ -40,7 +41,7 @@ object generatorSpec extends mutable.Specification
 
     "handle field declaration" >> {
 
-      val f = FieldDecl(Ident("theField"), TypeRef.std(Ident("string")), FieldConstraint.Required, false)
+      val f = FieldDecl(Ident("theField"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None)
       fieldDecl(f) must beEqvTo(Doc.text("theField: t.string"))
 
     }
@@ -50,10 +51,11 @@ object generatorSpec extends mutable.Specification
       None,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false),
-        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false),
-        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false)
-      )
+        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false, None),
+        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None),
+        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false, None)
+      ),
+      None
     )
 
     "handle complex type const declaration" >> {
@@ -81,9 +83,10 @@ object generatorSpec extends mutable.Specification
       TypeRef.definedFrom("TestEnum", "TestEnumType"),
       true,
       NEL.of(
-        EnumMemberDecl(Ident("V_01"), "01"),
-        EnumMemberDecl(Ident("V_02"), "02")
-      )
+        EnumMemberDecl(Ident("V_01"), "01", None),
+        EnumMemberDecl(Ident("V_02"), "02", None)
+      ),
+      None
     )
 
     "handle enum type declaration" >> {

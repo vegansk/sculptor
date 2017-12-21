@@ -138,13 +138,23 @@ object Transform {
   lazy val `type`: x.Type[SrcF] => Result[TypeDecl] =
     x.Type.fold(simpleType, complexType, element)
 
+  def annotationToComment(ann: Option[x.Annotation[SrcF]]): Option[Comment] =
+    ann.flatMap(_.documentation.headOption)
+
   def simpleTypeEnum(
     t: x.SimpleType[SrcF]
   )(name: String, values: List[x.Enumeration[SrcF]]): Result[TypeDecl] =
     for {
       l <- ok(
         values
-          .map(e => EnumMemberDecl(Ident(enumMemberName(e.value)), e.value))
+          .map(
+            e =>
+              EnumMemberDecl(
+                Ident(enumMemberName(e.value)),
+                e.value,
+                annotationToComment(e.annotation)
+            )
+          )
       )
       members <- NEL
         .fromList(l)
@@ -153,15 +163,18 @@ object Transform {
       EnumDecl(
         TypeRef.definedFrom(enumName(name), enumConstName(name)),
         true,
-        members
+        members,
+        annotationToComment(t.annotation)
       )
 
-  def simpleTypeNewtype(name: String, base: x.QName): Result[TypeDecl] = {
+  def simpleTypeNewtype(name: String,
+                        base: x.QName,
+                        ann: Option[x.Annotation[SrcF]]): Result[TypeDecl] = {
     val `type` =
       TypeRef.definedFrom(newtypeTypeName(name), newtypeTypeConstName(name))
     for {
       baseRef <- typeRef(`type`)(base)
-    } yield NewtypeDecl(`type`, baseRef, true)
+    } yield NewtypeDecl(`type`, baseRef, true, annotationToComment(ann))
   }
 
   def simpleType(t: x.SimpleType[SrcF]): Result[TypeDecl] =
@@ -270,14 +283,20 @@ object Transform {
   def bodyField(
     `type0`: TypeRef.defined
   )(body: x.Body[SrcF]): BodyFieldHandler[Result[List[FieldDecl]]] =
-    (name, `type`, minOccurs, maxOccurs, nullable) =>
+    (name, `type`, minOccurs, maxOccurs, nullable, ann) =>
       for {
         config <- getConfig
         t <- typeRef(`type0`)(
           `type`.getOrElse(x.QName("anyType", config.xsdNs))
         )
         result <- transformField(minOccurs, maxOccurs, nullable)(
-          FieldDecl(Ident(fieldName(name)), t, FieldConstraint.Required, false)
+          FieldDecl(
+            Ident(fieldName(name)),
+            t,
+            FieldConstraint.Required,
+            false,
+            annotationToComment(ann)
+          )
         )
       } yield List(result)
 
@@ -305,7 +324,7 @@ object Transform {
     b: x.Body[SrcF],
     `type`: TypeRef.defined
   ): BodyAnonComplexTypeHandler[Result[List[FieldDecl]]] =
-    (name, ct, minOccurs, maxOccurs, nullable) => {
+    (name, ct, minOccurs, maxOccurs, nullable, ann) => {
       val anonTypeName = `type`.name.value + "_" + name
       for {
         _ <- pushUnparsedType(
@@ -316,7 +335,8 @@ object Transform {
           x.QName.fromString(anonTypeName).some,
           minOccurs,
           maxOccurs,
-          nullable
+          nullable,
+          ann
         )
       } yield result
     }
@@ -325,7 +345,7 @@ object Transform {
     b: x.Body[SrcF],
     `type`: TypeRef.defined
   ): BodyAnonSimpleTypeHandler[Result[List[FieldDecl]]] =
-    (name, st, minOccurs, maxOccurs, nullable) => {
+    (name, st, minOccurs, maxOccurs, nullable, ann) => {
       val anonTypeName = `type`.name.value + "_" + name
       for {
         _ <- pushUnparsedType(
@@ -336,7 +356,8 @@ object Transform {
           x.QName.fromString(anonTypeName).some,
           minOccurs,
           maxOccurs,
-          nullable
+          nullable,
+          ann
         )
       } yield result
     }
@@ -373,7 +394,8 @@ object Transform {
                 v =>
                   if (v) FieldConstraint.Optional else FieldConstraint.Required
               ),
-            false
+            false,
+            annotationToComment(attr.annotation)
           )
       case _ => Errors.cantTransform(t)
     }
@@ -403,7 +425,14 @@ object Transform {
         .fromList(l ++ al)
         .fold(Errors.cantTransform[NEL[FieldDecl]](t))(ok(_))
       baseRef <- baseNameO.traverse(typeRef(`type`))
-    } yield ComplexTypeDecl(`type`, baseRef, true, fields)
+    } yield
+      ComplexTypeDecl(
+        `type`,
+        baseRef,
+        true,
+        fields,
+        annotationToComment(t.annotation)
+      )
   }
 
   def complexTypeAny(name: String, any: x.Any[SrcF]): Result[TypeDecl] = {
@@ -412,7 +441,8 @@ object Transform {
     for {
       config <- getConfig
       `type` <- typeRef(type0)(x.QName("anyType", config.xsdNs))
-    } yield NewtypeDecl(type0, `type`, true)
+    } yield
+      NewtypeDecl(type0, `type`, true, annotationToComment(any.annotation))
   }
 
   def complexType(t: x.ComplexType[SrcF]): Result[TypeDecl] =

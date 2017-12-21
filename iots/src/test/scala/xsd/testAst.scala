@@ -24,9 +24,10 @@ object testAst {
       TypeRef.definedFrom("TestEt", "TestEtType"),
       true,
       NEL.of(
-        EnumMemberDecl(Ident("V_01"), "01"),
-        EnumMemberDecl(Ident("V_02"), "02")
-      )
+        EnumMemberDecl(Ident("V_01"), "01", None),
+        EnumMemberDecl(Ident("V_02"), "02", None)
+      ),
+      None
     )
   }
 
@@ -48,11 +49,12 @@ object testAst {
           FieldDecl(
             Ident("id"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false),
+            FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("org"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false))
+            FieldConstraint.Optional, false, None)),
+        None
       )
   }
 
@@ -85,23 +87,24 @@ object testAst {
           FieldDecl(
             Ident("value1"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false),
+            FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("value2"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false),
+            FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("value3"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false),
+            FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("value4"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false),
+            FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("value5"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false))
+            FieldConstraint.Optional, false, None)),
+        None
       )
     lazy val dst = List(outerType)
   }
@@ -127,11 +130,12 @@ object testAst {
           FieldDecl(
             Ident("x"),
             TypeRef.std(Ident("number")),
-            FieldConstraint.Required, false),
+            FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("y"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false))
+            FieldConstraint.Required, false, None)),
+        None
       )
   }
 
@@ -153,11 +157,12 @@ object testAst {
           FieldDecl(
             Ident("num"),
             TypeRef.std(Ident("number")),
-            FieldConstraint.Optional, false),
+            FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("str"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false))
+            FieldConstraint.Optional, false, None)),
+        None
       )
   }
 
@@ -183,7 +188,8 @@ object testAst {
           FieldDecl(
             Ident("value"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false))
+            FieldConstraint.Required, false, None)),
+        None
       )
   }
 
@@ -198,7 +204,8 @@ object testAst {
       NewtypeDecl(
         TypeRef.definedFrom("DecimalT", "DecimalTType"),
         TypeRef.std(Ident("number")),
-        true
+        true,
+        None
       )
   }
 
@@ -228,7 +235,8 @@ object testAst {
           FieldDecl(
             Ident("id"),
             TypeRef.std(Ident("number")),
-            FieldConstraint.Required, false))
+            FieldConstraint.Required, false, None)),
+        None
       )
 
     val elType =
@@ -240,7 +248,8 @@ object testAst {
           FieldDecl(
             Ident("value"),
             TypeRef.defined(Ident("TestValue"), Ident("TestValueType")),
-            FieldConstraint.Required, false))
+            FieldConstraint.Required, false, None)),
+        None
       )
 
     lazy val dst = List(anonType, elType)
@@ -265,11 +274,12 @@ object testAst {
           FieldDecl(
             Ident("value"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, false),
+            FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("id"),
             TypeRef.std(Ident("number")),
-            FieldConstraint.Required, false))
+            FieldConstraint.Required, false, None)),
+        None
       )
   }
 
@@ -295,23 +305,24 @@ object testAst {
           FieldDecl(
             Ident("optional"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, false),
+            FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("nullable"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Nullable, false),
+            FieldConstraint.Nullable, false, None),
           FieldDecl(
             Ident("array"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Required, true),
+            FieldConstraint.Required, true, None),
           FieldDecl(
             Ident("optionalNullable"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.OptionalNullable, false),
+            FieldConstraint.OptionalNullable, false, None),
           FieldDecl(
             Ident("optionalArray"),
             TypeRef.std(Ident("string")),
-            FieldConstraint.Optional, true))
+            FieldConstraint.Optional, true, None)),
+        None
       )
   }
 
@@ -350,7 +361,8 @@ object testAst {
       NewtypeDecl(
         TypeRef.definedFrom("AliasT", "AliasTType"),
         TypeRef.definedFrom("TypeT", "TypeTType"),
-        true
+        true,
+        None
       )
   }
 }
