@@ -6,4 +6,5 @@ import ast._
 
 final case class Config(iotsNs: Ident,
                         header: Option[String],
-                        nativeTypes: Boolean)
+                        nativeTypes: Boolean,
+                        generateComments: Boolean)

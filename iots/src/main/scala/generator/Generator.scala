@@ -37,6 +37,11 @@ class Generator(config: Config) {
       ')'
     )
 
+  def comment(c: Option[Comment]): List[Doc] =
+    c.filter(_ => config.generateComments)
+      .map(_.replace("\n", " "))
+      .fold[List[Doc]](Nil)(t => List(text("/** ") + text(t) + text(" */")))
+
   def nativeArray(`type`: Doc): Doc =
     `type` + text("[]")
 
@@ -74,7 +79,11 @@ class Generator(config: Config) {
     val optional =
       if (!requiredConstraints.contains(f.constraint)) char('?')
       else empty
-    ident(f.name) + optional + char(':') + space + nativeTypeExpr(f)
+    spread(
+      List(ident(f.name) + optional + char(':'), nativeTypeExpr(f)) ++ comment(
+        f.comment
+      )
+    )
   }
 
   def complexTypeNativeIntfDecl(ct: ComplexTypeDecl): Doc = {
@@ -88,12 +97,16 @@ class Generator(config: Config) {
         )
       )
     val postfix = char('}')
-    intercalate(comma + line, ct.fields.toList.map(nativeFieldDecl _))
-      .tightBracketBy(prefix, postfix)
+    stack(
+      comment(ct.comment) ++
+        intercalate(comma + line, ct.fields.toList.map(nativeFieldDecl _))
+          .tightBracketBy(prefix, postfix)
+          .pure[List]
+    )
   }
 
-  def complexTypeIotsIntfDecl(ct: ComplexTypeDecl): Doc =
-    exportPrefix(ct.exported) +
+  def complexTypeIotsIntfDecl(ct: ComplexTypeDecl): Doc = {
+    val i = exportPrefix(ct.exported) +
       spread(
         List(
           text("interface"),
@@ -103,6 +116,8 @@ class Generator(config: Config) {
           text("{}")
         )
       )
+    stack(comment(ct.comment) ++ i.pure[List])
+  }
 
   def complexTypeIntfDecl(ct: ComplexTypeDecl): Doc =
     config.nativeTypes match {
@@ -132,7 +147,7 @@ class Generator(config: Config) {
   }
 
   def fieldDecl(f: FieldDecl): Doc =
-    ident(f.name) + char(':') + space + typeExpr(f)
+    spread(List(ident(f.name) + char(':'), typeExpr(f)) ++ comment(f.comment))
 
   private val intersection: Doc = qName(
     QName.of(config.iotsNs, Ident("intersection"))
@@ -161,33 +176,40 @@ class Generator(config: Config) {
             .some
       }
 
-    intercalate(
-      comma + line,
-      List(
-        ct.baseType.map(typeConst _),
-        fields(interface, requiredConstraints.contains),
-        fields(partial, requiredConstraints.contains(_).unary_!)
-      ).foldMap(_.toList)
-    ).tightBracketBy(prefix, suffix)
+    stack(
+      comment(ct.comment) ++
+        intercalate(
+          comma + line,
+          List(
+            ct.baseType.map(typeConst _),
+            fields(interface, requiredConstraints.contains),
+            fields(partial, requiredConstraints.contains(_).unary_!)
+          ).foldMap(_.toList)
+        ).tightBracketBy(prefix, suffix).pure[List]
+    )
   }
 
   def complexTypeDecl(ct: ComplexTypeDecl): Doc =
     stack(List(complexTypeConstDecl(ct), complexTypeIntfDecl(ct)))
 
   def enumMemberDecl(m: EnumMemberDecl): Doc =
-    spread(List(ident(m.name), eqSign, strLit(m.value)))
+    spread(List(ident(m.name), eqSign, strLit(m.value)) ++ comment(m.comment))
 
   def enumTypeDecl(e: EnumDecl): Doc = {
     val prefix = exportPrefix(e.exported) +
       spread(List(text("enum"), ident(e.`type`.name), text("{")))
     val suffix = char('}')
 
-    intercalate(comma + line, e.members.map(enumMemberDecl _).toList)
-      .tightBracketBy(prefix, suffix)
+    stack(
+      comment(e.comment) ++
+        intercalate(comma + line, e.members.map(enumMemberDecl _).toList)
+          .tightBracketBy(prefix, suffix)
+          .pure[List]
+    )
   }
 
-  def enumConstDecl(e: EnumDecl): Doc =
-    exportPrefix(e.exported) +
+  def enumConstDecl(e: EnumDecl): Doc = {
+    val c = exportPrefix(e.exported) +
       spread(
         List(
           const,
@@ -199,18 +221,25 @@ class Generator(config: Config) {
         )
       )
 
+    stack(comment(e.comment) ++ c.pure[List])
+  }
+
   def enumDecl(e: EnumDecl): Doc =
     stack(List(enumTypeDecl(e), enumConstDecl(e)))
 
-  def newtypeConstDecl(t: NewtypeDecl): Doc =
-    exportPrefix(t.exported) +
+  def newtypeConstDecl(t: NewtypeDecl): Doc = {
+    val c = exportPrefix(t.exported) +
       spread(
         List(const, ident(t.`type`.constName), eqSign, typeConst(t.baseType))
       )
+    stack(comment(t.comment) ++ c.pure[List])
+  }
 
-  def newtypeTypeDecl(t: NewtypeDecl): Doc =
-    exportPrefix(t.exported) +
+  def newtypeTypeDecl(t: NewtypeDecl): Doc = {
+    val t1 = exportPrefix(t.exported) +
       spread(List(`type`, ident(t.`type`.name), eqSign, typeName(t.baseType)))
+    stack(comment(t.comment) ++ t1.pure[List])
+  }
 
   def newtypeDecl(t: NewtypeDecl): Doc =
     stack(List(newtypeConstDecl(t), newtypeTypeDecl(t)))

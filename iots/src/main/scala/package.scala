@@ -16,8 +16,8 @@ package iots {
                           types: List[Type] = Nil,
                           iotsNs: String = "t",
                           header: Option[String] = None,
-                          nativeTypes: Boolean = false)
-
+                          nativeTypes: Boolean = false,
+                          generateComments: Boolean = true)
 }
 
 package object iots {
@@ -44,7 +44,8 @@ package object iots {
     generator.Config(
       iotsNs = Ident(cfg.iotsNs),
       header = cfg.header,
-      nativeTypes = cfg.nativeTypes
+      nativeTypes = cfg.nativeTypes,
+      generateComments = cfg.generateComments
     )
   }
 

@@ -44,28 +44,37 @@ object ast {
   final case class FieldDecl(name: Ident,
                              `type`: TypeRef,
                              constraint: FieldConstraint,
-                             array: Boolean)
+                             array: Boolean,
+                             comment: Option[Comment])
+
+  type Comment = String
 
   sealed trait TypeDecl {
     def `type`: TypeRef.defined
+    def comment: Option[Comment]
   }
 
   final case class ComplexTypeDecl(`type`: TypeRef.defined,
                                    baseType: Option[TypeRef],
                                    exported: Boolean,
-                                   fields: NEL[FieldDecl])
+                                   fields: NEL[FieldDecl],
+                                   comment: Option[Comment])
       extends TypeDecl
 
-  final case class EnumMemberDecl(name: Ident, value: String)
+  final case class EnumMemberDecl(name: Ident,
+                                  value: String,
+                                  comment: Option[Comment])
 
   final case class EnumDecl(`type`: TypeRef.defined,
                             exported: Boolean,
-                            members: NEL[EnumMemberDecl])
+                            members: NEL[EnumMemberDecl],
+                            comment: Option[Comment])
       extends TypeDecl
 
   final case class NewtypeDecl(`type`: TypeRef.defined,
                                baseType: TypeRef,
-                               exported: Boolean)
+                               exported: Boolean,
+                               comment: Option[Comment])
       extends TypeDecl
 
   final case class TypesDecl(value: NEL[TypeDecl])
