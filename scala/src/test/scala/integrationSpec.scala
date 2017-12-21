@@ -1,33 +1,27 @@
 package sculptor
-package iots
+package scala
 
 import org.specs2._
-import scala.xml._
+import _root_.scala.xml._
 import cats._
 import cats.implicits._
 import org.typelevel.paiges._
 
 object integrationSpec extends mutable.Specification {
   import testing.utils._
-  import iots.xsd.{Config => XsdConfig, _}
-  import iots.generator.{Config => GenConfig}
+  import scala.xsd.{Config => XsdConfig, _}
+  import scala.generator.{Config => GenConfig}
   import sculptor.xsd.{ast => x}
   import ast._
 
   val xsdConfig = XsdConfig(
     List(
-      ImportDecl(Ident("t"), "io-ts"),
-      ImportDecl(Ident("T"), "core/types")
+      ImportDecl("java.time.Instant")
     ),
-    "xsd".some,
+    "xs".some,
     List(
       ExternatType(
-        x.QName.fromString("xsd:date"),
-        QName.of(Ident("Date")),
-        QName.of(Ident("T"), Ident("date"))
-      ),
-      ExternatType(
-        x.QName.fromString("xsd:dateTime"),
+        x.QName.fromString("xs:date"),
         QName.of(Ident("Date")),
         QName.of(Ident("T"), Ident("date"))
       ),
@@ -57,15 +51,16 @@ object integrationSpec extends mutable.Specification {
     generator.create(genConfig).moduleDecl(m)
   }
 
-  "iots module" should {
-    "produce iots sources from fes-1.0.xsd" >> {
+  "scala module" should {
+    "produce scala sources from fes-2.0.xsd" >> {
       val xsd = parseXsd(
         XML.load(
-          getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
+          getClass.getClassLoader.getResourceAsStream("xsd/fes-2.0.xsd")
         )
       )
 
-      val _ = generateSources(transformSchema(xsd)).render(80).take(5000)
+      // println(generateSources(transformSchema(xsd)).render(80).take(50000))
+      val _ = generateSources(transformSchema(xsd)).render(0)
 
       true must_=== true
     }

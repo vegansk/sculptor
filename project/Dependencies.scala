@@ -54,4 +54,19 @@ object Dependencies {
     scalacheck,
     specs2ScalaCheck
   ).map(_ % "test")
+
+  val scala = Seq(
+    scalaXml,
+    scalaGraphCore,
+    cats,
+    catsEffect,
+    shapeless,
+    paigesCore,
+    paigesCats
+  ) ++ Seq(
+    specs2,
+    pprint,
+    scalacheck,
+    specs2ScalaCheck
+  ).map(_ % "test")
 }

@@ -90,6 +90,12 @@ object Sculptor {
         libraryDependencies ++= Dependencies.iots
       )
 
+    val scala: PC = _.configure(common)
+      .settings(
+        name := "sculptor-scala",
+        libraryDependencies ++= Dependencies.scala
+      )
+
     val sbtIots: PC = _.configure(common, plugin)
       .settings(
         name := "sbt-sculptor-iots",
@@ -110,5 +116,10 @@ object Sculptor {
     .in(file("sbt-iots"))
     .configure(Config.sbtIots)
     .dependsOn(iots)
+
+  lazy val scala = project
+    .in(file("scala"))
+    .dependsOn(xsd)
+    .configure(Config.scala)
 
 }
