@@ -457,7 +457,7 @@
                     <xs:documentation>Дата документа</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="organisation" type="xs:string">
+            <xs:element minOccurs="0" name="place" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Орган, осуществивший регистрацию</xs:documentation>
                 </xs:annotation>
