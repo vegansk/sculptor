@@ -3,12 +3,12 @@ package sculptor
 import java.io.File
 // import cats._
 import cats.effect._
-import scala.xml._
+import _root_.scala.xml._
 import java.nio.file.{Paths, Files, StandardOpenOption}
 import java.nio.charset.StandardCharsets
 
-package iots {
-  final case class Import(name: String, path: String)
+package scala {
+  final case class Import(path: String)
 
   final case class Type(xsdName: String, name: String, constName: String)
 
@@ -20,7 +20,7 @@ package iots {
                           generateComments: Boolean = true)
 }
 
-package object iots {
+package object scala {
 
   import ast._
   import sculptor.xsd.{ast => x, parseSchema}
@@ -28,7 +28,7 @@ package object iots {
   private def toXsdConfig(cfg: Config, xsdNs: Option[String]): xsd.Config =
     xsd.Config(
       imports = cfg.imports.map { i =>
-        ImportDecl(Ident(i.name), i.path)
+        ImportDecl(i.path)
       },
       xsdNs = xsdNs,
       externalTypes = cfg.types.map { t =>

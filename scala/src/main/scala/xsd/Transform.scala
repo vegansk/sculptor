@@ -1,5 +1,5 @@
 package sculptor
-package iots
+package scala
 package xsd
 
 import cats._
@@ -69,20 +69,16 @@ object Transform {
   }
 
   def mkTypeName(v: String): String = toCamelCase(v, true)
-  def mkConstName(v: String): String = mkTypeName(v) + "Type"
 
   def enumName(v: String): String = mkTypeName(v)
-  def enumConstName(v: String): String = mkConstName(v)
   def enumMemberName(v: String): String = v.toList match {
     case x :: _ if Character.isJavaIdentifierStart(x) => v
     case _ => "V_" + v
   }
 
   def complexTypeName(v: String): String = mkTypeName(v)
-  def complexTypeConstName(v: String): String = mkConstName(v)
 
   def newtypeTypeName(v: String): String = mkTypeName(v)
-  def newtypeTypeConstName(v: String): String = mkConstName(v)
 
   def fieldName(v: String): String = toCamelCase(v, false)
 
@@ -161,8 +157,7 @@ object Transform {
         .fold(Errors.cantTransform[NEL[EnumMemberDecl]](t))(ok(_))
     } yield
       EnumDecl(
-        TypeRef.definedFrom(enumName(name), enumConstName(name)),
-        true,
+        TypeRef.definedFrom(enumName(name)),
         members,
         annotationToComment(t.annotation)
       )
@@ -171,10 +166,10 @@ object Transform {
                         base: x.QName,
                         ann: Option[x.Annotation[SrcF]]): Result[TypeDecl] = {
     val `type` =
-      TypeRef.definedFrom(newtypeTypeName(name), newtypeTypeConstName(name))
+      TypeRef.definedFrom(newtypeTypeName(name))
     for {
       baseRef <- typeRef(`type`)(base)
-    } yield NewtypeDecl(`type`, baseRef, true, annotationToComment(ann))
+    } yield NewtypeDecl(`type`, baseRef, annotationToComment(ann))
   }
 
   def simpleType(t: x.SimpleType[SrcF]): Result[TypeDecl] =
@@ -193,17 +188,17 @@ object Transform {
       ns = config.xsdNs
       name <- if (`type`.ns === ns) {
         `type`.name match {
-          case "string" => ok("string")
-          case "base64Binary" => ok("string") // TODO: Custom type!
-          case "anyURI" => ok("string") // TODO: Custom type!
-          case "boolean" => ok("boolean")
-          case "int" => ok("number")
-          case "long" => ok("number")
-          case "integer" => ok("number")
-          case "nonNegativeInteger" => ok("number")
-          case "positiveInteger" => ok("number")
-          case "decimal" => ok("number")
-          case "anyType" => ok("any")
+          case "string" => ok("String")
+          case "base64Binary" => ok("String") // TODO: Custom type!
+          case "anyURI" => ok("String") // TODO: Custom type!
+          case "boolean" => ok("Boolean")
+          case "int" => ok("Int")
+          case "long" => ok("Long")
+          case "integer" => ok("Int")
+          case "nonNegativeInteger" => ok("Int")
+          case "positiveInteger" => ok("Int")
+          case "decimal" => ok("Double")
+          case "anyType" => ok("Any")
           case _ => Errors.unknownType[String](`type`)
         }
       } else Errors.unknownType[String](`type`)
@@ -219,13 +214,13 @@ object Transform {
             stdTypeRef(`type`)
           case x.QName(t, None) => {
             val `type` =
-              TypeRef.definedFrom(complexTypeName(t), complexTypeConstName(t))
+              TypeRef.definedFrom(complexTypeName(t))
             for {
               _ <- addDependency(forType, `type`)
             } yield `type`
           }
           case _ => Errors.unknownType[TypeRef](`type`)
-        })(t => ok(TypeRef.external(t.name, t.constName)))
+        })(t => ok(TypeRef.external(t.name)))
     } yield result
 
   object fieldConstraint {
@@ -412,7 +407,7 @@ object Transform {
     b: List[x.Body[SrcF]],
     attrs: List[x.Attribute[SrcF]]): Result[TypeDecl] = {
     val `type` =
-      TypeRef.definedFrom(complexTypeName(name), complexTypeConstName(name))
+      TypeRef.definedFrom(complexTypeName(name))
     for {
       l0 <- b.flatTraverse(bodyToFields(`type`))
       l <- ok(
@@ -428,7 +423,6 @@ object Transform {
       ComplexTypeDecl(
         `type`,
         baseRef,
-        true,
         fields,
         annotationToComment(t.annotation)
       )
@@ -436,12 +430,11 @@ object Transform {
 
   def complexTypeAny(name: String, any: x.Any[SrcF]): Result[TypeDecl] = {
     val type0 =
-      TypeRef.definedFrom(newtypeTypeName(name), newtypeTypeConstName(name))
+      TypeRef.definedFrom(newtypeTypeName(name))
     for {
       config <- getConfig
       `type` <- typeRef(type0)(x.QName("anyType", config.xsdNs))
-    } yield
-      NewtypeDecl(type0, `type`, true, annotationToComment(any.annotation))
+    } yield NewtypeDecl(type0, `type`, annotationToComment(any.annotation))
   }
 
   def complexType(t: x.ComplexType[SrcF]): Result[TypeDecl] =
