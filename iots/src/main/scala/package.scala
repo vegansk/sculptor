@@ -15,7 +15,8 @@ package iots {
   final case class Config(imports: List[Import] = Nil,
                           types: List[Type] = Nil,
                           iotsNs: String = "t",
-                          header: Option[String] = None)
+                          header: Option[String] = None,
+                          nativeTypes: Boolean = false)
 
 }
 
@@ -40,7 +41,11 @@ package object iots {
     )
 
   private def toGeneratorConfig(cfg: Config): generator.Config = {
-    generator.Config(iotsNs = Ident(cfg.iotsNs), header = cfg.header)
+    generator.Config(
+      iotsNs = Ident(cfg.iotsNs),
+      header = cfg.header,
+      nativeTypes = cfg.nativeTypes
+    )
   }
 
   def generateFromFile(xsdFile: File, tsFile: File, cfg: Config): IO[Unit] =

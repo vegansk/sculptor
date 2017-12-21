@@ -26,7 +26,8 @@ lazy val root = project.in(file("."))
         IotsType("xs:dateTime", "Date", "T.date")
       ),
       header = Option("/** tslint:disable: all */"),
-      iotsNs = "iots"
+      iotsNs = "iots",
+      nativeTypes = true
     ),
 
     iotsTargetDirectory := file("src_generated"),

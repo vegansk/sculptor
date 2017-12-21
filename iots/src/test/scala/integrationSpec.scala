@@ -36,7 +36,8 @@ object integrationSpec extends mutable.Specification {
 
   val genConfig = GenConfig(
     Ident("t"),
-    None
+    None,
+    false
   )
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {
@@ -58,7 +59,7 @@ object integrationSpec extends mutable.Specification {
         )
       )
 
-      println(generateSources(transformSchema(xsd)).render(80).take(5000))
+      val _ = generateSources(transformSchema(xsd)).render(80).take(5000)
 
       true must_=== true
     }

@@ -19,7 +19,8 @@ object generatorSpec extends mutable.Specification
     val gen = generator.create(
       generator.Config(
         Ident("t"),
-        "/* header */".some
+        "/* header */".some,
+        false
       )
     )
     import gen._

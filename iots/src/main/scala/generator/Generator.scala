@@ -37,6 +37,9 @@ class Generator(config: Config) {
       ')'
     )
 
+  def nativeArray(`type`: Doc): Doc =
+    `type` + text("[]")
+
   def nullable(`type`: Doc): Doc =
     qName(QName(NEL.of(config.iotsNs, Ident("union")))) +
       text("([") +
@@ -56,7 +59,40 @@ class Generator(config: Config) {
     else
       empty
 
-  def complexTypeIntfDecl(ct: ComplexTypeDecl): Doc =
+  private val nullableConstraints =
+    List(FieldConstraint.Nullable, FieldConstraint.OptionalNullable)
+
+  private val requiredConstraints =
+    List(FieldConstraint.Required, FieldConstraint.Nullable)
+
+  def nativeTypeExpr(f: FieldDecl): Doc = {
+    (typeName(f.`type`): Id[Doc])
+      .map(t => if (f.array) nativeArray(t) else t)
+  }
+
+  def nativeFieldDecl(f: FieldDecl): Doc = {
+    val optional =
+      if (!requiredConstraints.contains(f.constraint)) char('?')
+      else empty
+    ident(f.name) + optional + char(':') + space + nativeTypeExpr(f)
+  }
+
+  def complexTypeNativeIntfDecl(ct: ComplexTypeDecl): Doc = {
+    val base = ct.baseType.fold(List[Doc]()) { bt =>
+      List(text("extends"), typeName(bt))
+    }
+    val prefix = exportPrefix(ct.exported) +
+      spread(
+        List(text("interface"), ident(ct.`type`.name)) ++ base ++ List(
+          text("{")
+        )
+      )
+    val postfix = char('}')
+    intercalate(comma + line, ct.fields.toList.map(nativeFieldDecl _))
+      .tightBracketBy(prefix, postfix)
+  }
+
+  def complexTypeIotsIntfDecl(ct: ComplexTypeDecl): Doc =
     exportPrefix(ct.exported) +
       spread(
         List(
@@ -67,6 +103,12 @@ class Generator(config: Config) {
           text("{}")
         )
       )
+
+  def complexTypeIntfDecl(ct: ComplexTypeDecl): Doc =
+    config.nativeTypes match {
+      case true => complexTypeNativeIntfDecl(ct)
+      case _ => complexTypeIotsIntfDecl(ct)
+    }
 
   def typeConst(t: TypeRef): Doc = t match {
     case TypeRef.std(v) => qName(QName.of(config.iotsNs, v))
@@ -81,8 +123,6 @@ class Generator(config: Config) {
   }
 
   def typeExpr(f: FieldDecl): Doc = {
-    val nullableConstraints =
-      List(FieldConstraint.Nullable, FieldConstraint.OptionalNullable)
     (typeConst(f.`type`): Id[Doc])
       .map(t => if (f.array) array(t) else t)
       .map(
@@ -109,9 +149,6 @@ class Generator(config: Config) {
     val suffix = text("],") + space + char('"') + text(ct.`type`.name.value) + text(
       "\")"
     )
-
-    val requiredConstraints =
-      List(FieldConstraint.Required, FieldConstraint.Nullable)
 
     def fields(prefix: Doc,
                constraint: FieldConstraint => Boolean): Option[Doc] =

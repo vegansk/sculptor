@@ -4,4 +4,6 @@ package generator
 
 import ast._
 
-final case class Config(iotsNs: Ident, header: Option[String])
+final case class Config(iotsNs: Ident,
+                        header: Option[String],
+                        nativeTypes: Boolean)
