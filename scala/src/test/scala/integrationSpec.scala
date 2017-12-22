@@ -32,6 +32,7 @@ object integrationSpec extends mutable.Specification {
   )
 
   val genConfig = GenConfig(
+    Some("com.github.vegansk"),
     None,
     true
   )

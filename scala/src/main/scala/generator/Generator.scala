@@ -236,10 +236,16 @@ class Generator(config: Config) {
   def importsDecl(i: ImportsDecl): Doc =
     stack(i.value.map(importDecl _).toList)
 
+  def packageDecl: Option[Doc] =
+    config.packageName.map { p =>
+      text("package ") + text(p)
+    }
+
   def moduleDecl(m: ModuleDecl): Doc =
     intercalate(
       line + line,
       config.header.map(text _).toList ++
+        packageDecl.toList ++
         m.imports.map(importsDecl _).toList ++
         m.types.map(typesDecl _).toList
     )
