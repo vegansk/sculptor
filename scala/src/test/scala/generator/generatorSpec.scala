@@ -28,7 +28,11 @@ object generatorSpec extends mutable.Specification
     "handle newtype" >> {
 
       val t = NewtypeDecl(TypeRef.definedFrom("NewString"), TypeRef.std(Ident("String")), None)
-      newtypeDecl(t) must beEqvTo(Doc.text("type NewString = String"))
+      newtypeDecl(t) must beEqvTo(
+        Doc.text("""|final case class NewString(
+                    |  value: String
+                    |)""".stripMargin)
+      )
     }
 
     "handle enums" >> {
@@ -64,7 +68,7 @@ object generatorSpec extends mutable.Specification
                     |  )
                     |
                     |  val fromString: String => Option[Test] = {
-                    |    s => values.find(_.code === s)
+                    |    s => values.find(_.code == s)
                     |  }
                     |}""".stripMargin
         )
