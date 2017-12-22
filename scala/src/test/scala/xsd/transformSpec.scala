@@ -25,7 +25,6 @@ object transformSpec extends mutable.Specification
       List(
         ExternatType(
           x.QName("t1", None),
-          QName.of(Ident("fake")),
           QName.of(Ident("fake"))
         )
       )

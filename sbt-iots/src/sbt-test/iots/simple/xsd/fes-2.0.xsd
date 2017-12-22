@@ -3145,7 +3145,7 @@
             <xs:documentation>Характеристика счета общей собственности</xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="name" type="xs:anyType">
+            <xs:element name="name" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Наименование счета ОС</xs:documentation>
                 </xs:annotation>
