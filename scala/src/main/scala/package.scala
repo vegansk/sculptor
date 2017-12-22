@@ -56,7 +56,7 @@ package object scala {
                   generator
                     .create(toGeneratorConfig(cfg))
                     .moduleDecl(module)
-                    .render(0)
+                    .render(80)
                 }
               case Left(err) => IO.raiseError(new Exception(err))
             }
