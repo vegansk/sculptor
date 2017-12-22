@@ -8,6 +8,7 @@ lazy val root = project.in(file("."))
     version := "0.0.1",
 
     scalagenConfig := ScalagenConfig(
+      packageName = Option("com.github.vegansk"),
       imports = List(
         ScalagenImport("java.time.Instant"),
       ),

@@ -18,6 +18,7 @@ object generatorSpec extends mutable.Specification
 
     val gen = generator.create(
       generator.Config(
+        "com.github.vegansk".some,
         "/* header */".some,
         false
       )

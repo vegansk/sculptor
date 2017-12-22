@@ -11,7 +11,8 @@ package scala {
 
   final case class Type(xsdName: String, name: String)
 
-  final case class Config(imports: List[Import] = Nil,
+  final case class Config(packageName: Option[String] = None,
+                          imports: List[Import] = Nil,
                           types: List[Type] = Nil,
                           header: Option[String] = None,
                           generateComments: Boolean = true)
@@ -38,6 +39,7 @@ package object scala {
 
   private def toGeneratorConfig(cfg: Config): generator.Config = {
     generator.Config(
+      packageName = cfg.packageName,
       header = cfg.header,
       generateComments = cfg.generateComments
     )
