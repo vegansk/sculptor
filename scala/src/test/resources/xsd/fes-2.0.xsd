@@ -2209,105 +2209,6 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
-    <xs:complexType name="structured_address_t">
-        <xs:annotation>
-            <xs:documentation>Структурированный адрес</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element minOccurs="0" name="country" type="country_et">
-                <xs:annotation>
-                    <xs:documentation>Страна из Общероссийского классификатора стран мира ОК (МК (ИСО 3166) 004-97) 025-2001</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="index" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Почтовый индекс</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:choice minOccurs="0">
-                <xs:element name="region_number" nillable="true" type="region_et">
-                    <xs:annotation>
-                        <xs:documentation>Код региона по справочнику регионов России</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:sequence>
-                    <xs:element name="region_type" type="xs:string">
-                        <xs:annotation>
-                            <xs:documentation>Тип региона</xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
-                    <xs:element name="region" type="xs:string">
-                        <xs:annotation>
-                            <xs:documentation>Наименование региона</xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
-                </xs:sequence>
-            </xs:choice>
-            <xs:sequence minOccurs="0">
-                <xs:element name="zone_type" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Тип района</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="zone" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Район</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:sequence>
-            <xs:sequence minOccurs="0">
-                <xs:element name="city_type" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Тип города</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="city" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Город</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:sequence>
-            <xs:sequence minOccurs="0">
-                <xs:element name="place_type" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Тип населенного пункта</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="place" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Населенный пункт</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:sequence>
-            <xs:sequence minOccurs="0">
-                <xs:element name="street_type" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Тип улицы</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="street" type="xs:string">
-                    <xs:annotation>
-                        <xs:documentation>Улица</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:sequence>
-            <xs:element minOccurs="0" name="house" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Номер дома/ домовладения</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="building" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Корпус/строение</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="flat" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Квартира/офис</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
     <xs:complexType name="legal_address_t">
         <xs:annotation>
             <xs:documentation>Юридический адрес</xs:documentation>
@@ -3338,7 +3239,7 @@
             <xs:documentation>Информация, идентифицирующая эмитента</xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="person_identifier_t"/>
+            <xs:extension base="person_identifier_t">   </xs:extension>
         </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="document_person_t">
@@ -3386,13 +3287,13 @@
         <xs:annotation>
             <xs:documentation>Информация, идентифицирующая ЗЛ как отправителя</xs:documentation>
         </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="person_other_t">
-                <xs:sequence>
-                    <xs:element name="kind" type="account_kind_et"/>
-                </xs:sequence>
-            </xs:extension>
-        </xs:complexContent>
+        <xs:sequence>
+            <xs:element name="kind" type="account_kind_et"/>
+            <xs:choice>
+                <xs:element name="individual" type="person_identifier_t"/>
+                <xs:element name="legal" type="person_identifier_t"/>
+            </xs:choice>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="document_sender_t">
         <xs:annotation>
@@ -3508,22 +3409,23 @@
         <xs:annotation>
             <xs:documentation>Расширенная анкета ЮЛ</xs:documentation>
         </xs:annotation>
-        <xs:complexContent>
-            <xs:extension base="legal_form_t">
-                <xs:sequence>
-                    <xs:element minOccurs="0" name="official_person" type="official_person_form_t">
-                        <xs:annotation>
-                            <xs:documentation>Официальное лицо</xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
-                    <xs:element minOccurs="0" name="beneficial_owners" type="beneficial_owners_t">
-                        <xs:annotation>
-                            <xs:documentation>Бенефициарные владельцы</xs:documentation>
-                        </xs:annotation>
-                    </xs:element>
-                </xs:sequence>
-            </xs:extension>
-        </xs:complexContent>
+        <xs:sequence>
+            <xs:element name="form" type="legal_form_t">
+                <xs:annotation>
+                    <xs:documentation>Анкета ЮЛ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="official_person" type="official_person_form_t">
+                <xs:annotation>
+                    <xs:documentation>Официальное лицо</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="beneficial_owners" type="beneficial_owners_t">
+                <xs:annotation>
+                    <xs:documentation>Бенефициарные владельцы</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="payment_requisites_t">
         <xs:annotation>
@@ -4272,4 +4174,85 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="structured_address_t">
+        <xs:annotation>
+            <xs:documentation>Структурированный адрес</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="country" type="country_et">
+                <xs:annotation>
+                    <xs:documentation>Страна из Общероссийского классификатора стран мира ОК (МК (ИСО 3166) 004-97) 025-2001</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="index" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Почтовый индекс</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice minOccurs="0">
+                <xs:element name="region_code" nillable="true" type="region_et">
+                    <xs:annotation>
+                        <xs:documentation>Код региона по справочнику регионов России</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="region" type="structured_address_element_t">
+                    <xs:annotation>
+                        <xs:documentation>Данные региона</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+            <xs:element minOccurs="0" name="zone" type="structured_address_element_t">
+                <xs:annotation>
+                    <xs:documentation>Район</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="city" type="structured_address_element_t">
+                <xs:annotation>
+                    <xs:documentation>Город</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="place" type="structured_address_element_t">
+                <xs:annotation>
+                    <xs:documentation>Населенный пункт</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="street" type="structured_address_element_t">
+                <xs:annotation>
+                    <xs:documentation>Улица</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="house" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Номер дома/ домовладения</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="building" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Корпус/строение</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="flat" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Квартира/офис</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="structured_address_element_t">
+        <xs:annotation>
+            <xs:documentation>Элемент структурированного адреса</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="type" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Тип элемента</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="value" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Значение элемента</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
 </xs:schema>

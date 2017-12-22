@@ -109,12 +109,9 @@ class Generator(config: Config) {
   }
 
   def complexTypeDecl(ct: ComplexTypeDecl): Doc = {
-    val base = ct.baseType.fold(List[Doc]()) { bt =>
-      List(text("extends"), typeName(bt))
-    }
-    val prefix = spread(
-      List(text("final case class"), ident(ct.`type`.name)) ++ base
-    ) + char('(')
+    val prefix = spread(List(text("final case class"), ident(ct.`type`.name))) + char(
+      '('
+    )
     val postfix = char(')')
     stack(
       comment(ct.comment) ++
@@ -175,7 +172,7 @@ class Generator(config: Config) {
   }
 
   def enumFromStringFunc(e: EnumDecl): Doc =
-    bracketBy(text("s => values.find(_.code === s)"))(
+    bracketBy(text("s => values.find(_.code == s)"))(
       text("val fromString: String => Option[") +
         typeName(e.`type`) + text("] = {"),
       char('}')
@@ -215,10 +212,12 @@ class Generator(config: Config) {
     stack(List(enumTypeDecl(e), enumObjDecl(e)))
 
   def newtypeDecl(t: NewtypeDecl): Doc = {
-    val t1 = spread(
-      List(text("type"), typeName(t.`type`), eqSign, typeName(t.baseType))
-    )
-    stack(comment(t.comment) ++ t1.pure[List])
+    val prefix = text("final case class ") + typeName(t.`type`) + char('(')
+    val postfix = char(')')
+
+    val cls = bracketBy(text("value: ") + typeName(t.baseType))(prefix, postfix)
+
+    stack(comment(t.comment) ++ cls.pure[List])
   }
 
   def typeDecl(t: TypeDecl): Doc = t match {
