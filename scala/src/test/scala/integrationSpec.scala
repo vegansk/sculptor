@@ -22,21 +22,17 @@ object integrationSpec extends mutable.Specification {
     List(
       ExternatType(
         x.QName.fromString("xs:date"),
-        QName.of(Ident("Date")),
-        QName.of(Ident("T"), Ident("date"))
+        QName.of(Ident("Date"))
       ),
       ExternatType(
         x.QName("official_info_t", None),
-        QName.of(Ident("fake")),
         QName.of(Ident("fake"))
       )
     )
   )
 
   val genConfig = GenConfig(
-    Ident("t"),
     None,
-    false,
     true
   )
 

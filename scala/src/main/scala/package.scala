@@ -1,7 +1,6 @@
 package sculptor
 
 import java.io.File
-// import cats._
 import cats.effect._
 import _root_.scala.xml._
 import java.nio.file.{Paths, Files, StandardOpenOption}
@@ -10,13 +9,11 @@ import java.nio.charset.StandardCharsets
 package scala {
   final case class Import(path: String)
 
-  final case class Type(xsdName: String, name: String, constName: String)
+  final case class Type(xsdName: String, name: String)
 
   final case class Config(imports: List[Import] = Nil,
                           types: List[Type] = Nil,
-                          iotsNs: String = "t",
                           header: Option[String] = None,
-                          nativeTypes: Boolean = false,
                           generateComments: Boolean = true)
 }
 
@@ -34,17 +31,14 @@ package object scala {
       externalTypes = cfg.types.map { t =>
         xsd.ExternatType(
           xsdName = x.QName.fromString(t.xsdName),
-          name = QName.fromString(t.name),
-          constName = QName.fromString(t.constName)
+          name = QName.fromString(t.name)
         )
       }
     )
 
   private def toGeneratorConfig(cfg: Config): generator.Config = {
     generator.Config(
-      iotsNs = Ident(cfg.iotsNs),
       header = cfg.header,
-      nativeTypes = cfg.nativeTypes,
       generateComments = cfg.generateComments
     )
   }

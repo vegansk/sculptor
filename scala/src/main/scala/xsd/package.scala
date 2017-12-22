@@ -8,7 +8,7 @@ import sculptor.xsd.{ast => x}
 import ast._
 
 package xsd {
-  final case class ExternatType(xsdName: x.QName, name: QName, constName: QName)
+  final case class ExternatType(xsdName: x.QName, name: QName)
 
   final case class Config(imports: List[ImportDecl],
                           xsdNs: Option[String],
