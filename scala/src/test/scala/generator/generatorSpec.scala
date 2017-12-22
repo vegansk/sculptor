@@ -22,7 +22,8 @@ object generatorSpec extends mutable.Specification
         "/* header */".some,
         generator.Parameters(
           generateComments = false,
-          generateCatsEq = true
+          generateCatsEq = true,
+          generateCirceCodecs = true
         )
       )
     )
@@ -36,7 +37,11 @@ object generatorSpec extends mutable.Specification
                     |  value: String
                     |)
                     |object NewString {
-                    |  lazy val NewStringEq: Eq[NewString] = Eq.fromUniversalEquals
+                    |  implicit val NewStringEq: Eq[NewString] = Eq.fromUniversalEquals
+                    |
+                    |  implicit val NewStringEncoder: Encoder[NewString] = Encoder[String].contramap(_.value)
+                    |
+                    |  implicit val NewStringDecoder: Decoder[NewString] = Decoder[String].map(NewString(_))
                     |}""".stripMargin)
       )
     }
@@ -77,7 +82,11 @@ object generatorSpec extends mutable.Specification
                     |    s => values.find(_.code == s)
                     |  }
                     |
-                    |  lazy val TestEq: Eq[Test] = Eq.fromUniversalEquals
+                    |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
+                    |
+                    |  implicit val TestEncoder: Encoder[Test] = Encoder[String].contramap(_.code)
+                    |
+                    |  implicit val TestDecoder: Decoder[Test] = Decoder[String].emap(fromString(_).toRight("Invalid enum value"))
                     |}""".stripMargin
         )
       )
@@ -103,7 +112,23 @@ object generatorSpec extends mutable.Specification
              |  date: Instant
              |)
              |object Test {
-             |  lazy val TestEq: Eq[Test] = Eq.fromUniversalEquals
+             |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
+             |
+             |  implicit val TestEncoder: Encoder[Test] = Encoder.instance[Test] { v =>
+             |    Json.obj(
+             |      "id" := v.id,
+             |      "str" := v.str,
+             |      "date" := v.date
+             |    )
+             |  }
+             |
+             |  implicit val TestDecoder: Decoder[Test] = Decoder.instance[Test] { c =>
+             |    for {
+             |      id <- c.downField("id").as[Option[Int]]
+             |      str <- c.downField("str").as[String]
+             |      date <- c.downField("date").as[Instant]
+             |    } yield Test(id, str, date)
+             |  }
              |}""".stripMargin
         )
       )

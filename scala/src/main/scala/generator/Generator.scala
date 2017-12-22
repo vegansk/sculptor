@@ -71,17 +71,24 @@ class Generator(config: Config) {
     "yield"
   )
 
-  def ident(i: Ident): Doc =
-    reservedWords.contains(i.value) match {
-      case true => char('`') + text(i.value) + char('`')
-      case _ => text(i.value)
+  def mask(s: String, maskReservedWords: Boolean): String =
+    maskReservedWords match {
+      case true if reservedWords.contains(s) =>
+        s"`$s`"
+      case _ => s
     }
+
+  def ident(i: Ident, maskReservedWords: Boolean = true): Doc =
+    text(mask(i.value, maskReservedWords))
 
   def bracketBy(d: Doc)(left: Doc, right: Doc): Doc =
     left + (lineBreak + d).nested(tabSize) + lineBreak + right
 
-  def qName(name: QName): Doc =
-    intercalate(dot, name.path.map(ident).toList)
+  def qNameString(name: QName, maskReservedWords: Boolean = true): String =
+    name.path.map(i => mask(i.value, maskReservedWords)).toList.mkString(".")
+
+  def qName(name: QName, maskReservedWords: Boolean = true): Doc =
+    text(qNameString(name, maskReservedWords))
 
   def array(`type`: Doc): Doc =
     text("List[") + `type` + char(']')
@@ -104,20 +111,33 @@ class Generator(config: Config) {
       FieldConstraint.Optional
     )
 
-  def typeName(t: TypeRef): Doc = t match {
-    case TypeRef.std(v) => ident(v)
-    case TypeRef.defined(v) => ident(v)
-    case TypeRef.external(v) => qName(v)
-  }
+  def typeNameString(t: TypeRef, maskReservedWords: Boolean = true): String =
+    t match {
+      case TypeRef.std(v) => mask(v.value, maskReservedWords)
+      case TypeRef.defined(v) => mask(v.value, maskReservedWords)
+      case TypeRef.external(v) => qNameString(v, maskReservedWords)
+    }
+
+  def typeName(t: TypeRef, maskReservedWords: Boolean = true): Doc =
+    text(typeNameString(t, maskReservedWords))
+
+  def mkInstanceVal(t: TypeRef, typeClass: String): Doc =
+    spread(
+      List(
+        text("implicit val"),
+        typeName(t, false) + text(typeClass) + char(':'),
+        text(typeClass) + char('[') + typeName(t) + char(']'),
+        eqSign
+      )
+    ) + space
+
+  def mkInstanceByCall(t: TypeRef, typeClass: String, call: String): Doc =
+    text(typeClass) + char('[') + typeName(t) + text("].") + text(call)
 
   def catsEqInstance(t: TypeRef): Option[Doc] =
     config.parameters.generateCatsEq match {
       case true =>
-        Option(
-          text("lazy val ") + typeName(t) + text("Eq: Eq[") + typeName(t) + text(
-            "] = Eq.fromUniversalEquals"
-          )
-        )
+        Option(mkInstanceVal(t, "Eq") + text("Eq.fromUniversalEquals"))
       case _ => None
     }
 
@@ -144,14 +164,70 @@ class Generator(config: Config) {
     )
   }
 
+  def complexTypeCirceEncoder(ct: ComplexTypeDecl): Doc = {
+    val prefix = mkInstanceVal(ct.`type`, "Encoder") + text(
+      s"Encoder.instance[${typeNameString(ct.`type`)}] { v =>"
+    )
+    val postfix = char('}')
+
+    val fields = ct.fields.toList.map { f =>
+      spread(List(strLit(f.name.value), text(":= v.") + ident(f.name)))
+    }
+
+    val obj =
+      bracketBy(intercalate(comma + line, fields))(text("Json.obj("), char(')'))
+
+    bracketBy(obj)(prefix, postfix)
+  }
+
+  def complexTypeCirceDecoder(ct: ComplexTypeDecl): Doc = {
+    val prefix = mkInstanceVal(ct.`type`, "Decoder") + text(
+      s"Decoder.instance[${typeNameString(ct.`type`)}] { c =>"
+    )
+    val postfix = char('}')
+
+    val fieldsDecls = ct.fields.toList.map { f =>
+      spread(
+        List(
+          ident(f.name),
+          text("<-"),
+          text("c.downField(") + strLit(f.name.value) + text(").as[") + typeExpr(
+            f
+          ) + char(']')
+        )
+      )
+    }
+
+    val fieldsList =
+      intercalate(comma + space, ct.fields.toList.map(f => ident(f.name)))
+
+    val `for` = bracketBy(stack(fieldsDecls))(text("for {"), char('}')) +
+      space + text("yield") + space +
+      typeName(ct.`type`) + char('(') + fieldsList + char(')')
+
+    bracketBy(`for`)(prefix, postfix)
+  }
+
+  def complexTypeCirceCodecs(ct: ComplexTypeDecl): List[Doc] =
+    config.parameters.generateCirceCodecs match {
+      case true =>
+        List(complexTypeCirceEncoder(ct), complexTypeCirceDecoder(ct))
+      case false => Nil
+    }
+
   def complexTypeObjectDecl(ct: ComplexTypeDecl): Option[Doc] = {
-    val elements = NEL.fromList(catsEqInstance(ct.`type`).toList).map(_.toList)
+    val elements = NEL
+      .fromList(
+        catsEqInstance(ct.`type`).toList ++
+          complexTypeCirceCodecs(ct)
+      )
+      .map(_.toList)
 
     elements.map { el =>
       val prefix = text("object ") + typeName(ct.`type`) + text(" {")
       val postfix = char('}')
 
-      bracketBy(stack(el))(prefix, postfix)
+      bracketBy(intercalate(line * 2, el))(prefix, postfix)
     }
   }
 
@@ -201,6 +277,24 @@ class Generator(config: Config) {
       char('}')
     )
 
+  def enumCirceCodecs(e: EnumDecl): List[Doc] =
+    config.parameters.generateCirceCodecs match {
+      case true =>
+        List(
+          mkInstanceVal(e.`type`, "Encoder") + mkInstanceByCall(
+            TypeRef.definedFrom("String"),
+            "Encoder",
+            "contramap(_.code)"
+          ),
+          mkInstanceVal(e.`type`, "Decoder") + mkInstanceByCall(
+            TypeRef.definedFrom("String"),
+            "Decoder",
+            "emap(fromString(_).toRight(\"Invalid enum value\"))"
+          )
+        )
+      case _ => Nil
+    }
+
   def enumObjectDecl(e: EnumDecl): Doc = {
     val prefix = spread(List(text("object"), typeName(e.`type`), text("{")))
     val suffix = char('}')
@@ -210,7 +304,7 @@ class Generator(config: Config) {
         line * 2,
         List(enumValuesVal(e), enumFromStringFunc(e)) ++ catsEqInstance(
           e.`type`
-        ).toList
+        ).toList ++ enumCirceCodecs(e)
       )
     )(prefix, suffix)
   }
@@ -232,6 +326,24 @@ class Generator(config: Config) {
         List(enumTypeDecl(e), enumObjectDecl(e))
     )
 
+  def newtypeCirceCodecs(t: NewtypeDecl): List[Doc] =
+    config.parameters.generateCirceCodecs match {
+      case true =>
+        List(
+          mkInstanceVal(t.`type`, "Encoder") + mkInstanceByCall(
+            t.baseType,
+            "Encoder",
+            "contramap(_.value)"
+          ),
+          mkInstanceVal(t.`type`, "Decoder") + mkInstanceByCall(
+            t.baseType,
+            "Decoder",
+            s"map(${typeNameString(t.`type`)}(_))"
+          )
+        )
+      case _ => Nil
+    }
+
   def newtypeClassDecl(t: NewtypeDecl): Doc = {
     val prefix = text("final case class ") + typeName(t.`type`) + char('(')
     val postfix = char(')')
@@ -240,7 +352,12 @@ class Generator(config: Config) {
   }
 
   def newtypeObjectDecl(t: NewtypeDecl): Option[Doc] = {
-    val elements = NEL.fromList(catsEqInstance(t.`type`).toList).map(_.toList)
+    val elements = NEL
+      .fromList(
+        catsEqInstance(t.`type`).toList ++
+          newtypeCirceCodecs(t)
+      )
+      .map(_.toList)
 
     elements.map { xs =>
       val prefix = text("object ") + typeName(t.`type`) + text(" {")

@@ -374,7 +374,7 @@
                     <xs:documentation>Дата выдачи</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="place">
+            <xs:element minOccurs="0" name="place" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Место выдачи</xs:documentation>
                 </xs:annotation>
@@ -3239,7 +3239,7 @@
             <xs:documentation>Информация, идентифицирующая эмитента</xs:documentation>
         </xs:annotation>
         <xs:complexContent>
-            <xs:extension base="person_identifier_t">   </xs:extension>
+            <xs:extension base="person_identifier_t"> </xs:extension>
         </xs:complexContent>
     </xs:complexType>
     <xs:complexType name="document_person_t">

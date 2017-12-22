@@ -198,7 +198,6 @@ object Transform {
           case "nonNegativeInteger" => ok("Int")
           case "positiveInteger" => ok("Int")
           case "decimal" => ok("Double")
-          case "anyType" => ok("Any")
           case _ => Errors.unknownType[String](`type`)
         }
       } else Errors.unknownType[String](`type`)
