@@ -28,7 +28,53 @@ class Generator(config: Config) {
 
   def strLit(v: String): Doc = char('"') + text(v) + char('"')
 
-  def ident(i: Ident): Doc = text(i.value)
+  private val reservedWords = Set(
+    "abstract",
+    "case",
+    "catch",
+    "class",
+    "def",
+    "do",
+    "else",
+    "extends",
+    "false",
+    "final",
+    "finally",
+    "for",
+    "forSome",
+    "if",
+    "implicit",
+    "import",
+    "lazy",
+    "match",
+    "new",
+    "null",
+    "object",
+    "override",
+    "package",
+    "private",
+    "protected",
+    "return",
+    "sealed",
+    "super",
+    "this",
+    "throw",
+    "trait",
+    "try",
+    "true",
+    "type",
+    "val",
+    "var",
+    "while",
+    "with",
+    "yield"
+  )
+
+  def ident(i: Ident): Doc =
+    reservedWords.contains(i.value) match {
+      case true => char('`') + text(i.value) + char('`')
+      case _ => text(i.value)
+    }
 
   def bracketBy(d: Doc)(left: Doc, right: Doc): Doc =
     left + (lineBreak + d).nested(tabSize) + lineBreak + right
