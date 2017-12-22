@@ -19,6 +19,10 @@ object SculptorScalagenPlugin extends AutoPlugin {
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     val ScalagenImport = scala.Import
 
+    type ScalagenParameters = scala.Parameters
+    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+    val ScalagenParameters = scala.Parameters
+
     val scalagenXsdFiles: SettingKey[Seq[File]] = settingKey(
       "List of xsd files"
     )

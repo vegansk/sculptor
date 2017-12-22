@@ -3,6 +3,7 @@ package scala
 package generator
 
 import cats._
+import cats.data.{NonEmptyList => NEL}
 import cats.implicits._
 import org.typelevel.paiges._
 
@@ -86,7 +87,7 @@ class Generator(config: Config) {
     text("List[") + `type` + char(']')
 
   def comment(c: Option[Comment]): List[Doc] =
-    c.filter(_ => config.generateComments)
+    c.filter(_ => config.parameters.generateComments)
       .map(_.replace("\n", " "))
       .fold[List[Doc]](Nil)(t => List(text("/** ") + text(t) + text(" */")))
 
@@ -103,30 +104,22 @@ class Generator(config: Config) {
       FieldConstraint.Optional
     )
 
-  def nativeTypeExpr(f: FieldDecl): Doc = {
-    (typeName(f.`type`): Id[Doc])
-      .map(t => if (f.array) nativeArray(t) else t)
-  }
-
-  def complexTypeDecl(ct: ComplexTypeDecl): Doc = {
-    val prefix = spread(List(text("final case class"), ident(ct.`type`.name))) + char(
-      '('
-    )
-    val postfix = char(')')
-    stack(
-      comment(ct.comment) ++
-        bracketBy(intercalate(comma + line, ct.fields.toList.map(fieldDecl _)))(
-          prefix,
-          postfix
-        ).pure[List]
-    )
-  }
-
   def typeName(t: TypeRef): Doc = t match {
     case TypeRef.std(v) => ident(v)
     case TypeRef.defined(v) => ident(v)
     case TypeRef.external(v) => qName(v)
   }
+
+  def catsEqInstance(t: TypeRef): Option[Doc] =
+    config.parameters.generateCatsEq match {
+      case true =>
+        Option(
+          text("lazy val ") + typeName(t) + text("Eq: Eq[") + typeName(t) + text(
+            "] = Eq.fromUniversalEquals"
+          )
+        )
+      case _ => None
+    }
 
   def typeExpr(f: FieldDecl): Doc = {
     (typeName(f.`type`): Id[Doc])
@@ -138,6 +131,36 @@ class Generator(config: Config) {
 
   def fieldDecl(f: FieldDecl): Doc =
     spread(List(ident(f.name) + char(':'), typeExpr(f)) ++ comment(f.comment))
+
+  def complexTypeClassDecl(ct: ComplexTypeDecl): Doc = {
+    val prefix = spread(List(text("final case class"), ident(ct.`type`.name))) + char(
+      '('
+    )
+    val postfix = char(')')
+
+    bracketBy(intercalate(comma + line, ct.fields.toList.map(fieldDecl _)))(
+      prefix,
+      postfix
+    )
+  }
+
+  def complexTypeObjectDecl(ct: ComplexTypeDecl): Option[Doc] = {
+    val elements = NEL.fromList(catsEqInstance(ct.`type`).toList).map(_.toList)
+
+    elements.map { el =>
+      val prefix = text("object ") + typeName(ct.`type`) + text(" {")
+      val postfix = char('}')
+
+      bracketBy(stack(el))(prefix, postfix)
+    }
+  }
+
+  def complexTypeDecl(ct: ComplexTypeDecl): Doc =
+    stack(
+      comment(ct.comment) ++
+        complexTypeClassDecl(ct).pure[List] ++
+        complexTypeObjectDecl(ct).toList
+    )
 
   def enumMemberDecl(e: EnumDecl)(m: EnumMemberDecl): Doc = {
     val code = spread(List(text("override val code ="), strLit(m.value)))
@@ -178,21 +201,18 @@ class Generator(config: Config) {
       char('}')
     )
 
-  def enumObjDecl(e: EnumDecl): Doc = {
+  def enumObjectDecl(e: EnumDecl): Doc = {
     val prefix = spread(List(text("object"), typeName(e.`type`), text("{")))
     val suffix = char('}')
 
-    intercalate(
-      line,
-      comment(e.comment) ++
-        bracketBy(
-          intercalate(
-            line,
-            e.members.map(enumMemberDecl(e) _).toList ++
-              List(line + enumValuesVal(e), line + enumFromStringFunc(e))
-          )
-        )(prefix, suffix).pure[List]
-    )
+    bracketBy(
+      intercalate(line, e.members.map(enumMemberDecl(e) _).toList) + line * 2 + intercalate(
+        line * 2,
+        List(enumValuesVal(e), enumFromStringFunc(e)) ++ catsEqInstance(
+          e.`type`
+        ).toList
+      )
+    )(prefix, suffix)
   }
 
   def enumTypeDecl(e: EnumDecl): Doc = {
@@ -201,24 +221,40 @@ class Generator(config: Config) {
     )
     val suffix = char('}')
 
-    val t = bracketBy(
+    bracketBy(
       stack(List(text("val code: String"), text("val description: String")))
     )(prefix, suffix)
-
-    stack(comment(e.comment) ++ t.pure[List])
   }
 
   def enumDecl(e: EnumDecl): Doc =
-    stack(List(enumTypeDecl(e), enumObjDecl(e)))
+    stack(
+      comment(e.comment) ++
+        List(enumTypeDecl(e), enumObjectDecl(e))
+    )
 
-  def newtypeDecl(t: NewtypeDecl): Doc = {
+  def newtypeClassDecl(t: NewtypeDecl): Doc = {
     val prefix = text("final case class ") + typeName(t.`type`) + char('(')
     val postfix = char(')')
 
-    val cls = bracketBy(text("value: ") + typeName(t.baseType))(prefix, postfix)
-
-    stack(comment(t.comment) ++ cls.pure[List])
+    bracketBy(text("value: ") + typeName(t.baseType))(prefix, postfix)
   }
+
+  def newtypeObjectDecl(t: NewtypeDecl): Option[Doc] = {
+    val elements = NEL.fromList(catsEqInstance(t.`type`).toList).map(_.toList)
+
+    elements.map { xs =>
+      val prefix = text("object ") + typeName(t.`type`) + text(" {")
+      val postfix = char('}')
+      bracketBy(intercalate(line * 2, xs))(prefix, postfix)
+    }
+  }
+
+  def newtypeDecl(t: NewtypeDecl): Doc =
+    stack(
+      comment(t.comment) ++
+        newtypeClassDecl(t).pure[List] ++
+        newtypeObjectDecl(t).toList
+    )
 
   def typeDecl(t: TypeDecl): Doc = t match {
     case v: ComplexTypeDecl => complexTypeDecl(v)

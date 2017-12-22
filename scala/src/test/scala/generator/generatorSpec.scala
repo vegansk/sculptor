@@ -20,7 +20,10 @@ object generatorSpec extends mutable.Specification
       generator.Config(
         "com.github.vegansk".some,
         "/* header */".some,
-        false
+        generator.Parameters(
+          generateComments = false,
+          generateCatsEq = true
+        )
       )
     )
     import gen._
@@ -31,7 +34,10 @@ object generatorSpec extends mutable.Specification
       newtypeDecl(t) must beEqvTo(
         Doc.text("""|final case class NewString(
                     |  value: String
-                    |)""".stripMargin)
+                    |)
+                    |object NewString {
+                    |  lazy val NewStringEq: Eq[NewString] = Eq.fromUniversalEquals
+                    |}""".stripMargin)
       )
     }
 
@@ -51,7 +57,7 @@ object generatorSpec extends mutable.Specification
                     |  val description: String
                     |}""".stripMargin)
       )
-      enumObjDecl(e) must beEqvTo(
+      enumObjectDecl(e) must beEqvTo(
         Doc.text("""|object Test {
                     |  object A extends Test {
                     |    override val code = "valueA"
@@ -70,6 +76,8 @@ object generatorSpec extends mutable.Specification
                     |  val fromString: String => Option[Test] = {
                     |    s => values.find(_.code == s)
                     |  }
+                    |
+                    |  lazy val TestEq: Eq[Test] = Eq.fromUniversalEquals
                     |}""".stripMargin
         )
       )
@@ -93,97 +101,13 @@ object generatorSpec extends mutable.Specification
              |  id: Option[Int],
              |  str: String,
              |  date: Instant
-             |)""".stripMargin
+             |)
+             |object Test {
+             |  lazy val TestEq: Eq[Test] = Eq.fromUniversalEquals
+             |}""".stripMargin
         )
       )
     }
-
-    // "handle type names" >> {
-
-    //   typeConst(TypeRef.std(Ident("string"))) must beEqvTo(Doc.text("t.string"))
-    //   typeConst(TypeRef.external(QName.of(Ident("p"), Ident("string")), QName.of(Ident("p"), Ident("stringType")))) must beEqvTo(Doc.text("p.stringType"))
-
-    // }
-
-    // "handle complex type const declaration" >> {
-
-    //   complexTypeConstDecl(ct) must beEqvTo(
-    //     Doc.text(
-    //       "export const TestType = t.intersection([" +
-    //         "t.interface({str: t.string, date: T.date}), " +
-    //         "t.partial({id: t.number})" +
-    //         "], \"Test\")"
-    //     )
-    //   )
-
-    // }
-
-    // "handle complex type interface declaration" >> {
-
-    //   complexTypeIntfDecl(ct) must beEqvTo(
-    //     Doc.text("export interface Test extends t.TypeOf<typeof TestType> {}")
-    //   )
-
-    // }
-
-    // val e = EnumDecl(
-    //   TypeRef.definedFrom("TestEnum", "TestEnumType"),
-    //   NEL.of(
-    //     EnumMemberDecl(Ident("V_01"), "01", None),
-    //     EnumMemberDecl(Ident("V_02"), "02", None)
-    //   ),
-    //   None
-    // )
-
-    // "handle enum type declaration" >> {
-
-    //   enumTypeDecl(e) must beEqvTo(
-    //     Doc.text(
-    //       """export enum TestEnum {V_01 = "01", V_02 = "02"}"""
-    //     )
-    //   )
-
-    // }
-
-    // "handle enum constant declaration" >> {
-
-    //   enumConstDecl(e) must beEqvTo(
-    //     Doc.text(
-    //       """export const TestEnumType = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
-    //     )
-    //   )
-
-    // }
-
-    // val imports = ImportsDecl(
-    //   List(
-    //     ImportDecl("java.time.Instant")
-    //   )
-    // )
-
-    // "handle imports declaration" >> {
-
-    //   importsDecl(imports) must beEqvTo(
-    //     Doc.text("import java.time.Instant")
-    //   )
-
-    // }
-
-    // val module = ModuleDecl(
-    //   imports.some,
-    //   TypesDecl(NEL.of(ct, e)).some
-    // )
-
-    // "handle module declaration" >> {
-
-    //   moduleDecl(module) must beEqvTo(
-    //     Doc.text("/* header */") + Doc.line * 2 +
-    //     importsDecl(imports) + Doc.line * 2 +
-    //       complexTypeDecl(ct) + Doc.line * 2 +
-    //       enumDecl(e)
-    //   )
-
-    // }
 
   }
 
