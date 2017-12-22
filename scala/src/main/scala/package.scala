@@ -15,13 +15,17 @@ package scala {
                           imports: List[Import] = Nil,
                           types: List[Type] = Nil,
                           header: Option[String] = None,
-                          generateComments: Boolean = true)
+                          parameters: Parameters = Parameters())
 }
 
 package object scala {
 
   import ast._
   import sculptor.xsd.{ast => x, parseSchema}
+
+  type Parameters = generator.Parameters
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  val Parameters = generator.Parameters
 
   private def toXsdConfig(cfg: Config, xsdNs: Option[String]): xsd.Config =
     xsd.Config(
@@ -41,7 +45,7 @@ package object scala {
     generator.Config(
       packageName = cfg.packageName,
       header = cfg.header,
-      generateComments = cfg.generateComments
+      parameters = cfg.parameters
     )
   }
 

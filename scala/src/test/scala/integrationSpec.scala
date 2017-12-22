@@ -10,7 +10,7 @@ import org.typelevel.paiges._
 object integrationSpec extends mutable.Specification {
   import testing.utils._
   import scala.xsd.{Config => XsdConfig, _}
-  import scala.generator.{Config => GenConfig}
+  import scala.generator.{Config => GenConfig, Parameters => GenParameters}
   import sculptor.xsd.{ast => x}
   import ast._
 
@@ -34,7 +34,7 @@ object integrationSpec extends mutable.Specification {
   val genConfig = GenConfig(
     Some("com.github.vegansk"),
     None,
-    true
+    GenParameters()
   )
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {
