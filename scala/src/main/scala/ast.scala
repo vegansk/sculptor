@@ -41,6 +41,7 @@ object ast {
   }
 
   final case class FieldDecl(name: Ident,
+                             xmlName: String,
                              `type`: TypeRef,
                              constraint: FieldConstraint,
                              array: Boolean,

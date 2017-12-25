@@ -20,10 +20,12 @@ object generatorSpec extends mutable.Specification
       generator.Config(
         "com.github.vegansk".some,
         "/* header */".some,
+        Nil,
         generator.Parameters(
           generateComments = false,
           generateCatsEq = true,
-          generateCirceCodecs = true
+          generateCirceCodecs = true,
+          generateXmlSerializers = false
         )
       )
     )
@@ -79,7 +81,7 @@ object generatorSpec extends mutable.Specification
                     |  )
                     |
                     |  val fromString: String => Option[Test] = {
-                    |    s => values.find(_.code == s)
+                    |    s => values.find(_.code === s)
                     |  }
                     |
                     |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
@@ -96,9 +98,9 @@ object generatorSpec extends mutable.Specification
       TypeRef.definedFrom("Test"),
       None,
       NEL.of(
-        FieldDecl(Ident("id"), TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, None),
-        FieldDecl(Ident("str"), TypeRef.std(Ident("String")), FieldConstraint.Required, false, None),
-        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Instant"))), FieldConstraint.Required, false, None)
+        FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, None),
+        FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, None),
+        FieldDecl(Ident("date"), "date", TypeRef.external(QName.of(Ident("Instant"))), FieldConstraint.Required, false, None)
       ),
       None
     )
@@ -114,8 +116,8 @@ object generatorSpec extends mutable.Specification
              |object Test {
              |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
              |
-             |  implicit val TestEncoder: Encoder[Test] = Encoder.instance[Test] { v =>
-             |    Json.obj(
+             |  implicit val TestObjectEncoder: ObjectEncoder[Test] = ObjectEncoder.instance[Test] { v =>
+             |    JsonObject(
              |      "id" := v.id,
              |      "str" := v.str,
              |      "date" := v.date
