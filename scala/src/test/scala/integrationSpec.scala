@@ -10,21 +10,21 @@ import org.typelevel.paiges._
 object integrationSpec extends mutable.Specification {
   import testing.utils._
   import scala.xsd.{Config => XsdConfig, _}
-  import scala.generator.{Config => GenConfig, Parameters => GenParameters}
+  import scala.generator.{Config => GenConfig, Parameters => GenParameters, ExternalType => GenType}
   import sculptor.xsd.{ast => x}
   import ast._
 
   val xsdConfig = XsdConfig(
     List(
-      ImportDecl("java.time.Instant")
+      ImportDecl("java.time.LocalDate")
     ),
     "xs".some,
     List(
-      ExternatType(
+      ExternalType(
         x.QName.fromString("xs:date"),
-        QName.of(Ident("Date"))
+        QName.of(Ident("LocalDate"))
       ),
-      ExternatType(
+      ExternalType(
         x.QName("official_info_t", None),
         QName.of(Ident("fake"))
       )
@@ -34,7 +34,10 @@ object integrationSpec extends mutable.Specification {
   val genConfig = GenConfig(
     Some("com.github.vegansk"),
     None,
-    GenParameters()
+    List(GenType("LocalDate")),
+    GenParameters(
+      generateXmlSerializers = true
+    )
   )
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {
@@ -56,8 +59,8 @@ object integrationSpec extends mutable.Specification {
         )
       )
 
-      // println(generateSources(transformSchema(xsd)).render(80).take(50000))
-      val _ = generateSources(transformSchema(xsd)).render(0)
+      println(generateSources(transformSchema(xsd)).render(80).take(6000))
+      // val _ = generateSources(transformSchema(xsd)).render(0)
 
       true must_=== true
     }

@@ -285,6 +285,7 @@ object Transform {
         result <- transformField(minOccurs, maxOccurs, nullable)(
           FieldDecl(
             Ident(fieldName(name)),
+            name,
             t,
             FieldConstraint.Required,
             false,
@@ -380,6 +381,7 @@ object Transform {
         } yield
           FieldDecl(
             Ident(fieldName(name)),
+            name,
             t,
             use
               .map(_ === "optional")

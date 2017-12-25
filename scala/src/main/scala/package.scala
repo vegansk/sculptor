@@ -34,7 +34,7 @@ package object scala {
       },
       xsdNs = xsdNs,
       externalTypes = cfg.types.map { t =>
-        xsd.ExternatType(
+        xsd.ExternalType(
           xsdName = x.QName.fromString(t.xsdName),
           name = QName.fromString(t.name)
         )
@@ -45,6 +45,7 @@ package object scala {
     generator.Config(
       packageName = cfg.packageName,
       header = cfg.header,
+      externalTypes = cfg.types.map(t => generator.ExternalType(t.name)),
       parameters = cfg.parameters
     )
   }

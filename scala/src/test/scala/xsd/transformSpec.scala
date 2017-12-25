@@ -23,7 +23,7 @@ object transformSpec extends mutable.Specification
       ),
       "xs".some,
       List(
-        ExternatType(
+        ExternalType(
           x.QName("t1", None),
           QName.of(Ident("fake"))
         )

@@ -46,10 +46,12 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("id"),
+            "id",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("org"),
+            "org",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None)),
         None
@@ -83,22 +85,27 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value1"),
+            "value1",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("value2"),
+            "value2",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("value3"),
+            "value3",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("value4"),
+            "value4",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("value5"),
+            "value5",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None)),
         None
@@ -125,10 +132,12 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("x"),
+            "x",
             TypeRef.std(Ident("Int")),
             FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("y"),
+            "y",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None)),
         None
@@ -151,10 +160,12 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("num"),
+            "num",
             TypeRef.std(Ident("Int")),
             FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("str"),
+            "str",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None)),
         None
@@ -181,6 +192,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
+            "value",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None)),
         None
@@ -226,6 +238,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("id"),
+            "id",
             TypeRef.std(Ident("Int")),
             FieldConstraint.Required, false, None)),
         None
@@ -238,6 +251,7 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
+            "value",
             TypeRef.defined(Ident("TestValue")),
             FieldConstraint.Required, false, None)),
         None
@@ -263,10 +277,12 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("value"),
+            "value",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, false, None),
           FieldDecl(
             Ident("id"),
+            "id",
             TypeRef.std(Ident("Int")),
             FieldConstraint.Required, false, None)),
         None
@@ -293,22 +309,27 @@ object testAst {
         NEL.of(
           FieldDecl(
             Ident("optional"),
+            "optional",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, false, None),
           FieldDecl(
             Ident("nullable"),
+            "nullable",
             TypeRef.std(Ident("String")),
             FieldConstraint.Nullable, false, None),
           FieldDecl(
             Ident("array"),
+            "array",
             TypeRef.std(Ident("String")),
             FieldConstraint.Required, true, None),
           FieldDecl(
             Ident("optionalNullable"),
+            "optional_nullable",
             TypeRef.std(Ident("String")),
             FieldConstraint.OptionalNullable, false, None),
           FieldDecl(
             Ident("optionalArray"),
+            "optional_array",
             TypeRef.std(Ident("String")),
             FieldConstraint.Optional, true, None)),
         None

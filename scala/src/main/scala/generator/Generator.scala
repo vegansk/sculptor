@@ -27,7 +27,9 @@ class Generator(config: Config) {
 
   val `import`: Doc = text("import")
 
-  def strLit(v: String): Doc = char('"') + text(v) + char('"')
+  def strLitString(v: String): String = "\"" + v + "\""
+
+  def strLit(v: String): Doc = text(strLitString(v))
 
   private val reservedWords = Set(
     "abstract",
@@ -141,6 +143,100 @@ class Generator(config: Config) {
       case _ => None
     }
 
+  def createElem(elemNameVar: String, data: Doc): Doc =
+    bracketBy(
+      intercalate(
+        comma + line,
+        List(
+          text("null"),
+          text(mask(elemNameVar, true)),
+          text("Null"),
+          text("TopScope"),
+        ) ++ List(data)
+      )
+    )(text("Elem("), char(')'))
+
+  val xmlSerializersClassName: Doc = text("XmlSerializers")
+
+  val xmlSerializerParam: Doc =
+    config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
+      case true => {
+        text("(s: ") + xmlSerializersClassName + char(')')
+      }
+      case _ => empty
+    }
+
+  def decapitalize(s: String): String = {
+    val (x, xs) = s.splitAt(1)
+    x.toLowerCase + xs
+  }
+
+  def xmlSerializerName(typeName: String): Doc =
+    text(decapitalize(typeName) + "ToXml")
+
+  def mkXmlSerializersObject: Option[Doc] =
+    config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
+      case true => {
+        val prefix = text("final case class ") + xmlSerializersClassName + char(
+          '('
+        )
+        val postfix = char(')')
+        bracketBy(intercalate(comma + line, config.externalTypes.map { t =>
+          xmlSerializerName(t.name) + text(s": String => ${t.name} => Node")
+        }))(prefix, postfix).some
+      }
+      case _ => None
+    }
+
+  def callXmlSerializer(elemName: String,
+                        varName: String,
+                        `type`: TypeRef): Doc = {
+    val name = typeNameString(`type`)
+    config.externalTypes.find(_.name === name) match {
+      case Some(_) =>
+        text("s.") + xmlSerializerName(name) + text("(") + text(elemName) + text(
+          s")($varName)"
+        )
+      case _ =>
+        `type` match {
+          case TypeRef.std(_) =>
+            createElem(elemName, text(s"Text($varName.toString)"))
+          case _ =>
+            text(s"$name.toXml(s)(") + text(elemName) + text(s")($varName)")
+        }
+    }
+  }
+
+  def callFieldXmlSerializer(elemName: String,
+                             objectName: String,
+                             fieldName: String,
+                             fieldType: TypeRef): Doc =
+    callXmlSerializer(
+      elemName,
+      s"$objectName.${mask(fieldName, true)}",
+      fieldType
+    )
+
+  def mkXmlSerilaizerFunc(`type`: TypeRef,
+                          varName: String,
+                          code: => Doc): Option[Doc] =
+    config.parameters.generateXmlSerializers match {
+      case true => {
+        val prefix = spread(
+          List(
+            text(s"def toXml") + xmlSerializerParam + text(
+              s"(elemName: String)($varName:"
+            ),
+            typeName(`type`) + text("):"),
+            text("Node = {")
+          )
+        )
+        val postfix = char('}')
+        bracketBy(code)(prefix, postfix).some
+      }
+      case _ => None
+    }
+
   def typeExpr(f: FieldDecl): Doc = {
     (typeName(f.`type`): Id[Doc])
       .map(t => if (f.array) array(t) else t)
@@ -165,8 +261,8 @@ class Generator(config: Config) {
   }
 
   def complexTypeCirceEncoder(ct: ComplexTypeDecl): Doc = {
-    val prefix = mkInstanceVal(ct.`type`, "Encoder") + text(
-      s"Encoder.instance[${typeNameString(ct.`type`)}] { v =>"
+    val prefix = mkInstanceVal(ct.`type`, "ObjectEncoder") + text(
+      s"ObjectEncoder.instance[${typeNameString(ct.`type`)}] { v =>"
     )
     val postfix = char('}')
 
@@ -175,7 +271,10 @@ class Generator(config: Config) {
     }
 
     val obj =
-      bracketBy(intercalate(comma + line, fields))(text("Json.obj("), char(')'))
+      bracketBy(intercalate(comma + line, fields))(
+        text("JsonObject("),
+        char(')')
+      )
 
     bracketBy(obj)(prefix, postfix)
   }
@@ -215,11 +314,55 @@ class Generator(config: Config) {
       case false => Nil
     }
 
+  def complexTypeFieldXmlSerializer(f: FieldDecl): Doc = {
+    val isOptional = optionalConstraints.contains(f.constraint)
+    val isArray = f.array
+    (isOptional, isArray) match {
+      case (false, false) =>
+        text("List(") + callFieldXmlSerializer(
+          strLitString(f.xmlName),
+          "ct",
+          f.name.value,
+          f.`type`
+        ) + char(')')
+      case (false, true) =>
+        text("ct.") + ident(f.name) + text(".map(v => ") +
+          callXmlSerializer(strLitString(f.xmlName), "v", f.`type`) +
+          char(')')
+      case (true, false) =>
+        text("ct.") + ident(f.name) + text(".map(v => ") +
+          callXmlSerializer(strLitString(f.xmlName), "v", f.`type`) +
+          text(").toList")
+      case (true, true) =>
+        text("ct.") + ident(f.name) + text("toList.flatMap(v => ") +
+          callXmlSerializer(strLitString(f.xmlName), "v", f.`type`) +
+          char(')')
+    }
+  }
+
+  def complexTypeXmlSerializer(ct: ComplexTypeDecl): Option[Doc] =
+    config.parameters.generateXmlSerializers match {
+      case true =>
+        mkXmlSerilaizerFunc(
+          ct.`type`,
+          "ct",
+          createElem(
+            "elemName",
+            intercalate(
+              text(" ++") + line,
+              ct.fields.toList.map(complexTypeFieldXmlSerializer)
+            ) + text(":_*")
+          )
+        )
+      case _ => None
+    }
+
   def complexTypeObjectDecl(ct: ComplexTypeDecl): Option[Doc] = {
     val elements = NEL
       .fromList(
         catsEqInstance(ct.`type`).toList ++
-          complexTypeCirceCodecs(ct)
+          complexTypeCirceCodecs(ct) ++
+          complexTypeXmlSerializer(ct).toList
       )
       .map(_.toList)
 
@@ -271,7 +414,7 @@ class Generator(config: Config) {
   }
 
   def enumFromStringFunc(e: EnumDecl): Doc =
-    bracketBy(text("s => values.find(_.code == s)"))(
+    bracketBy(text("s => values.find(_.code === s)"))(
       text("val fromString: String => Option[") +
         typeName(e.`type`) + text("] = {"),
       char('}')
@@ -295,18 +438,25 @@ class Generator(config: Config) {
       case _ => Nil
     }
 
+  def enumXmlSerilaizer(e: EnumDecl): Option[Doc] =
+    mkXmlSerilaizerFunc(
+      e.`type`,
+      "e",
+      createElem("elemName", text("Text(e.code)"))
+    )
+
   def enumObjectDecl(e: EnumDecl): Doc = {
-    val prefix = spread(List(text("object"), typeName(e.`type`), text("{")))
-    val suffix = char('}')
+    val prefix = spread(List(text("object"), typeName(e.`type`), char('{')))
+    val postfix = char('}')
 
     bracketBy(
       intercalate(line, e.members.map(enumMemberDecl(e) _).toList) + line * 2 + intercalate(
         line * 2,
         List(enumValuesVal(e), enumFromStringFunc(e)) ++ catsEqInstance(
           e.`type`
-        ).toList ++ enumCirceCodecs(e)
+        ).toList ++ enumCirceCodecs(e) ++ enumXmlSerilaizer(e).toList
       )
-    )(prefix, suffix)
+    )(prefix, postfix)
   }
 
   def enumTypeDecl(e: EnumDecl): Doc = {
@@ -344,6 +494,13 @@ class Generator(config: Config) {
       case _ => Nil
     }
 
+  def newtypeXmlSerializer(t: NewtypeDecl): Option[Doc] =
+    mkXmlSerilaizerFunc(
+      t.`type`,
+      "t",
+      callFieldXmlSerializer("elemName", "t", "value", t.baseType)
+    )
+
   def newtypeClassDecl(t: NewtypeDecl): Doc = {
     val prefix = text("final case class ") + typeName(t.`type`) + char('(')
     val postfix = char(')')
@@ -355,7 +512,8 @@ class Generator(config: Config) {
     val elements = NEL
       .fromList(
         catsEqInstance(t.`type`).toList ++
-          newtypeCirceCodecs(t)
+          newtypeCirceCodecs(t) ++
+          newtypeXmlSerializer(t).toList
       )
       .map(_.toList)
 
@@ -399,6 +557,7 @@ class Generator(config: Config) {
       config.header.map(text _).toList ++
         packageDecl.toList ++
         m.imports.map(importsDecl _).toList ++
+        mkXmlSerializersObject.toList ++
         m.types.map(typesDecl _).toList
     )
 }
