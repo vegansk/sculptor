@@ -22,6 +22,8 @@ object nativeGeneratorSpec extends mutable.Specification
         "/* header */".some,
         true,
         true,
+        false,
+        false,
         false
       )
     )
