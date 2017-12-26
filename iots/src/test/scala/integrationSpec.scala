@@ -44,6 +44,8 @@ object integrationSpec extends mutable.Specification {
     None,
     false,
     true,
+    false,
+    false,
     false
   )
 

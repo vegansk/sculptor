@@ -90,7 +90,9 @@ class Generator(config: Config) {
 
   def nativeFieldDecl(f: FieldDecl): Doc = {
     val optional =
-      if (!requiredConstraints.contains(f.constraint)) char('?')
+      if (config.generatePartialTypes || !requiredConstraints.contains(
+            f.constraint
+          )) char('?')
       else empty
     spread(
       List(ident(f.name) + optional + char(':'), nativeTypeExpr(f)) ++ comment(
@@ -193,14 +195,22 @@ class Generator(config: Config) {
             .some
       }
 
+    def optionalField(constraint: FieldConstraint): Boolean =
+      config.generatePartialConstants || !requiredConstraints.contains(
+        constraint
+      )
+
+    def requiredField(constraint: FieldConstraint): Boolean =
+      !optionalField(constraint)
+
     stack(
       comment(ct.comment) ++
         intercalate(
           comma + line,
           List(
             ct.baseType.map(typeConst _),
-            fields(interface, requiredConstraints.contains),
-            fields(partial, requiredConstraints.contains(_).unary_!)
+            fields(interface, requiredField),
+            fields(partial, optionalField)
           ).foldMap(_.toList)
         ).tightBracketBy(prefix, suffix).pure[List]
     )

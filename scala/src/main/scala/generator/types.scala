@@ -5,7 +5,8 @@ package generator
 final case class Parameters(generateComments: Boolean = true,
                             generateCatsEq: Boolean = false,
                             generateCirceCodecs: Boolean = false,
-                            generateXmlSerializers: Boolean = false)
+                            generateXmlSerializers: Boolean = false,
+                            generateOptionalTypes: Boolean = false)
 
 final case class ExternalType(name: String) extends AnyVal
 

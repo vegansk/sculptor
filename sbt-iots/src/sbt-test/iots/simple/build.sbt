@@ -28,7 +28,8 @@ lazy val root = project.in(file("."))
       header = Option("/** tslint:disable: all */"),
       iotsNs = "iots",
       nativeTypes = true,
-      generateEnumsDocumentationGetters = true
+      generateEnumsDocumentationGetters = true,
+      generatePartialTypes = true
     ),
 
     iotsTargetDirectory := file("src_generated"),

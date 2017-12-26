@@ -18,7 +18,9 @@ package iots {
                           header: Option[String] = None,
                           nativeTypes: Boolean = false,
                           generateComments: Boolean = true,
-                          generateEnumsDocumentationGetters: Boolean = false)
+                          generateEnumsDocumentationGetters: Boolean = false,
+                          generatePartialTypes: Boolean = false,
+                          generatePartialConstants: Boolean = false)
 }
 
 package object iots {
@@ -47,7 +49,9 @@ package object iots {
       header = cfg.header,
       nativeTypes = cfg.nativeTypes,
       generateComments = cfg.generateComments,
-      generateEnumsDocumentationGetters = cfg.generateEnumsDocumentationGetters
+      generateEnumsDocumentationGetters = cfg.generateEnumsDocumentationGetters,
+      generatePartialTypes = cfg.generatePartialTypes,
+      generatePartialConstants = cfg.generatePartialConstants
     )
   }
 

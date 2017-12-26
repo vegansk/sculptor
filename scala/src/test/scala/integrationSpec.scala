@@ -59,8 +59,8 @@ object integrationSpec extends mutable.Specification {
         )
       )
 
-      println(generateSources(transformSchema(xsd)).render(80).take(6000))
-      // val _ = generateSources(transformSchema(xsd)).render(0)
+      // println(generateSources(transformSchema(xsd)).render(80).take(6000))
+      val _ = generateSources(transformSchema(xsd)).render(0)
 
       true must_=== true
     }

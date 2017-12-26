@@ -22,6 +22,8 @@ object generatorSpec extends mutable.Specification
         "/* header */".some,
         false,
         false,
+        false,
+        false,
         false
       )
     )

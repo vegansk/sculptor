@@ -267,7 +267,10 @@ class Generator(config: Config) {
     (typeName(f.`type`): Id[Doc])
       .map(t => if (f.array) array(t) else t)
       .map(
-        t => if (optionalConstraints.contains(f.constraint)) optional(t) else t
+        t =>
+          if (config.parameters.generateOptionalTypes || optionalConstraints
+                .contains(f.constraint)) optional(t)
+          else t
       )
   }
 
