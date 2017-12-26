@@ -21,6 +21,7 @@ object generatorSpec extends mutable.Specification
         Ident("t"),
         "/* header */".some,
         false,
+        false,
         false
       )
     )

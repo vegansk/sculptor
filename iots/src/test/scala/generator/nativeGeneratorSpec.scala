@@ -21,7 +21,8 @@ object nativeGeneratorSpec extends mutable.Specification
         Ident("t"),
         "/* header */".some,
         true,
-        true
+        true,
+        false
       )
     )
     import gen._

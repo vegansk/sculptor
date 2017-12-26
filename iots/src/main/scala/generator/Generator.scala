@@ -9,6 +9,8 @@ import org.typelevel.paiges._
 
 class Generator(config: Config) {
 
+  private def tabSize = 2
+
   import ast._
 
   import Doc._
@@ -25,12 +27,23 @@ class Generator(config: Config) {
 
   val `import`: Doc = text("import")
 
+  def bracketBy(d: Doc)(left: Doc, right: Doc): Doc =
+    left + (lineBreak + d).nested(tabSize) + lineBreak + right
+
   def strLit(v: String): Doc = char('"') + text(v) + char('"')
 
   def ident(i: Ident): Doc = text(i.value)
 
+  def decapitalize(s: String): String = {
+    val (x, xs) = s.splitAt(1)
+    x.toLowerCase + xs
+  }
+
+  def qNameString(name: QName): String =
+    name.path.map(_.value).toList.mkString(".")
+
   def qName(name: QName): Doc =
-    intercalate(dot, name.path.map(ident).toList)
+    text(qNameString(name))
 
   def array(`type`: Doc): Doc =
     qName(QName(NEL.of(config.iotsNs, Ident("array")))) + char('(') + `type` + char(
@@ -131,11 +144,15 @@ class Generator(config: Config) {
     case TypeRef.external(_, v) => qName(v)
   }
 
-  def typeName(t: TypeRef): Doc = t match {
-    case TypeRef.std(v) => ident(v)
-    case TypeRef.defined(v, _) => ident(v)
-    case TypeRef.external(v, _) => qName(v)
-  }
+  def typeNameString(t: TypeRef, maskReservedWords: Boolean = true): String =
+    t match {
+      case TypeRef.std(v) => v.value
+      case TypeRef.defined(v, _) => v.value
+      case TypeRef.external(v, _) => qNameString(v)
+    }
+
+  def typeName(t: TypeRef): Doc =
+    text(typeNameString(t))
 
   def typeExpr(f: FieldDecl): Doc = {
     (typeConst(f.`type`): Id[Doc])
@@ -224,8 +241,27 @@ class Generator(config: Config) {
     stack(comment(e.comment) ++ c.pure[List])
   }
 
+  def enumDocumentationGetter(e: EnumDecl): Option[Doc] =
+    config.generateEnumsDocumentationGetters match {
+      case true => {
+        val prefix = exportPrefix(e.exported) +
+          text("const " + decapitalize(typeNameString(e.`type`)) + "Desc: [") +
+          typeName(e.`type`) + text(", string][] = [")
+        val postfix = char(']')
+        val elements = e.members.toList.map { m =>
+          char('[') + typeName(e.`type`) + dot + ident(m.name) +
+            text(", ") + strLit(m.comment.getOrElse(m.value)) + char(']')
+        }
+
+        bracketBy(intercalate(comma + line, elements))(prefix, postfix).some
+      }
+      case false => None
+    }
+
   def enumDecl(e: EnumDecl): Doc =
-    stack(List(enumTypeDecl(e), enumConstDecl(e)))
+    stack(
+      List(enumTypeDecl(e), enumConstDecl(e)) ++ enumDocumentationGetter(e).toList
+    )
 
   def newtypeConstDecl(t: NewtypeDecl): Doc = {
     val c = exportPrefix(t.exported) +
