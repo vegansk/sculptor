@@ -43,7 +43,8 @@ object integrationSpec extends mutable.Specification {
     Ident("t"),
     None,
     false,
-    true
+    true,
+    false
   )
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {

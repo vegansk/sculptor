@@ -17,7 +17,8 @@ package iots {
                           iotsNs: String = "t",
                           header: Option[String] = None,
                           nativeTypes: Boolean = false,
-                          generateComments: Boolean = true)
+                          generateComments: Boolean = true,
+                          generateEnumsDocumentationGetters: Boolean = false)
 }
 
 package object iots {
@@ -45,7 +46,8 @@ package object iots {
       iotsNs = Ident(cfg.iotsNs),
       header = cfg.header,
       nativeTypes = cfg.nativeTypes,
-      generateComments = cfg.generateComments
+      generateComments = cfg.generateComments,
+      generateEnumsDocumentationGetters = cfg.generateEnumsDocumentationGetters
     )
   }
 
