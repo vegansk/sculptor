@@ -152,6 +152,7 @@ class Generator(config: Config) {
           text(mask(elemNameVar, true)),
           text("Null"),
           text("TopScope"),
+          text("true"),
         ) ++ List(data)
       )
     )(text("Elem("), char(')'))
@@ -173,6 +174,20 @@ class Generator(config: Config) {
 
   def xmlSerializerName(typeName: String): Doc =
     text(decapitalize(typeName) + "ToXml")
+
+  def mkXmlSerializerUtils: Option[Doc] = {
+    val code =
+      """|private object utils {
+         |  def unused[T](v: T): Unit = {
+         |    val _ = v
+         |  }
+         |}""".stripMargin
+
+    config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
+      case true => text(code).some
+      case _ => None
+    }
+  }
 
   def mkXmlSerializersObject: Option[Doc] =
     config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
@@ -217,6 +232,12 @@ class Generator(config: Config) {
       fieldType
     )
 
+  def mkXmlSerializersObjectUnusedCall: Option[Doc] =
+    config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
+      case true => text("utils.unused(s)").some
+      case _ => None
+    }
+
   def mkXmlSerilaizerFunc(`type`: TypeRef,
                           varName: String,
                           code: => Doc): Option[Doc] =
@@ -232,7 +253,12 @@ class Generator(config: Config) {
           )
         )
         val postfix = char('}')
-        bracketBy(code)(prefix, postfix).some
+        bracketBy(
+          stack(
+            mkXmlSerializersObjectUnusedCall.toList ++
+              List(code)
+          )
+        )(prefix, postfix).some
       }
       case _ => None
     }
@@ -558,6 +584,7 @@ class Generator(config: Config) {
         packageDecl.toList ++
         m.imports.map(importsDecl _).toList ++
         mkXmlSerializersObject.toList ++
+        mkXmlSerializerUtils.toList ++
         m.types.map(typesDecl _).toList
     )
 }
