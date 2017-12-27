@@ -1,27 +1,27 @@
 package sbtsculptor.scalagen
 
 import sbt._
-import sculptor.scala
+import sculptor.scalagen
 
 object SculptorScalagenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type ScalagenConfig = scala.Config
+    type ScalagenConfig = scalagen.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenConfig = scala.Config
+    val ScalagenConfig = scalagen.Config
 
-    type ScalagenType = scala.Type
+    type ScalagenType = scalagen.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenType = scala.Type
+    val ScalagenType = scalagen.Type
 
-    type ScalagenImport = scala.Import
+    type ScalagenImport = scalagen.Import
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenImport = scala.Import
+    val ScalagenImport = scalagen.Import
 
-    type ScalagenParameters = scala.Parameters
+    type ScalagenParameters = scalagen.Parameters
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenParameters = scala.Parameters
+    val ScalagenParameters = scalagen.Parameters
 
     val scalagenXsdFiles: SettingKey[Seq[File]] = settingKey(
       "List of xsd files"
@@ -53,7 +53,7 @@ object SculptorScalagenPlugin extends AutoPlugin {
   private def generateFile(xsd: File,
                            output: File,
                            config: ScalagenConfig): Unit =
-    scala.generateFromFile(xsd, output, config).unsafeRunSync
+    scalagen.generateFromFile(xsd, output, config).unsafeRunSync
 
   private def changePathExt(f: File, p: File, ext: String): File = {
     val n0 = f.getName

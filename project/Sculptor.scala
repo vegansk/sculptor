@@ -84,21 +84,21 @@ object Sculptor {
         libraryDependencies ++= Dependencies.xsd
       )
 
-    val iots: PC = _.configure(common)
+    val tsgen: PC = _.configure(common)
       .settings(
-        name := "sculptor-iots",
-        libraryDependencies ++= Dependencies.iots
+        name := "sculptor-tsgen",
+        libraryDependencies ++= Dependencies.tsgen
       )
 
-    val sbtIots: PC = _.configure(common, plugin)
+    val sbtTsgen: PC = _.configure(common, plugin)
       .settings(
-        name := "sbt-sculptor-iots",
+        name := "sbt-sculptor-tsgen",
       )
 
-    val scala: PC = _.configure(common)
+    val scalagen: PC = _.configure(common)
       .settings(
-        name := "sculptor-scala",
-        libraryDependencies ++= Dependencies.scala
+        name := "sculptor-scalagen",
+        libraryDependencies ++= Dependencies.scalagen
       )
 
     val sbtScalagen: PC = _.configure(common, plugin)
@@ -111,24 +111,24 @@ object Sculptor {
     .in(file("xsd"))
     .configure(Config.xsd)
 
-  lazy val iots = project
-    .in(file("iots"))
+  lazy val tsgen = project
+    .in(file("tsgen"))
     .dependsOn(xsd)
-    .configure(Config.iots)
+    .configure(Config.tsgen)
 
-  lazy val sbtIots = project
-    .in(file("sbt-iots"))
-    .configure(Config.sbtIots)
-    .dependsOn(iots)
+  lazy val sbtTsgen = project
+    .in(file("sbt-tsgen"))
+    .configure(Config.sbtTsgen)
+    .dependsOn(tsgen)
 
-  lazy val scala = project
-    .in(file("scala"))
+  lazy val scalagen = project
+    .in(file("scalagen"))
     .dependsOn(xsd)
-    .configure(Config.scala)
+    .configure(Config.scalagen)
 
   lazy val sbtScalagen = project
     .in(file("sbt-scalagen"))
     .configure(Config.sbtScalagen)
-    .dependsOn(scala)
+    .dependsOn(scalagen)
 
 }

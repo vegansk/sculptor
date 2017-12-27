@@ -17,7 +17,7 @@ lazy val root = project.in(file("."))
     ),
 
     scalagenConfig := ScalagenConfig(
-      packageName = Option("polaris.schema.fes.optional"),
+      packageName = Option("polaris.schema.fes"),
       imports = List(
         ScalagenImport("java.time.LocalDate"),
         ScalagenImport("java.util.UUID"),
@@ -25,6 +25,7 @@ lazy val root = project.in(file("."))
         ScalagenImport("cats.implicits._"),
         ScalagenImport("io.circe._"),
         ScalagenImport("io.circe.syntax._"),
+        ScalagenImport("scala.xml._"),
         ScalagenImport("polaris.json.instances._")
       ),
       types = List(
@@ -36,8 +37,8 @@ lazy val root = project.in(file("."))
         generateComments = true,
         generateCatsEq = true,
         generateCirceCodecs = true,
-        generateXmlSerializers = false,
-        generateOptionalTypes = true
+        generateXmlSerializers = true,
+        generateOptionalTypes = false
       )
     ),
 

@@ -40,7 +40,7 @@ object Dependencies {
     pprint
   ).map(_ % "test")
 
-  val iots = Seq(
+  val tsgen = Seq(
     scalaXml,
     scalaGraphCore,
     cats,
@@ -55,7 +55,7 @@ object Dependencies {
     specs2ScalaCheck
   ).map(_ % "test")
 
-  val scala = Seq(
+  val scalagen = Seq(
     scalaXml,
     scalaGraphCore,
     cats,
