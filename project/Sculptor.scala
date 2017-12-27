@@ -73,35 +73,47 @@ object Sculptor {
       addCompilerPlugin(Dependencies.kindProjector)
     )
 
+    val publish: PC = _.settings(
+      publishMavenStyle := true,
+      credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+      publishTo := {
+        val nexus = "http://nexus.eldissoft.lan/nexus/content/repositories/"
+        if (isSnapshot.value)
+          Some("snapshots" at nexus + "snapshots")
+        else
+          Some("releases" at nexus + "releases")
+      }
+    )
+
     val plugin: PC = _.settings(
       sbtPlugin := true,
       sbtVersion := Dependencies.Versions.sbt
     )
 
-    val xsd: PC = _.configure(common)
+    val xsd: PC = _.configure(common, publish)
       .settings(
         name := "sculptor-xsd",
         libraryDependencies ++= Dependencies.xsd
       )
 
-    val tsgen: PC = _.configure(common)
+    val tsgen: PC = _.configure(common, publish)
       .settings(
         name := "sculptor-tsgen",
         libraryDependencies ++= Dependencies.tsgen
       )
 
-    val sbtTsgen: PC = _.configure(common, plugin)
+    val sbtTsgen: PC = _.configure(common, plugin, publish)
       .settings(
         name := "sbt-sculptor-tsgen",
       )
 
-    val scalagen: PC = _.configure(common)
+    val scalagen: PC = _.configure(common, publish)
       .settings(
         name := "sculptor-scalagen",
         libraryDependencies ++= Dependencies.scalagen
       )
 
-    val sbtScalagen: PC = _.configure(common, plugin)
+    val sbtScalagen: PC = _.configure(common, plugin, publish)
       .settings(
         name := "sbt-sculptor-scalagen",
       )
