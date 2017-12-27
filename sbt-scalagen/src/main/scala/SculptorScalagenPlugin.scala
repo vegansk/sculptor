@@ -7,9 +7,9 @@ object SculptorScalagenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type ScalagenConfig = scalagen.Config
+    type ScalagenOptions = scalagen.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenConfig = scalagen.Config
+    val ScalagenOptions = scalagen.Config
 
     type ScalagenType = scalagen.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -23,14 +23,12 @@ object SculptorScalagenPlugin extends AutoPlugin {
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     val ScalagenParameters = scalagen.Parameters
 
-    val scalagenXsdFiles: SettingKey[Seq[File]] = settingKey(
-      "List of xsd files"
-    )
-    val scalagenTargetDirectory: SettingKey[File] = settingKey(
-      "Output directory for generated files"
-    )
-    val scalagenConfig: SettingKey[ScalagenConfig] = settingKey(
-      "Generator configuration"
+    final case class ScalagenConfig(xsdFile: File,
+                                    outFile: File,
+                                    options: ScalagenOptions)
+
+    val scalagenConfigurations: SettingKey[Seq[ScalagenConfig]] = settingKey(
+      "List of scalagen configurations"
     )
 
     val scalagenGenerate: TaskKey[Unit] = taskKey(
@@ -42,36 +40,20 @@ object SculptorScalagenPlugin extends AutoPlugin {
   import autoImport._
 
   def baseSettings: Seq[Setting[_]] = Seq(
-    scalagenXsdFiles := Seq(),
-    scalagenTargetDirectory := file("src_managed"),
-    scalagenConfig := ScalagenConfig(),
+    scalagenConfigurations := Seq(),
     scalagenGenerate := scalagenGenerateTask.value
   )
 
   override lazy val projectSettings = baseSettings
 
-  private def generateFile(xsd: File,
-                           output: File,
-                           config: ScalagenConfig): Unit =
-    scalagen.generateFromFile(xsd, output, config).unsafeRunSync
-
-  private def changePathExt(f: File, p: File, ext: String): File = {
-    val n0 = f.getName
-    val n = n0.lastIndexOf(".") match {
-      case -1 => n0
-      case i => n0.substring(0, i)
-    }
-
-    new File(p, n + "." + ext)
+  private def generate(cfg: ScalagenConfig): Unit = {
+    val _ = cfg.outFile.getParentFile.mkdirs
+    scalagen
+      .generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options)
+      .unsafeRunSync
   }
 
   private lazy val scalagenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
-    val xsdFiles = scalagenXsdFiles.value
-    val targetDir = scalagenTargetDirectory.value
-    val config = scalagenConfig.value
-
-    xsdFiles.foreach(
-      xsd => generateFile(xsd, changePathExt(xsd, targetDir, "scala"), config)
-    )
+    scalagenConfigurations.value.foreach(generate)
   }
 }
