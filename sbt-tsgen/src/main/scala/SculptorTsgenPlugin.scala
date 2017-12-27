@@ -7,9 +7,9 @@ object SculptorTsgenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type TsgenConfig = tsgen.Config
+    type TsgenOptions = tsgen.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenConfig = tsgen.Config
+    val TsgenOptions = tsgen.Config
 
     type TsgenType = tsgen.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
@@ -19,12 +19,12 @@ object SculptorTsgenPlugin extends AutoPlugin {
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     val TsgenImport = tsgen.Import
 
-    val tsgenXsdFiles: SettingKey[Seq[File]] = settingKey("List of xsd files")
-    val tsgenTargetDirectory: SettingKey[File] = settingKey(
-      "Output directory for generated files"
-    )
-    val tsgenConfig: SettingKey[TsgenConfig] = settingKey(
-      "Generator configuration"
+    final case class TsgenConfig(xsdFile: File,
+                                 outFile: File,
+                                 options: TsgenOptions)
+
+    val tsgenConfigurations: SettingKey[Seq[TsgenConfig]] = settingKey(
+      "List of tsgen configurations"
     )
 
     val tsgenGenerate: TaskKey[Unit] = taskKey(
@@ -35,35 +35,17 @@ object SculptorTsgenPlugin extends AutoPlugin {
 
   import autoImport._
 
-  def baseSettings: Seq[Setting[_]] = Seq(
-    tsgenXsdFiles := Seq(),
-    tsgenTargetDirectory := file("src_managed"),
-    tsgenConfig := TsgenConfig(),
-    tsgenGenerate := tsgenGenerateTask.value
-  )
+  def baseSettings: Seq[Setting[_]] =
+    Seq(tsgenConfigurations := Seq(), tsgenGenerate := tsgenGenerateTask.value)
 
   override lazy val projectSettings = baseSettings
 
-  private def generateFile(xsd: File, output: File, config: TsgenConfig): Unit =
-    tsgen.generateFromFile(xsd, output, config).unsafeRunSync
-
-  private def changePathExt(f: File, p: File, ext: String): File = {
-    val n0 = f.getName
-    val n = n0.lastIndexOf(".") match {
-      case -1 => n0
-      case i => n0.substring(0, i)
-    }
-
-    new File(p, n + "." + ext)
+  private def generate(cfg: TsgenConfig): Unit = {
+    val _ = cfg.outFile.getParentFile.mkdirs
+    tsgen.generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options).unsafeRunSync
   }
 
   private lazy val tsgenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
-    val xsdFiles = tsgenXsdFiles.value
-    val targetDir = tsgenTargetDirectory.value
-    val config = tsgenConfig.value
-
-    xsdFiles.foreach(
-      xsd => generateFile(xsd, changePathExt(xsd, targetDir, "ts"), config)
-    )
+    tsgenConfigurations.value.foreach(generate)
   }
 }
