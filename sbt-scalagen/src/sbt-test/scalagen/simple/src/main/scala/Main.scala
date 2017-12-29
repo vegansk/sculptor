@@ -1,6 +1,9 @@
 import polaris.schema.fes._
+import polaris.schema.fes.{optional => opt}
 import scala.xml._
 
+import io.circe._
+import io.circe.syntax._
 import java.util.UUID
 
 object Main extends App {
@@ -58,6 +61,13 @@ object Main extends App {
     None, None
   )
 
-  println(Document.toXml(xmlCodecs)("DOCUMENT")(document))
+  val result = for {
+    json <- Right(document.asJson)
+    optionalDoc <- json.as[opt.Document]
+    sourceDoc <- opt.Document.strong(optionalDoc).toEither
+    xml <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(sourceDoc))
+  } yield xml
+
+  println(result)
 
 }

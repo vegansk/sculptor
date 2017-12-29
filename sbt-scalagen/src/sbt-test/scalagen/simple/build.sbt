@@ -13,6 +13,7 @@ val scalagenOptions = ScalagenOptions(
     ScalagenImport("java.time.LocalDate"),
     ScalagenImport("java.util.UUID"),
     ScalagenImport("cats._"),
+    ScalagenImport("cats.data._"),
     ScalagenImport("cats.implicits._"),
     ScalagenImport("io.circe._"),
     ScalagenImport("io.circe.syntax._"),
@@ -29,7 +30,15 @@ val scalagenOptions = ScalagenOptions(
     generateCatsEq = true,
     generateCirceCodecs = true,
     generateXmlSerializers = true,
-    generateOptionalTypes = false
+    generateOptionalTypes = ScalagenOptionalTypes.No
+  )
+)
+
+val scalagenOptionalOptions = scalagenOptions.copy(
+  packageName = Option("polaris.schema.fes.optional"),
+  parameters = scalagenOptions.parameters.copy(
+    generateXmlSerializers = false,
+    generateOptionalTypes = ScalagenOptionalTypes.Generate(Some("polaris.schema.fes"))
   )
 )
 
@@ -42,11 +51,20 @@ lazy val root = project.in(file("."))
       cats, circe, circeJava8, scalaXml
     ),
 
+    scalacOptions ++= Seq(
+      "-Ypartial-unification"
+    ),
+
     scalagenConfigurations := Seq(
       ScalagenConfig(
         file("xsd") / "fes-2.0.xsd",
         file("src") / "main/scala/fes-2.0.scala",
         scalagenOptions
+      ),
+      ScalagenConfig(
+        file("xsd") / "fes-2.0.xsd",
+        file("src") / "main/scala/fes-2.0-optional.scala",
+        scalagenOptionalOptions
       )
     ),
 
