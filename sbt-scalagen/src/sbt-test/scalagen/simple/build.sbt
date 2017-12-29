@@ -38,7 +38,14 @@ val scalagenOptionalOptions = scalagenOptions.copy(
   packageName = Option("polaris.schema.fes.optional"),
   parameters = scalagenOptions.parameters.copy(
     generateXmlSerializers = false,
-    generateOptionalTypes = ScalagenOptionalTypes.Generate(Some("polaris.schema.fes"))
+    generateOptionalTypes = ScalagenOptionalTypes.Generate(
+      Some("polaris.schema.fes"),
+      Map(
+        "Document" -> List(
+          "messageHeader", "services"
+        )
+      )
+    )
   )
 )
 

@@ -39,7 +39,11 @@ object integrationSpec extends mutable.Specification {
     List(GenType("LocalDate")),
     GenParameters(
       generateXmlSerializers = true,
-      generateOptionalTypes = OptionalTypes.Generate("strong".some)
+      generateCirceCodecs = true,
+      generateOptionalTypes = OptionalTypes.Generate(
+        "strong".some,
+        Map("Document" -> List("messageHeader", "services"))
+      )
     )
   )
 
