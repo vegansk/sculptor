@@ -113,6 +113,11 @@ class Generator(config: Config) {
       FieldConstraint.Optional
     ).contains(f.constraint)
 
+  def isRequiredField(`type`: TypeRef.defined, f: FieldDecl): Boolean =
+    !isOptionalField(f) && config.parameters.generateOptionalTypes.requiredFields
+      .get(`type`.name.value)
+      .fold(false)(_.contains(f.name.value))
+
   def typeNameString(t: TypeRef, maskReservedWords: Boolean = true): String =
     t match {
       case TypeRef.std(v) => mask(v.value, maskReservedWords)
@@ -275,17 +280,24 @@ class Generator(config: Config) {
   /**
     * @param strongTypeExpr - always generate strong type expression
     */
-  def typeExpr(f: FieldDecl, strongTypeExpr: Boolean = false): Doc =
+  def typeExpr(f: FieldDecl,
+               strongTypeExpr: Boolean = false,
+               requiredField: Boolean = false): Doc =
     typeExprImpl(
       f,
       f.array,
-      isOptionalField(f) || (!strongTypeExpr && config.parameters.generateOptionalTypes.toBool),
+      isOptionalField(f) || (!requiredField && !strongTypeExpr && config.parameters.generateOptionalTypes.toBool),
       config.parameters.generateOptionalTypes.strongTypesPrefix
         .filter(_ => strongTypeExpr)
     )
 
-  def fieldDecl(f: FieldDecl): Doc =
-    spread(List(ident(f.name) + char(':'), typeExpr(f)) ++ comment(f.comment))
+  def fieldDecl(f: FieldDecl, requiredField: Boolean = false): Doc =
+    spread(
+      List(
+        ident(f.name) + char(':'),
+        typeExpr(f, requiredField = requiredField)
+      ) ++ comment(f.comment)
+    )
 
   def complexTypeClassDecl(ct: ComplexTypeDecl): Doc = {
     val prefix = spread(List(text("final case class"), ident(ct.`type`.name))) + char(
@@ -293,10 +305,12 @@ class Generator(config: Config) {
     )
     val postfix = char(')')
 
-    bracketBy(intercalate(comma + line, ct.fields.toList.map(fieldDecl _)))(
-      prefix,
-      postfix
-    )
+    bracketBy(
+      intercalate(
+        comma + line,
+        ct.fields.toList.map(f => fieldDecl(f, isRequiredField(ct.`type`, f)))
+      )
+    )(prefix, postfix)
   }
 
   def complexTypeCirceEncoder(ct: ComplexTypeDecl): Doc = {
@@ -330,7 +344,9 @@ class Generator(config: Config) {
           ident(f.name),
           text("<-"),
           text("c.downField(") + strLit(f.name.value) + text(").as[") + typeExpr(
-            f
+            f,
+            false,
+            isRequiredField(ct.`type`, f)
           ) + char(']')
         )
       )
@@ -408,20 +424,24 @@ class Generator(config: Config) {
   }
 
   def complexTypeOptionalTypeToStrongTypeFieldConverter(
+    `type`: TypeRef.defined,
     f: FieldDecl,
     strongTypesPrefix: String
   ): Doc = {
     val field = text("v.") + ident(f.name)
     val isOptional = isOptionalField(f)
     val hasConverter = typeHasOptionalConverter(f.`type`)
+    val isRequired = isRequiredField(`type`, f)
     val strong = f.array match {
       case true => text("v.traverse(") + typeName(f.`type`) + text(".strong _)")
       case _ => typeName(f.`type`) + text(".strong(v)")
     }
     val toValidNel = field + text(s""".toValidNel("${f.name.value}")""")
-    val validNel = text("Validated.validNel[String,") + typeExpr(f) + text("](") + field + char(
-      ')'
-    )
+    val validNel = text("Validated.validNel[String,") + typeExpr(
+      f,
+      false,
+      isRequired
+    ) + text("](") + field + char(')')
     val appendPath = text(s""".leftMap(_.map("${f.name.value}." + _))""")
     val callCvt = text(".andThen(v => ") + strong + appendPath + text(")")
     val validStrongNelNone = text("Validated.validNel[String,") + typeExpr(
@@ -432,11 +452,13 @@ class Generator(config: Config) {
       ")(v => "
     ) + strong + text(".map(_.some)") + appendPath + text("))")
 
-    (isOptional, hasConverter) match {
-      case (false, false) => toValidNel
-      case (false, true) => toValidNel + callCvt
-      case (true, false) => validNel
-      case (true, true) => validNel + callOptionalCvt
+    (isOptional, isRequired, hasConverter) match {
+      case (false, true, false) => validNel
+      case (false, true, true) => validNel + callCvt
+      case (false, false, false) => toValidNel
+      case (false, false, true) => toValidNel + callCvt
+      case (true, _, false) => validNel
+      case (true, _, true) => validNel + callOptionalCvt
     }
   }
 
@@ -444,12 +466,19 @@ class Generator(config: Config) {
     ct: ComplexTypeDecl
   ): Option[Doc] =
     config.parameters.generateOptionalTypes match {
-      case OptionalTypes.Generate(Some(sp)) => {
+      case OptionalTypes.Generate(Some(sp), _) => {
         val prefix = mkOptionalTypeConverterPrefix(ct.`type`, sp)
         val postfix = char('}')
 
         val fields = ct.fields
-          .map(f => complexTypeOptionalTypeToStrongTypeFieldConverter(f, sp))
+          .map(
+            f =>
+              complexTypeOptionalTypeToStrongTypeFieldConverter(
+                ct.`type`,
+                f,
+                sp
+            )
+          )
         val cvt =
           if (ct.fields.size === 1) {
             fields.head +
@@ -562,7 +591,7 @@ class Generator(config: Config) {
 
   def enumOptionalTypeToStrongTypeConverter(e: EnumDecl): Option[Doc] =
     config.parameters.generateOptionalTypes match {
-      case OptionalTypes.Generate(Some(sp)) => {
+      case OptionalTypes.Generate(Some(sp), _) => {
         val prefix = mkOptionalTypeConverterPrefix(e.`type`, sp)
         val postfix = char('}')
         val body = text(sp + ".") +
@@ -634,7 +663,7 @@ class Generator(config: Config) {
 
   def newtypeOptionalTypeToStrongTypeConverter(t: NewtypeDecl): Option[Doc] = {
     config.parameters.generateOptionalTypes match {
-      case OptionalTypes.Generate(Some(sp)) => {
+      case OptionalTypes.Generate(Some(sp), _) => {
         val prefix = mkOptionalTypeConverterPrefix(t.`type`, sp)
         val postfix = char('}')
         val strongType = text(sp + ".") + typeName(t.`type`)
