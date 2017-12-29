@@ -19,6 +19,10 @@ object SculptorScalagenPlugin extends AutoPlugin {
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     val ScalagenImport = scalagen.Import
 
+    type ScalagenOptionalTypes = scalagen.OptionalTypes
+    @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+    val ScalagenOptionalTypes = scalagen.OptionalTypes
+
     type ScalagenParameters = scalagen.Parameters
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
     val ScalagenParameters = scalagen.Parameters

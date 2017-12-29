@@ -106,12 +106,12 @@ class Generator(config: Config) {
   def optional(`type`: Doc): Doc =
     text("Option[") + `type` + char(']')
 
-  private val optionalConstraints =
+  def isOptionalField(f: FieldDecl): Boolean =
     List(
       FieldConstraint.Nullable,
       FieldConstraint.OptionalNullable,
       FieldConstraint.Optional
-    )
+    ).contains(f.constraint)
 
   def typeNameString(t: TypeRef, maskReservedWords: Boolean = true): String =
     t match {
@@ -263,16 +263,26 @@ class Generator(config: Config) {
       case _ => None
     }
 
-  def typeExpr(f: FieldDecl): Doc = {
+  def typeExprImpl(f: FieldDecl,
+                   isArray: Boolean,
+                   isOptional: Boolean,
+                   prefix: Option[String]): Doc =
     (typeName(f.`type`): Id[Doc])
-      .map(t => if (f.array) array(t) else t)
-      .map(
-        t =>
-          if (config.parameters.generateOptionalTypes || optionalConstraints
-                .contains(f.constraint)) optional(t)
-          else t
-      )
-  }
+      .map(t => prefix.fold(t)(p => text(p + ".") + t))
+      .map(t => if (isArray) array(t) else t)
+      .map(t => if (isOptional) optional(t) else t)
+
+  /**
+    * @param strongTypeExpr - always generate strong type expression
+    */
+  def typeExpr(f: FieldDecl, strongTypeExpr: Boolean = false): Doc =
+    typeExprImpl(
+      f,
+      f.array,
+      isOptionalField(f) || (!strongTypeExpr && config.parameters.generateOptionalTypes.toBool),
+      config.parameters.generateOptionalTypes.strongTypesPrefix
+        .filter(_ => strongTypeExpr)
+    )
 
   def fieldDecl(f: FieldDecl): Doc =
     spread(List(ident(f.name) + char(':'), typeExpr(f)) ++ comment(f.comment))
@@ -344,9 +354,7 @@ class Generator(config: Config) {
     }
 
   def complexTypeFieldXmlSerializer(f: FieldDecl): Doc = {
-    val isOptional = optionalConstraints.contains(f.constraint)
-    val isArray = f.array
-    (isOptional, isArray) match {
+    (isOptionalField(f), f.array) match {
       case (false, false) =>
         text("List(") + callFieldXmlSerializer(
           strLitString(f.xmlName),
@@ -386,12 +394,90 @@ class Generator(config: Config) {
       case _ => None
     }
 
+  def mkOptionalTypeConverterPrefix(t: TypeRef,
+                                    strongTypesPrefix: String): Doc =
+    text("def strong(v: ") +
+      typeName(t) +
+      text("): ValidatedNel[String, " + strongTypesPrefix + ".") +
+      typeName(t) +
+      text("] = {")
+
+  def typeHasOptionalConverter(t: TypeRef): Boolean = t match {
+    case _: TypeRef.defined => true
+    case _ => false
+  }
+
+  def complexTypeOptionalTypeToStrongTypeFieldConverter(
+    f: FieldDecl,
+    strongTypesPrefix: String
+  ): Doc = {
+    val field = text("v.") + ident(f.name)
+    val isOptional = isOptionalField(f)
+    val hasConverter = typeHasOptionalConverter(f.`type`)
+    val strong = f.array match {
+      case true => text("v.traverse(") + typeName(f.`type`) + text(".strong _)")
+      case _ => typeName(f.`type`) + text(".strong(v)")
+    }
+    val toValidNel = field + text(s""".toValidNel("${f.name.value}")""")
+    val validNel = text("Validated.validNel[String,") + typeExpr(f) + text("](") + field + char(
+      ')'
+    )
+    val appendPath = text(s""".leftMap(_.map("${f.name.value}." + _))""")
+    val callCvt = text(".andThen(v => ") + strong + appendPath + text(")")
+    val validStrongNelNone = text("Validated.validNel[String,") + typeExpr(
+      f,
+      true
+    ) + text("](None)")
+    val callOptionalCvt = text(".andThen(_.fold(") + validStrongNelNone + text(
+      ")(v => "
+    ) + strong + text(".map(_.some)") + appendPath + text("))")
+
+    (isOptional, hasConverter) match {
+      case (false, false) => toValidNel
+      case (false, true) => toValidNel + callCvt
+      case (true, false) => validNel
+      case (true, true) => validNel + callOptionalCvt
+    }
+  }
+
+  def complexTypeOptionalTypeToStrongTypeConverter(
+    ct: ComplexTypeDecl
+  ): Option[Doc] =
+    config.parameters.generateOptionalTypes match {
+      case OptionalTypes.Generate(Some(sp)) => {
+        val prefix = mkOptionalTypeConverterPrefix(ct.`type`, sp)
+        val postfix = char('}')
+
+        val fields = ct.fields
+          .map(f => complexTypeOptionalTypeToStrongTypeFieldConverter(f, sp))
+        val cvt =
+          if (ct.fields.size === 1) {
+            fields.head +
+              text(".map(" + sp + ".") +
+              typeName(ct.`type`) +
+              text(".apply _)")
+          } else {
+            bracketBy(intercalate(comma + line, fields.toList))(
+              char('('),
+              char(')')
+            ) +
+              text(".mapN(" + sp + ".") +
+              typeName(ct.`type`) +
+              text(".apply _)")
+          }
+
+        bracketBy(cvt)(prefix, postfix).some
+      }
+      case _ => None
+    }
+
   def complexTypeObjectDecl(ct: ComplexTypeDecl): Option[Doc] = {
     val elements = NEL
       .fromList(
         catsEqInstance(ct.`type`).toList ++
           complexTypeCirceCodecs(ct) ++
-          complexTypeXmlSerializer(ct).toList
+          complexTypeXmlSerializer(ct).toList ++
+          complexTypeOptionalTypeToStrongTypeConverter(ct).toList
       )
       .map(_.toList)
 
@@ -474,6 +560,20 @@ class Generator(config: Config) {
       createElem("elemName", text("Text(e.code)"))
     )
 
+  def enumOptionalTypeToStrongTypeConverter(e: EnumDecl): Option[Doc] =
+    config.parameters.generateOptionalTypes match {
+      case OptionalTypes.Generate(Some(sp)) => {
+        val prefix = mkOptionalTypeConverterPrefix(e.`type`, sp)
+        val postfix = char('}')
+        val body = text(sp + ".") +
+          typeName(e.`type`) +
+          text(".fromString(v.code).toValidNel(v.code)")
+
+        bracketBy(body)(prefix, postfix).some
+      }
+      case _ => None
+    }
+
   def enumObjectDecl(e: EnumDecl): Doc = {
     val prefix = spread(List(text("object"), typeName(e.`type`), char('{')))
     val postfix = char('}')
@@ -481,9 +581,11 @@ class Generator(config: Config) {
     bracketBy(
       intercalate(line, e.members.map(enumMemberDecl(e) _).toList) + line * 2 + intercalate(
         line * 2,
-        List(enumValuesVal(e), enumFromStringFunc(e)) ++ catsEqInstance(
-          e.`type`
-        ).toList ++ enumCirceCodecs(e) ++ enumXmlSerilaizer(e).toList
+        List(enumValuesVal(e), enumFromStringFunc(e)) ++
+          catsEqInstance(e.`type`).toList ++
+          enumCirceCodecs(e) ++
+          enumXmlSerilaizer(e).toList ++
+          enumOptionalTypeToStrongTypeConverter(e).toList
       )
     )(prefix, postfix)
   }
@@ -530,11 +632,26 @@ class Generator(config: Config) {
       callFieldXmlSerializer("elemName", "t", "value", t.baseType)
     )
 
-  def newtypeClassDecl(t: NewtypeDecl): Doc = {
-    val prefix = text("final case class ") + typeName(t.`type`) + char('(')
-    val postfix = char(')')
-
-    bracketBy(text("value: ") + typeName(t.baseType))(prefix, postfix)
+  def newtypeOptionalTypeToStrongTypeConverter(t: NewtypeDecl): Option[Doc] = {
+    config.parameters.generateOptionalTypes match {
+      case OptionalTypes.Generate(Some(sp)) => {
+        val prefix = mkOptionalTypeConverterPrefix(t.`type`, sp)
+        val postfix = char('}')
+        val strongType = text(sp + ".") + typeName(t.`type`)
+        val code = typeHasOptionalConverter(t.baseType) match {
+          case true =>
+            typeName(t.baseType) + text(".strong(v.value).map(") + strongType + text(
+              ".apply _)"
+            )
+          case false =>
+            text("Validated.validNel[String, ") + strongType + text("](") + strongType + text(
+              "(v.value))"
+            )
+        }
+        bracketBy(code)(prefix, postfix).some
+      }
+      case _ => None
+    }
   }
 
   def newtypeObjectDecl(t: NewtypeDecl): Option[Doc] = {
@@ -542,7 +659,8 @@ class Generator(config: Config) {
       .fromList(
         catsEqInstance(t.`type`).toList ++
           newtypeCirceCodecs(t) ++
-          newtypeXmlSerializer(t).toList
+          newtypeXmlSerializer(t).toList ++
+          newtypeOptionalTypeToStrongTypeConverter(t).toList
       )
       .map(_.toList)
 
@@ -551,6 +669,13 @@ class Generator(config: Config) {
       val postfix = char('}')
       bracketBy(intercalate(line * 2, xs))(prefix, postfix)
     }
+  }
+
+  def newtypeClassDecl(t: NewtypeDecl): Doc = {
+    val prefix = text("final case class ") + typeName(t.`type`) + char('(')
+    val postfix = char(')')
+
+    bracketBy(text("value: ") + typeName(t.baseType))(prefix, postfix)
   }
 
   def newtypeDecl(t: NewtypeDecl): Doc =

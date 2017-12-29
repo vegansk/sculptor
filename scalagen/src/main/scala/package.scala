@@ -27,6 +27,10 @@ package object scalagen {
   @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
   val Parameters = generator.Parameters
 
+  type OptionalTypes = generator.OptionalTypes
+  @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+  val OptionalTypes = generator.OptionalTypes
+
   private def toXsdConfig(cfg: Config, xsdNs: Option[String]): xsd.Config =
     xsd.Config(
       imports = cfg.imports.map { i =>

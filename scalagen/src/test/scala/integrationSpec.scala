@@ -10,7 +10,9 @@ import org.typelevel.paiges._
 object integrationSpec extends mutable.Specification {
   import testing.utils._
   import scalagen.xsd.{Config => XsdConfig, _}
-  import scalagen.generator.{Config => GenConfig, Parameters => GenParameters, ExternalType => GenType}
+  import scalagen.generator.{
+    Config => GenConfig, Parameters => GenParameters, ExternalType => GenType, _
+  }
   import sculptor.xsd.{ast => x}
   import ast._
 
@@ -36,7 +38,8 @@ object integrationSpec extends mutable.Specification {
     None,
     List(GenType("LocalDate")),
     GenParameters(
-      generateXmlSerializers = true
+      generateXmlSerializers = true,
+      generateOptionalTypes = OptionalTypes.Generate("strong".some)
     )
   )
 
@@ -59,7 +62,7 @@ object integrationSpec extends mutable.Specification {
         )
       )
 
-      // println(generateSources(transformSchema(xsd)).render(80).take(6000))
+      // println(generateSources(transformSchema(xsd)).render(80).take(6000000))
       val _ = generateSources(transformSchema(xsd)).render(0)
 
       true must_=== true

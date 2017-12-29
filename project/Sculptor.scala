@@ -70,6 +70,13 @@ object Sculptor {
         // Parsers are recursive
         Wart.Recursion
       ),
+      scalacOptions in (Compile, console) ~= {
+        _.filterNot(Set(
+          "-Xfatal-warnings",
+          "-Xlint",
+          "-Ywarn-unused:imports"
+        ))
+      },
       addCompilerPlugin(Dependencies.kindProjector)
     )
 
