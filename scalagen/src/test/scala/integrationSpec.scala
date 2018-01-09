@@ -38,8 +38,9 @@ object integrationSpec extends mutable.Specification {
     None,
     List(GenType("LocalDate")),
     GenParameters(
-      generateXmlSerializers = true,
-      generateCirceCodecs = true,
+      generateXmlSerializers = false,
+      generateKantanXPathDecoders = true,
+      generateCirceCodecs = false,
       generateOptionalTypes = OptionalTypes.Generate(
         "strong".some,
         Map("Document" -> List("messageHeader", "services"))
@@ -66,8 +67,8 @@ object integrationSpec extends mutable.Specification {
         )
       )
 
-      // println(generateSources(transformSchema(xsd)).render(80).take(6000000))
-      val _ = generateSources(transformSchema(xsd)).render(0)
+      println(generateSources(transformSchema(xsd)).render(80).take(600000))
+      // val _ = generateSources(transformSchema(xsd)).render(0)
 
       true must_=== true
     }

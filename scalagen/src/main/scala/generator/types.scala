@@ -25,6 +25,7 @@ final case class Parameters(generateComments: Boolean = true,
                             generateCatsEq: Boolean = false,
                             generateCirceCodecs: Boolean = false,
                             generateXmlSerializers: Boolean = false,
+                            generateKantanXPathDecoders: Boolean = false,
                             generateOptionalTypes: OptionalTypes =
                               OptionalTypes.No)
 

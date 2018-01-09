@@ -410,6 +410,23 @@ class Generator(config: Config) {
       case _ => None
     }
 
+  def complexTypeKantanXPathDecoder(ct: ComplexTypeDecl): Option[Doc] =
+    config.parameters.generateKantanXPathDecoders match {
+      case true => {
+        val result = mkInstanceVal(ct.`type`, "NodeDecoder") + bracketBy(
+          intercalate(
+            comma + lineBreak,
+            ct.fields.toList.map(f => text(s"""xp"./${f.xmlName}""""))
+          )
+        )(
+          text("NodeDecoder.decoder("),
+          text(s")(${typeNameString(ct.`type`)}.apply)")
+        )
+        result.some
+      }
+      case _ => None
+    }
+
   def mkOptionalTypeConverterPrefix(t: TypeRef,
                                     strongTypesPrefix: String): Doc =
     text("def strong(v: ") +
@@ -506,6 +523,7 @@ class Generator(config: Config) {
         catsEqInstance(ct.`type`).toList ++
           complexTypeCirceCodecs(ct) ++
           complexTypeXmlSerializer(ct).toList ++
+          complexTypeKantanXPathDecoder(ct).toList ++
           complexTypeOptionalTypeToStrongTypeConverter(ct).toList
       )
       .map(_.toList)
@@ -589,6 +607,21 @@ class Generator(config: Config) {
       createElem("elemName", text("Text(e.code)"))
     )
 
+  def enumKantanXPathDecoder(e: EnumDecl): Option[Doc] =
+    config.parameters.generateKantanXPathDecoders match {
+      case true => {
+        val result = mkInstanceVal(e.`type`, "NodeDecoder") +
+          bracketBy(
+            text("StringDecoder.fromPartial(Function.unlift(") +
+              typeName(e.`type`) + text(
+              ".fromString).andThen(Result.Success(_)))"
+            )
+          )(text("codecs.fromString("), char(')'))
+        result.some
+      }
+      case _ => None
+    }
+
   def enumOptionalTypeToStrongTypeConverter(e: EnumDecl): Option[Doc] =
     config.parameters.generateOptionalTypes match {
       case OptionalTypes.Generate(Some(sp), _) => {
@@ -614,6 +647,7 @@ class Generator(config: Config) {
           catsEqInstance(e.`type`).toList ++
           enumCirceCodecs(e) ++
           enumXmlSerilaizer(e).toList ++
+          enumKantanXPathDecoder(e).toList ++
           enumOptionalTypeToStrongTypeConverter(e).toList
       )
     )(prefix, postfix)
@@ -661,6 +695,20 @@ class Generator(config: Config) {
       callFieldXmlSerializer("elemName", "t", "value", t.baseType)
     )
 
+  def newtypeKantanXPathDecoder(t: NewtypeDecl): Option[Doc] =
+    config.parameters.generateKantanXPathDecoders match {
+      case true => {
+        val result = mkInstanceVal(t.`type`, "NodeDecoder") +
+          mkInstanceByCall(
+            t.baseType,
+            "NodeDecoder",
+            s"map(${typeNameString(t.`type`)}(_))"
+          )
+        result.some
+      }
+      case _ => None
+    }
+
   def newtypeOptionalTypeToStrongTypeConverter(t: NewtypeDecl): Option[Doc] = {
     config.parameters.generateOptionalTypes match {
       case OptionalTypes.Generate(Some(sp), _) => {
@@ -689,6 +737,7 @@ class Generator(config: Config) {
         catsEqInstance(t.`type`).toList ++
           newtypeCirceCodecs(t) ++
           newtypeXmlSerializer(t).toList ++
+          newtypeKantanXPathDecoder(t).toList ++
           newtypeOptionalTypeToStrongTypeConverter(t).toList
       )
       .map(_.toList)

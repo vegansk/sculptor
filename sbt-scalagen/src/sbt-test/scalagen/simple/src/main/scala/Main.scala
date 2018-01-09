@@ -1,9 +1,9 @@
 import polaris.schema.fes._
 import polaris.schema.fes.{optional => opt}
-import scala.xml._
 
 import io.circe._
 import io.circe.syntax._
+import kantan.xpath.implicits._
 import java.util.UUID
 
 object Main extends App {
@@ -62,10 +62,12 @@ object Main extends App {
   )
 
   val result = for {
-    json <- Right(document.asJson)
-    optionalDoc <- json.as[opt.Document]
-    sourceDoc <- opt.Document.strong(optionalDoc).toEither
-    xml <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(sourceDoc))
+    jsonDoc <- Right(document.asJson)
+    optionalDoc <- jsonDoc.as[opt.Document]
+    strongDoc <- opt.Document.strong(optionalDoc).toEither
+    xml0 <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(strongDoc))
+    docFromXml <- xml0.toString.evalXPath[Document](xp"/DOCUMENT").toEither
+    xml <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(docFromXml))
   } yield xml
 
   println(result)
