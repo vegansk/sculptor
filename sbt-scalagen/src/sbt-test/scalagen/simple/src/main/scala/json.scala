@@ -7,10 +7,10 @@ import java.time.LocalDate
 
 object instances {
 
-  implicit def localDateDecoder: Decoder[LocalDate] =
+  implicit val localDateDecoder: Decoder[LocalDate] =
       time.decodeLocalDateDefault
 
-  implicit def localDateEncoder: Encoder[LocalDate] =
+  implicit val localDateEncoder: Encoder[LocalDate] =
     time.encodeLocalDateDefault
 
 

@@ -6,6 +6,7 @@ val cats = "org.typelevel" %% "cats-core" % "1.0.0-RC1"
 val circe = "io.circe" %% "circe-core" % "0.9.0-M2"
 val circeJava8 = "io.circe" %% "circe-java8" % "0.9.0-M2"
 val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
+val kantanXPath = "com.nrinaudo" %% "kantan.xpath" % "0.3.2"
 
 val scalagenOptions = ScalagenOptions(
   packageName = Option("polaris.schema.fes"),
@@ -18,7 +19,12 @@ val scalagenOptions = ScalagenOptions(
     ScalagenImport("io.circe._"),
     ScalagenImport("io.circe.syntax._"),
     ScalagenImport("scala.xml._"),
-    ScalagenImport("polaris.json.instances._")
+    ScalagenImport("kantan.xpath.{NodeDecoder, codecs}"),
+    ScalagenImport("kantan.xpath.implicits._"),
+    ScalagenImport("kantan.codecs.Result"),
+    ScalagenImport("kantan.codecs.strings.StringDecoder"),
+    ScalagenImport("polaris.json.instances._"),
+    ScalagenImport("polaris.xml.instances._")
   ),
   types = List(
     ScalagenType("xs:date", "LocalDate"),
@@ -30,14 +36,26 @@ val scalagenOptions = ScalagenOptions(
     generateCatsEq = true,
     generateCirceCodecs = true,
     generateXmlSerializers = true,
+    generateKantanXPathDecoders = true,
     generateOptionalTypes = ScalagenOptionalTypes.No
   )
 )
 
 val scalagenOptionalOptions = scalagenOptions.copy(
+  imports = List(
+    ScalagenImport("java.time.LocalDate"),
+    ScalagenImport("java.util.UUID"),
+    ScalagenImport("cats._"),
+    ScalagenImport("cats.data._"),
+    ScalagenImport("cats.implicits._"),
+    ScalagenImport("io.circe._"),
+    ScalagenImport("io.circe.syntax._"),
+    ScalagenImport("polaris.json.instances._")
+  ),
   packageName = Option("polaris.schema.fes.optional"),
   parameters = scalagenOptions.parameters.copy(
     generateXmlSerializers = false,
+    generateKantanXPathDecoders = false,
     generateOptionalTypes = ScalagenOptionalTypes.Generate(
       Some("polaris.schema.fes"),
       Map(
@@ -55,7 +73,7 @@ lazy val root = project.in(file("."))
     version := "0.0.1",
 
     libraryDependencies ++= Seq(
-      cats, circe, circeJava8, scalaXml
+      cats, circe, circeJava8, scalaXml, kantanXPath
     ),
 
     scalacOptions ++= Seq(
