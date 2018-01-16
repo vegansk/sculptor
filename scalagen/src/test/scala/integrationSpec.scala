@@ -16,15 +16,28 @@ object integrationSpec extends mutable.Specification {
   import sculptor.xsd.{ast => x}
   import ast._
 
-  val xsdConfig = XsdConfig(
+  def xsdConfig(ns: String) = XsdConfig(
     List(
-      ImportDecl("java.time.LocalDate")
+      ImportDecl("java.time.LocalDate"),
+      ImportDecl("scala.xml._")
     ),
-    "xs".some,
+    ns.some,
     List(
       ExternalType(
-        x.QName.fromString("xs:date"),
+        x.QName.fromString(s"$ns:date"),
         QName.of(Ident("LocalDate"))
+      ),
+      ExternalType(
+        x.QName.fromString(s"$ns:anyType"),
+        QName.of(Ident("Node"))
+      ),
+      ExternalType(
+        x.QName.fromString(s"$ns:dateTime"),
+        QName.of(Ident("LocalDateTime"))
+      ),
+      ExternalType(
+        x.QName.fromString(s"$ns:time"),
+        QName.of(Ident("LocalTime"))
       ),
       ExternalType(
         x.QName("official_info_t", None),
@@ -38,6 +51,7 @@ object integrationSpec extends mutable.Specification {
     None,
     List(GenType("LocalDate")),
     GenParameters(
+      generateComments = true,
       generateXmlSerializers = false,
       generateKantanXPathDecoders = true,
       generateCirceCodecs = false,
@@ -48,8 +62,8 @@ object integrationSpec extends mutable.Specification {
     )
   )
 
-  def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {
-    transform(xsd).value(xsdConfig) match {
+  def transformSchema(xsd: x.Schema[Id], ns: String = "xs"): ModuleDecl = {
+    transform(xsd).value(xsdConfig(ns)) match {
       case Right(v) => v
       case Left(err) => sys.error(s"Transformation error: $err")
     }
@@ -69,6 +83,19 @@ object integrationSpec extends mutable.Specification {
 
       // println(generateSources(transformSchema(xsd)).render(80).take(600000))
       val _ = generateSources(transformSchema(xsd)).render(0)
+
+      true must_=== true
+    }
+
+    "produce scala sources from ca_iso20022_v2.xsd" >> {
+      val xsd = parseXsd(
+        XML.load(
+          getClass.getClassLoader.getResourceAsStream("xsd/ca_iso20022_v2.xsd")
+        )
+      )
+
+      // println(generateSources(transformSchema(xsd, "xsd")).render(80).take(600000))
+      val _ = generateSources(transformSchema(xsd, "xsd")).render(0)
 
       true must_=== true
     }

@@ -84,6 +84,9 @@ object parser {
             pattern = patternOp,
             minLength = minLengthOp,
             maxLength = maxLengthOp,
+            fractionDigits = fractionDigitsOp,
+            totalDigits = totalDigitsOp,
+            minInclusive = minInclusiveOp,
             enumeration = enumerationOp
           )(node)(a.SimpleTypeRestriction.empty[F])
         } yield setter(r)(ast)
@@ -108,6 +111,24 @@ object parser {
       def maxLengthOp = f.maxLength[a.SimpleTypeRestriction[F]] {
         f.valueOp { v => ast =>
           f.ok(ast.copy(maxLength = pure(Some(v))))
+        }
+      }
+
+      def fractionDigitsOp = f.fractionDigits[a.SimpleTypeRestriction[F]] {
+        f.valueOp { v => ast =>
+          f.ok(ast.copy(fractionDigits = pure(Some(v))))
+        }
+      }
+
+      def totalDigitsOp = f.totalDigits[a.SimpleTypeRestriction[F]] {
+        f.valueOp { v => ast =>
+          f.ok(ast.copy(totalDigits = pure(Some(v))))
+        }
+      }
+
+      def minInclusiveOp = f.minInclusive[a.SimpleTypeRestriction[F]] {
+        f.valueOp { v => ast =>
+          f.ok(ast.copy(minInclusive = pure(Some(v))))
         }
       }
 
@@ -195,6 +216,7 @@ object parser {
           for {
             v <- f.any(
               annotation = annotationOp,
+              namespace = namespaceOp,
               processContents = processContentsOp,
               minOccurs = minOccursOp,
               maxOccurs = maxOccursOp
@@ -208,6 +230,10 @@ object parser {
 
       def maxOccursOp = f.maxOccursOp[a.Any[F]] { v => ast =>
         f.ok(ast.copy(maxOccurs = pure(Some(v))))
+      }
+
+      def namespaceOp = f.namespaceOp[a.Any[F]] { v => ast =>
+        f.ok(ast.copy(namespace = pure(Some(v))))
       }
 
       def processContentsOp = f.processContentsOp[a.Any[F]] { v => ast =>
@@ -371,6 +397,58 @@ object parser {
       }
     }
 
+    object simpleContentExtension {
+      def fromSetter[A[_[_]]](
+        setter: Setter[A[F], a.SimpleContentExtension[F]]
+      ) =
+        f.simpleContentExtensionOp[A[F]] { node => ast =>
+          for {
+            el <- f.simpleContentExtension(
+              annotation = annotationOp,
+              base = baseOp,
+              attribute = attributeOp
+            )(node)(a.SimpleContentExtension.empty[F])
+          } yield setter(el)(ast)
+        }
+
+      def annotationOp = annotation.fromSetter[a.SimpleContentExtension] {
+        ann => ast =>
+          ast.copy(annotation = pure(Some(ann)))
+      }
+
+      def baseOp = f.baseOp[a.SimpleContentExtension[F]] { base => r =>
+        f.ok(r.copy(base = pure(a.QName.fromString(base))))
+      }
+
+      def attributeOp = attribute.fromSetter[a.SimpleContentExtension] {
+        v => ast =>
+          ast.copy(
+            attributes = combineAlternative(ast.attributes, pure(List(v)))
+          )
+      }
+    }
+
+    object simpleContent {
+      def fromSetter[A[_[_]]](setter: Setter[A[F], a.SimpleContent[F]]) =
+        f.simpleContentOp[A[F]] { node => ast =>
+          for {
+            el <- f.simpleContent(
+              annotation = annotationOp,
+              extension = extensionOp
+            )(node)(a.SimpleContent.empty[F])
+          } yield setter(el)(ast)
+        }
+
+      def annotationOp = annotation.fromSetter[a.SimpleContent] { ann => ast =>
+        ast.copy(annotation = pure(Some(ann)))
+      }
+
+      def extensionOp = simpleContentExtension.fromSetter[a.SimpleContent] {
+        e => ast =>
+          ast.copy(extension = pure(Some(e)))
+      }
+    }
+
     object complexType {
       def fromSetter[A[_[_]]](setter: Setter[A[F], a.ComplexType[F]]) =
         f.complexTypeOp[A[F]] { node => ast =>
@@ -379,6 +457,7 @@ object parser {
               name = nameOp,
               annotation = annotationOp,
               complexContent = complexContentOp,
+              simpleContent = simpleContentOp,
               attribute = attributeOp,
               sequence = sequenceOp,
               choice = choiceOp,
@@ -419,6 +498,11 @@ object parser {
           ast.copy(complexContent = pure(Some(cc)))
       }
 
+      def simpleContentOp = simpleContent.fromSetter[a.ComplexType] {
+        sc => ast =>
+          ast.copy(simpleContent = pure(Some(sc)))
+      }
+
       def sequenceOp: f.SequenceOp[a.ComplexType[F]] = sequence.fromSetter {
         seq => ast =>
           ast.copy(sequence = pure(Some(seq)))
@@ -456,7 +540,7 @@ object parser {
       }
 
       def typeOp = f.typeOp[a.Element[F]] { `type` => ast =>
-        f.ok(ast.copy(`type` = pure(Some(`type`))))
+        f.ok(ast.copy(`type` = pure(Some(a.QName.fromString(`type`)))))
       }
 
       def minOccursOp = f.minOccursOp[a.Element[F]] { minOccurs => ast =>

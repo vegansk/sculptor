@@ -55,11 +55,27 @@ object Transform {
   def getDependencies: Result[Dependencies] =
     getTransformState.map(_.dependencies)
 
+  def splitCamelCase(v: String): List[String] = v match {
+    case "" => Nil
+    case _ if v.length === 1 => List(v)
+    case _ =>
+      if (v.forall(_.isUpper))
+        List(v.toLowerCase.capitalize)
+      else {
+        val (x, xs) = v.drop(1).span(_.isLower)
+        (v.take(1) + x) :: splitCamelCase(xs)
+      }
+  }
+
+  def splitName(v: String): List[String] =
+    v.replaceAll("\\.", "_").split('_').toList.map(splitCamelCase _).flatten
+
   def toCamelCase(v: String, firstUpperCase: Boolean): String = {
     def camel(firstUpper: Boolean, v: String): String =
       if (firstUpper) v.toLowerCase.capitalize
+      else if (v.forall(_.isUpper)) v
       else v.toLowerCase
-    v.split('_').toList match {
+    splitName(v) match {
       case x :: xs => {
         val first = camel(firstUpperCase, x)
         (first :: xs.map(camel(true, _))).mkString
@@ -79,6 +95,8 @@ object Transform {
   def complexTypeName(v: String): String = mkTypeName(v)
 
   def newtypeTypeName(v: String): String = mkTypeName(v)
+
+  def simpleTypeExtensionTypeName(v: String): String = mkTypeName(v)
 
   def fieldName(v: String): String = toCamelCase(v, false)
 
@@ -123,13 +141,27 @@ object Transform {
       }
     }
 
+  def filterBadElementAliases(
+    l: List[(TypeRef.defined, TypeDecl)]
+  ): List[(TypeRef.defined, TypeDecl)] =
+    l.filter {
+      _ match {
+        case (
+            TypeRef.defined(Ident(name)),
+            NewtypeDecl(_, TypeRef.defined(Ident(name1)), _)
+            ) if name === name1 =>
+          false
+        case _ => true
+      }
+    }
+
   def types(): Result[Map[TypeRef.defined, TypeDecl]] =
     unfoldM(()) { _ =>
       popUnparsedType
         .map(_.traverse(`type`))
         .flatten
         .map(_.map(t => ((), (t.`type`, t))))
-    }.map(_.toMap)
+    }.map(filterBadElementAliases(_).toMap)
 
   lazy val `type`: x.Type[SrcF] => Result[TypeDecl] =
     x.Type.fold(simpleType, complexType, element)
@@ -289,6 +321,7 @@ object Transform {
             t,
             FieldConstraint.Required,
             false,
+            false,
             annotationToComment(ann)
           )
         )
@@ -373,7 +406,7 @@ object Transform {
 
   def attrToField(
     `type`: TypeRef.defined
-  )(t: x.ComplexType[SrcF])(attr: x.Attribute[SrcF]): Result[FieldDecl] =
+  )(t: x.AST[SrcF])(attr: x.Attribute[SrcF]): Result[FieldDecl] =
     attr match {
       case x.Attribute(_, Some(name), _, _, Some(typ), use) =>
         for {
@@ -389,15 +422,16 @@ object Transform {
                 v =>
                   if (v) FieldConstraint.Optional else FieldConstraint.Required
               ),
+            true,
             false,
             annotationToComment(attr.annotation)
           )
       case _ => Errors.cantTransform(t)
     }
 
-  def attrsToFields(`type`: TypeRef.defined)(
-    t: x.ComplexType[SrcF]
-  )(attrs: List[x.Attribute[SrcF]]): Result[List[FieldDecl]] =
+  def attrsToFields(
+    `type`: TypeRef.defined
+  )(t: x.AST[SrcF])(attrs: List[x.Attribute[SrcF]]): Result[List[FieldDecl]] =
     attrs.traverse(attrToField(`type`)(t))
 
   def bodyListToType(
@@ -438,6 +472,28 @@ object Transform {
     } yield NewtypeDecl(type0, `type`, annotationToComment(any.annotation))
   }
 
+  def complexTypeSimpleContent(t: x.ComplexType[SrcF])(
+    name: String,
+    baseType: x.QName,
+    attrs: List[x.Attribute[SrcF]]
+  ): Result[TypeDecl] = {
+    val type0 =
+      TypeRef.definedFrom(simpleTypeExtensionTypeName(name))
+    for {
+      `type` <- typeRef(type0)(baseType)
+      al <- attrsToFields(type0)(t)(attrs)
+      fields <- NEL
+        .fromList(al)
+        .fold(Errors.cantTransform[NEL[FieldDecl]](t))(ok(_))
+    } yield
+      SimpleTypeExtensionDecl(
+        type0,
+        `type`,
+        fields,
+        annotationToComment(t.annotation)
+      )
+  }
+
   def complexType(t: x.ComplexType[SrcF]): Result[TypeDecl] =
     getFold flatMap { fold =>
       fold
@@ -448,6 +504,7 @@ object Transform {
             bodyListToType(t, None, true)(name, ch.body, attrs),
           complexTypeAny,
           simpleTypeNewtype,
+          complexTypeSimpleContent(t),
           Errors.cantTransform
         )(t)
     }
@@ -456,6 +513,7 @@ object Transform {
     getFold flatMap {
       _.element[Result[TypeDecl]](
         (name, ct) => complexType(ct.copy[SrcF](name = Some(name))),
+        simpleTypeNewtype,
         Errors.cantTransform
       )(t)
     }

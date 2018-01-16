@@ -48,6 +48,9 @@ object astSpec extends mutable.Specification {
       pattern = Option("pattern".some),
       minLength = Option("minLength".some),
       maxLength = Option("maxLength".some),
+      fractionDigits = Option("fractionDigits".some),
+      totalDigits = Option("totalDigits".some),
+      minInclusive = Option("minInclusive".some),
       enumeration = Option(List(goodEnumeration, goodEnumeration))
     )
 
@@ -62,6 +65,9 @@ object astSpec extends mutable.Specification {
           pattern = "pattern".some,
           minLength = "minLength".some,
           maxLength = "maxLength".some,
+          fractionDigits = "fractionDigits".some,
+          totalDigits = "totalDigits".some,
+          minInclusive = "minInclusive".some,
           enumeration = List(
             Enumeration.build(goodEnumeration).toOption.get,
             Enumeration.build(goodEnumeration).toOption.get

@@ -48,11 +48,17 @@ object Fold {
     ( /*name: String*/ String, /*any: */ x.Any[SrcF]) => A
   type ComplexTypeAliasHandler[A] =
     ( /*name: */ String, /*base: */ x.QName,
-     /**/ Option[x.Annotation[SrcF]]) => A
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
+  type ComplexTypeSimpleContentHandler[A] =
+    ( /*name: */ String, /*base: */ x.QName,
+     /*attrs: */ List[x.Attribute[SrcF]]) => A
   type ComplexTypeHandler[A] = x.ComplexType[SrcF] => A
 
   type ElementComplexTypeHandler[A] =
     ( /*name: */ String, /*ct: */ x.ComplexType[SrcF]) => A
+  type ElementAliasHandler[A] =
+    ( /*name: */ String, /*base: */ x.QName,
+     /*ann: */ Option[x.Annotation[SrcF]]) => A
   type ElementHandler[A] = x.Element[SrcF] => A
 }
 
@@ -74,6 +80,9 @@ final class Fold(config: Config) {
               None,
               _,
               _,
+              _,
+              _,
+              _,
               values @ (_ :: _)
             )
           )
@@ -83,7 +92,7 @@ final class Fold(config: Config) {
           ann,
           Some(name),
           _,
-          Some(x.SimpleTypeRestriction(base, _, _, _, Nil))
+          Some(x.SimpleTypeRestriction(base, _, _, _, _, _, _, Nil))
           ) =>
         onNewtype(name, base, ann)
       case _ => default(t)
@@ -124,14 +133,7 @@ final class Fold(config: Config) {
               occurs(maxOccurs),
               isNullable(nullable)
               ) =>
-            onField(
-              name,
-              typ.map(x.QName.fromString _),
-              minOccurs,
-              maxOccurs,
-              nullable,
-              ann
-            )
+            onField(name, typ, minOccurs, maxOccurs, nullable, ann)
           case x.Element(
               ann,
               Some(name),
@@ -177,11 +179,13 @@ final class Fold(config: Config) {
     onChoice: ComplexTypeChoiceHandler[A],
     onAny: ComplexTypeAnyHandler[A],
     onAlias: ComplexTypeAliasHandler[A],
+    onSimpleContent: ComplexTypeSimpleContentHandler[A],
     default: ComplexTypeHandler[A]
   )(t: x.ComplexType[SrcF]): A = t match {
     case x.ComplexType(
         _,
         Some(name),
+        None,
         None,
         Some(seq),
         None,
@@ -206,6 +210,7 @@ final class Fold(config: Config) {
         ),
         None,
         None,
+        None,
         attrs,
         _,
         _,
@@ -221,6 +226,7 @@ final class Fold(config: Config) {
         Some(name),
         None,
         None,
+        None,
         Some(ch),
         attrs,
         _,
@@ -229,13 +235,32 @@ final class Fold(config: Config) {
         _
         ) =>
       onChoice(name, ch, attrs)
+    case x.ComplexType(
+        _,
+        Some(name),
+        None,
+        Some(
+          x.SimpleContent(_, Some(x.SimpleContentExtension(_, base, attrs)))
+        ),
+        None,
+        None,
+        _,
+        _,
+        _,
+        _,
+        _
+        ) =>
+      onSimpleContent(name, base, attrs)
     case _ => default(t)
   }
 
   def element[A](onComplexType: ElementComplexTypeHandler[A],
+                 onAlias: ElementAliasHandler[A],
                  default: ElementHandler[A])(e: x.Element[SrcF]): A = e match {
     case x.Element(_, Some(name), Some(ct), _, _, _, _, _) =>
       onComplexType(name, ct)
+    case x.Element(ann, Some(name), _, _, Some(typ), _, _, _) =>
+      onAlias(name, typ, ann)
     case _ => default(e)
   }
 }

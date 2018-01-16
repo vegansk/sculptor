@@ -97,7 +97,7 @@ class Generator(config: Config) {
 
   def comment(c: Option[Comment]): List[Doc] =
     c.filter(_ => config.parameters.generateComments)
-      .map(_.replace("\n", " "))
+      .map(_.split("\n")(0))
       .fold[List[Doc]](Nil)(t => List(text("/** ") + text(t) + text(" */")))
 
   def nativeArray(`type`: Doc): Doc =
@@ -148,14 +148,14 @@ class Generator(config: Config) {
       case _ => None
     }
 
-  def createElem(elemNameVar: String, data: Doc): Doc =
+  def createElem(elemNameVar: String, attr: Doc, data: Doc): Doc =
     bracketBy(
       intercalate(
         comma + line,
         List(
           text("null"),
           text(mask(elemNameVar, true)),
-          text("Null"),
+          attr,
           text("TopScope"),
           text("true"),
         ) ++ List(data)
@@ -220,7 +220,7 @@ class Generator(config: Config) {
       case _ =>
         `type` match {
           case TypeRef.std(_) =>
-            createElem(elemName, text(s"Text($varName.toString)"))
+            createElem(elemName, text("Null"), text(s"Text($varName.toString)"))
           case _ =>
             text(s"$name.toXml(s)(") + text(elemName) + text(s")($varName)")
         }
@@ -313,13 +313,14 @@ class Generator(config: Config) {
     )(prefix, postfix)
   }
 
-  def complexTypeCirceEncoder(ct: ComplexTypeDecl): Doc = {
-    val prefix = mkInstanceVal(ct.`type`, "ObjectEncoder") + text(
-      s"ObjectEncoder.instance[${typeNameString(ct.`type`)}] { v =>"
+  def complexTypeCirceEncoderImpl(t: TypeRef.defined,
+                                  fields0: List[FieldDecl]): Doc = {
+    val prefix = mkInstanceVal(t, "ObjectEncoder") + text(
+      s"ObjectEncoder.instance[${typeNameString(t)}] { v =>"
     )
     val postfix = char('}')
 
-    val fields = ct.fields.toList.map { f =>
+    val fields = fields0.map { f =>
       spread(List(strLit(f.name.value), text(":= v.") + ident(f.name)))
     }
 
@@ -332,13 +333,17 @@ class Generator(config: Config) {
     bracketBy(obj)(prefix, postfix)
   }
 
-  def complexTypeCirceDecoder(ct: ComplexTypeDecl): Doc = {
-    val prefix = mkInstanceVal(ct.`type`, "Decoder") + text(
-      s"Decoder.instance[${typeNameString(ct.`type`)}] { c =>"
+  def complexTypeCirceEncoder(ct: ComplexTypeDecl): Doc =
+    complexTypeCirceEncoderImpl(ct.`type`, ct.fields.toList)
+
+  def complexTypeCirceDecoderImpl(t: TypeRef.defined,
+                                  fields: List[FieldDecl]): Doc = {
+    val prefix = mkInstanceVal(t, "Decoder") + text(
+      s"Decoder.instance[${typeNameString(t)}] { c =>"
     )
     val postfix = char('}')
 
-    val fieldsDecls = ct.fields.toList.map { f =>
+    val fieldsDecls = fields.map { f =>
       spread(
         List(
           ident(f.name),
@@ -346,21 +351,24 @@ class Generator(config: Config) {
           text("c.downField(") + strLit(f.name.value) + text(").as[") + typeExpr(
             f,
             false,
-            isRequiredField(ct.`type`, f)
+            isRequiredField(t, f)
           ) + char(']')
         )
       )
     }
 
     val fieldsList =
-      intercalate(comma + space, ct.fields.toList.map(f => ident(f.name)))
+      intercalate(comma + space, fields.map(f => ident(f.name)))
 
     val `for` = bracketBy(stack(fieldsDecls))(text("for {"), char('}')) +
       space + text("yield") + space +
-      typeName(ct.`type`) + char('(') + fieldsList + char(')')
+      typeName(t) + char('(') + fieldsList + char(')')
 
     bracketBy(`for`)(prefix, postfix)
   }
+
+  def complexTypeCirceDecoder(ct: ComplexTypeDecl): Doc =
+    complexTypeCirceDecoderImpl(ct.`type`, ct.fields.toList)
 
   def complexTypeCirceCodecs(ct: ComplexTypeDecl): List[Doc] =
     config.parameters.generateCirceCodecs match {
@@ -368,6 +376,35 @@ class Generator(config: Config) {
         List(complexTypeCirceEncoder(ct), complexTypeCirceDecoder(ct))
       case false => Nil
     }
+
+  def complexTypeAttrXmlSerializer(f: FieldDecl, objName: String): Doc = {
+    val attrPrefix = text(s"Attribute(${strLitString(f.xmlName)}, ")
+    val attrPostfix = text(".child, Null)")
+    val attr = isOptionalField(f) match {
+      case true =>
+        text("ct.") + ident(f.name) + text(".map(v => ") + attrPrefix +
+          callXmlSerializer("tmp", "v", f.`type`) + attrPostfix +
+          text(").getOrElse(Null)")
+      case false =>
+        attrPrefix +
+          callFieldXmlSerializer(""""tmp"""", objName, f.name.value, f.`type`) +
+          attrPostfix
+    }
+    attr
+  }
+
+  def complexTypeAttrsXmlSerializer(fields: List[FieldDecl],
+                                    objName: String): Doc = {
+    text("Null") +
+      fields
+        .map(
+          f =>
+            text(".append(") + complexTypeAttrXmlSerializer(f, objName) + char(
+              ')'
+          )
+        )
+        .fold(empty)(_ + _)
+  }
 
   def complexTypeFieldXmlSerializer(f: FieldDecl): Doc = {
     (isOptionalField(f), f.array) match {
@@ -387,13 +424,14 @@ class Generator(config: Config) {
           callXmlSerializer(strLitString(f.xmlName), "v", f.`type`) +
           text(").toList")
       case (true, true) =>
-        text("ct.") + ident(f.name) + text("toList.flatMap(v => ") +
+        text("ct.") + ident(f.name) + text(".toList.flatten.flatMap(v => ") +
           callXmlSerializer(strLitString(f.xmlName), "v", f.`type`) +
           char(')')
     }
   }
 
-  def complexTypeXmlSerializer(ct: ComplexTypeDecl): Option[Doc] =
+  def complexTypeXmlSerializer(ct: ComplexTypeDecl): Option[Doc] = {
+    val (attrs, fields) = ct.fields.toList.partition(_.attribute)
     config.parameters.generateXmlSerializers match {
       case true =>
         mkXmlSerilaizerFunc(
@@ -401,26 +439,47 @@ class Generator(config: Config) {
           "ct",
           createElem(
             "elemName",
+            complexTypeAttrsXmlSerializer(attrs, "ct"),
             intercalate(
               text(" ++") + line,
-              ct.fields.toList.map(complexTypeFieldXmlSerializer)
+              fields.map(complexTypeFieldXmlSerializer)
             ) + text(":_*")
           )
         )
       case _ => None
     }
+  }
+
+  def complexTypeKantanFieldDecoder(f0: FieldDecl, nodeName: String): Doc = {
+    val isOptionalList = f0.array && isOptionalField(f0)
+    val f =
+      if (isOptionalList) f0.copy(constraint = FieldConstraint.Required)
+      else f0
+
+    ident(f.name) + text(" <- Query[") + typeExpr(f) + text("](") +
+      text(
+        s"""xp"./${if (f.attribute) "@" + f.xmlName else f.xmlName}").eval(${nodeName})"""
+      ) +
+      (if (isOptionalList) text(".map(_.toNel.map(_.toList))") else empty)
+  }
 
   def complexTypeKantanXPathDecoder(ct: ComplexTypeDecl): Option[Doc] =
     config.parameters.generateKantanXPathDecoders match {
       case true => {
-        val result = mkInstanceVal(ct.`type`, "NodeDecoder") + bracketBy(
-          intercalate(
-            comma + lineBreak,
-            ct.fields.toList.map(f => text(s"""xp"./${f.xmlName}""""))
-          )
+        val fields = ct.fields.toList
+        val fieldsList =
+          intercalate(comma + space, fields.toList.map(f => ident(f.name)))
+        val `for` = bracketBy(
+          stack(fields.toList.map(complexTypeKantanFieldDecoder(_, "node")))
         )(
-          text("NodeDecoder.decoder("),
-          text(s")(${typeNameString(ct.`type`)}.apply)")
+          text("for {"),
+          text("} yield ") + typeName(ct.`type`) + char('(') + fieldsList + char(
+            ')'
+          )
+        )
+        val result = mkInstanceVal(ct.`type`, "NodeDecoder") + bracketBy(`for`)(
+          text("NodeDecoder.fromFound { node =>"),
+          char('}')
         )
         result.some
       }
@@ -543,12 +602,157 @@ class Generator(config: Config) {
         complexTypeObjectDecl(ct).toList
     )
 
+  private val extensionContentFieldName = "baseContent"
+
+  private def extensionContentField(`type`: TypeRef): FieldDecl = FieldDecl(
+    Ident(extensionContentFieldName),
+    "",
+    `type`,
+    FieldConstraint.Required,
+    false,
+    false,
+    None
+  )
+
+  def simpleTypeExtensionClassDecl(t: SimpleTypeExtensionDecl): Doc = {
+    val prefix = spread(List(text("final case class"), ident(t.`type`.name))) + char(
+      '('
+    )
+    val postfix = char(')')
+
+    bracketBy(
+      intercalate(
+        comma + line,
+        (extensionContentField(t.baseType) :: t.fields.toList)
+          .map(f => fieldDecl(f, isRequiredField(t.`type`, f)))
+      )
+    )(prefix, postfix)
+  }
+
+  def simpleTypeExtensionCirceCodecs(t: SimpleTypeExtensionDecl): List[Doc] =
+    config.parameters.generateCirceCodecs match {
+      case true => {
+        val fields = extensionContentField(t.`type`) :: t.fields.toList
+        List(
+          complexTypeCirceEncoderImpl(t.`type`, fields),
+          complexTypeCirceDecoderImpl(t.`type`, fields)
+        )
+      }
+      case false => Nil
+    }
+
+  def simpleTypeExtensionXmlSerializer(
+    t: SimpleTypeExtensionDecl
+  ): Option[Doc] =
+    config.parameters.generateXmlSerializers match {
+      case true => {
+        mkXmlSerilaizerFunc(
+          t.`type`,
+          "t",
+          callFieldXmlSerializer(
+            "elemName",
+            "t",
+            extensionContentFieldName,
+            t.baseType
+          ) +
+            text(".asInstanceOf[Elem] % ") + complexTypeAttrsXmlSerializer(
+            t.fields.toList,
+            "t"
+          )
+        )
+      }
+      case false => None
+    }
+
+  def simpleTypeExtensionKantanXPathDecoder(
+    t: SimpleTypeExtensionDecl
+  ): Option[Doc] = {
+    config.parameters.generateKantanXPathDecoders match {
+      case true => {
+        val result = mkInstanceVal(t.`type`, "NodeDecoder") + bracketBy(
+          intercalate(
+            comma + lineBreak,
+            text("""xp"."""") ::
+              t.fields.toList.map(f => text(s"""xp"./${"@" + f.xmlName}""""))
+          )
+        )(
+          text("NodeDecoder.decoder("),
+          text(s")(${typeNameString(t.`type`)}.apply)")
+        )
+        result.some
+      }
+      case _ => None
+    }
+  }
+
+  def simpleTypeExtensionOptionalTypeToStrongTypeConverter(
+    t: SimpleTypeExtensionDecl
+  ): Option[Doc] =
+    config.parameters.generateOptionalTypes match {
+      case OptionalTypes.Generate(Some(sp), _) => {
+        val prefix = mkOptionalTypeConverterPrefix(t.`type`, sp)
+        val postfix = char('}')
+
+        val fields = (extensionContentField(t.`type`) :: t.fields)
+          .map(
+            f =>
+              complexTypeOptionalTypeToStrongTypeFieldConverter(t.`type`, f, sp)
+          )
+        val cvt =
+          if (fields.size === 1) {
+            fields.head +
+              text(".map(" + sp + ".") +
+              typeName(t.`type`) +
+              text(".apply _)")
+          } else {
+            bracketBy(intercalate(comma + line, fields.toList))(
+              char('('),
+              char(')')
+            ) +
+              text(".mapN(" + sp + ".") +
+              typeName(t.`type`) +
+              text(".apply _)")
+          }
+
+        bracketBy(cvt)(prefix, postfix).some
+      }
+      case _ => None
+    }
+
+  def simpleTypeExtensionObjectDecl(t: SimpleTypeExtensionDecl): Option[Doc] = {
+    val elements = NEL
+      .fromList(
+        catsEqInstance(t.`type`).toList ++
+          simpleTypeExtensionCirceCodecs(t) ++
+          simpleTypeExtensionXmlSerializer(t).toList ++
+          simpleTypeExtensionKantanXPathDecoder(t).toList ++
+          simpleTypeExtensionOptionalTypeToStrongTypeConverter(t).toList
+      )
+      .map(_.toList)
+
+    elements.map { el =>
+      val prefix = text("object ") + typeName(t.`type`) + text(" {")
+      val postfix = char('}')
+
+      bracketBy(intercalate(line * 2, el))(prefix, postfix)
+    }
+  }
+
+  def simpleTypeExtensionDecl(t: SimpleTypeExtensionDecl): Doc =
+    stack(
+      comment(t.comment) ++
+        simpleTypeExtensionClassDecl(t).pure[List] ++
+        simpleTypeExtensionObjectDecl(t).toList
+    )
+
   def enumMemberDecl(e: EnumDecl)(m: EnumMemberDecl): Doc = {
     val code = spread(List(text("override val code ="), strLit(m.value)))
     val description = spread(
       List(
         text("override val description ="),
-        char('"') + text(m.comment.getOrElse(m.value)) + char('"')
+        char('"') + text(m.comment.getOrElse(m.value).split("\n")(0)) + char(
+          '"'
+        )
       )
     )
     val prefix = spread(
@@ -604,7 +808,7 @@ class Generator(config: Config) {
     mkXmlSerilaizerFunc(
       e.`type`,
       "e",
-      createElem("elemName", text("Text(e.code)"))
+      createElem("elemName", text("Null"), text("Text(e.code)"))
     )
 
   def enumKantanXPathDecoder(e: EnumDecl): Option[Doc] =
@@ -767,6 +971,7 @@ class Generator(config: Config) {
     case v: ComplexTypeDecl => complexTypeDecl(v)
     case v: EnumDecl => enumDecl(v)
     case v: NewtypeDecl => newtypeDecl(v)
+    case v: SimpleTypeExtensionDecl => simpleTypeExtensionDecl(v)
   }
 
   def typesDecl(t: TypesDecl): Doc =

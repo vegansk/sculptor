@@ -48,12 +48,12 @@ object testAst {
             Ident("id"),
             "id",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None),
+            FieldConstraint.Required, false, false, None),
           FieldDecl(
             Ident("org"),
             "org",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None)),
+            FieldConstraint.Optional, false, false, None)),
         None
       )
   }
@@ -87,27 +87,27 @@ object testAst {
             Ident("value1"),
             "value1",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None),
+            FieldConstraint.Optional, false, false, None),
           FieldDecl(
             Ident("value2"),
             "value2",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None),
+            FieldConstraint.Required, false, false, None),
           FieldDecl(
             Ident("value3"),
             "value3",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None),
+            FieldConstraint.Required, false, false, None),
           FieldDecl(
             Ident("value4"),
             "value4",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None),
+            FieldConstraint.Optional, false, false, None),
           FieldDecl(
             Ident("value5"),
             "value5",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None)),
+            FieldConstraint.Optional, false, false, None)),
         None
       )
     lazy val dst = List(outerType)
@@ -134,12 +134,12 @@ object testAst {
             Ident("x"),
             "x",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, false, None),
+            FieldConstraint.Required, false, false, None),
           FieldDecl(
             Ident("y"),
             "y",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None)),
+            FieldConstraint.Required, false, false, None)),
         None
       )
   }
@@ -162,12 +162,12 @@ object testAst {
             Ident("num"),
             "num",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Optional, false, None),
+            FieldConstraint.Optional, false, false, None),
           FieldDecl(
             Ident("str"),
             "str",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None)),
+            FieldConstraint.Optional, false, false, None)),
         None
       )
   }
@@ -194,7 +194,7 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None)),
+            FieldConstraint.Required, false, false, None)),
         None
       )
   }
@@ -240,7 +240,7 @@ object testAst {
             Ident("id"),
             "id",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, false, None)),
+            FieldConstraint.Required, false, false, None)),
         None
       )
 
@@ -253,7 +253,7 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.defined(Ident("TestValue")),
-            FieldConstraint.Required, false, None)),
+            FieldConstraint.Required, false, false, None)),
         None
       )
 
@@ -279,12 +279,42 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, None),
+            FieldConstraint.Required, false, false, None),
           FieldDecl(
             Ident("id"),
             "id",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, false, None)),
+            FieldConstraint.Required, true, false, None)),
+        None
+      )
+  }
+
+  object complexTypeSimpleContent {
+    lazy val src = parseXsdTypes(
+      <xs:complexType name="test">
+        <xs:simpleContent>
+          <xs:extension base="base">
+            <xs:attribute name="id" type="xs:int" use="required" />
+          </xs:extension>
+        </xs:simpleContent>
+      </xs:complexType>
+    ).head
+
+    lazy val dst =
+      SimpleTypeExtensionDecl(
+        TypeRef.definedFrom("test"),
+        TypeRef.definedFrom("base"),
+        NEL.of(
+          FieldDecl(
+            Ident("baseContent"),
+            "",
+            TypeRef.definedFrom("base"),
+            FieldConstraint.Required, false, false, None),
+          FieldDecl(
+            Ident("id"),
+            "id",
+            TypeRef.std(Ident("int")),
+            FieldConstraint.Required, true, false, None)),
         None
       )
   }
@@ -311,27 +341,27 @@ object testAst {
             Ident("optional"),
             "optional",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, None),
+            FieldConstraint.Optional, false, false, None),
           FieldDecl(
             Ident("nullable"),
             "nullable",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Nullable, false, None),
+            FieldConstraint.Nullable, false, false, None),
           FieldDecl(
             Ident("array"),
             "array",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, true, None),
+            FieldConstraint.Required, false, true, None),
           FieldDecl(
             Ident("optionalNullable"),
             "optional_nullable",
             TypeRef.std(Ident("String")),
-            FieldConstraint.OptionalNullable, false, None),
+            FieldConstraint.OptionalNullable, false, false, None),
           FieldDecl(
             Ident("optionalArray"),
             "optional_array",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, true, None)),
+            FieldConstraint.Optional, false, true, None)),
         None
       )
   }

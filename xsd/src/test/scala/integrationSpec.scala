@@ -30,6 +30,25 @@ object integrationSpec extends mutable.Specification {
       )
     }
 
+    "produce ast from ca_iso20022_v2 schema" >> {
+      import scala.xml._
+      val result = run[Schema[Option]] {
+        parser[Option].parse {
+          XML.load(
+            getClass.getClassLoader.getResourceAsStream("xsd/ca_iso20022_v2.xsd")
+          )
+        }
+      }
+
+      result._2 must beRight(
+        (xsdO: Schema[Option]) => {
+          val xsd = Schema.build(xsdO)
+
+          xsd.toEither must beRight
+        }
+      )
+    }
+
   }
 
 }

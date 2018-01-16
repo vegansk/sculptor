@@ -416,7 +416,8 @@ object fold {
               "id" -> id,
               "targetNamespace" -> targetNamespace,
               "elementFormDefault" -> attrNop[A],
-              "attributeFormDefault" -> attrNop[A]
+              "attributeFormDefault" -> attrNop[A],
+              "version" -> attrNop[A]
             )
           )
         )
@@ -619,6 +620,27 @@ object fold {
   def maxLength[A](
     value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
   ): MaxLengthOp[A] = maxLengthOp(tagValue(value = value))
+
+  def fractionDigitsOp[A](op: Op[A]): FractionDigitsOp[A] =
+    tag[FractionDigitsTag][Op[A]](op)
+
+  def fractionDigits[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): FractionDigitsOp[A] = fractionDigitsOp(tagValue(value = value))
+
+  def totalDigitsOp[A](op: Op[A]): TotalDigitsOp[A] =
+    tag[TotalDigitsTag][Op[A]](op)
+
+  def totalDigits[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): TotalDigitsOp[A] = totalDigitsOp(tagValue(value = value))
+
+  def minInclusiveOp[A](op: Op[A]): MinInclusiveOp[A] =
+    tag[MinInclusiveTag][Op[A]](op)
+
+  def minInclusive[A](
+    value: => ValueOp[A] = tag[ValueTag](attrNop0[A]("value"))
+  ): MinInclusiveOp[A] = minInclusiveOp(tagValue(value = value))
 
   def patternOp[A](op: Op[A]): PatternOp[A] = tag[PatternTag][Op[A]](op)
 
