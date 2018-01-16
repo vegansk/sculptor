@@ -98,9 +98,9 @@ object generatorSpec extends mutable.Specification
       TypeRef.definedFrom("Test"),
       None,
       NEL.of(
-        FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, None),
-        FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, None),
-        FieldDecl(Ident("date"), "date", TypeRef.external(QName.of(Ident("Instant"))), FieldConstraint.Required, false, None)
+        FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, false, None),
+        FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, false, None),
+        FieldDecl(Ident("date"), "date", TypeRef.external(QName.of(Ident("Instant"))), FieldConstraint.Required, false, false, None)
       ),
       None
     )

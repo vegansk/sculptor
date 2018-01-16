@@ -44,6 +44,7 @@ object ast {
                              xmlName: String,
                              `type`: TypeRef,
                              constraint: FieldConstraint,
+                             attribute: Boolean,
                              array: Boolean,
                              comment: Option[Comment])
 
@@ -58,6 +59,12 @@ object ast {
                                    baseType: Option[TypeRef],
                                    fields: NEL[FieldDecl],
                                    comment: Option[Comment])
+      extends TypeDecl
+
+  final case class SimpleTypeExtensionDecl(`type`: TypeRef.defined,
+                                           baseType: TypeRef,
+                                           fields: NEL[FieldDecl],
+                                           comment: Option[Comment])
       extends TypeDecl
 
   final case class EnumMemberDecl(name: Ident,

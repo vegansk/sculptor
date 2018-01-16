@@ -74,6 +74,9 @@ final class Fold(config: Config) {
               None,
               _,
               _,
+              _,
+              _,
+              _,
               values @ (_ :: _)
             )
           )
@@ -83,7 +86,7 @@ final class Fold(config: Config) {
           ann,
           Some(name),
           _,
-          Some(x.SimpleTypeRestriction(base, _, _, _, Nil))
+          Some(x.SimpleTypeRestriction(base, _, _, _, _, _, _, Nil))
           ) =>
         onNewtype(name, base, ann)
       case _ => default(t)
@@ -124,14 +127,7 @@ final class Fold(config: Config) {
               occurs(maxOccurs),
               isNullable(nullable)
               ) =>
-            onField(
-              name,
-              typ.map(x.QName.fromString _),
-              minOccurs,
-              maxOccurs,
-              nullable,
-              ann
-            )
+            onField(name, typ, minOccurs, maxOccurs, nullable, ann)
           case x.Element(
               ann,
               Some(name),
@@ -183,6 +179,7 @@ final class Fold(config: Config) {
         _,
         Some(name),
         None,
+        None,
         Some(seq),
         None,
         attrs,
@@ -206,6 +203,7 @@ final class Fold(config: Config) {
         ),
         None,
         None,
+        None,
         attrs,
         _,
         _,
@@ -219,6 +217,7 @@ final class Fold(config: Config) {
     case x.ComplexType(
         _,
         Some(name),
+        None,
         None,
         None,
         Some(ch),

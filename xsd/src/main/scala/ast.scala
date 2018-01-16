@@ -85,12 +85,18 @@ object ast {
     pattern: F[Option[String]],
     minLength: F[Option[String]],
     maxLength: F[Option[String]],
+    fractionDigits: F[Option[String]],
+    totalDigits: F[Option[String]],
+    minInclusive: F[Option[String]],
     enumeration: F[List[Enumeration[F]]]
   ) extends AST[F]
 
   object SimpleTypeRestriction extends Builder("SimpleTypeRestriction") {
     def empty[F[_]: MonoidK](): SimpleTypeRestriction[F] =
       apply(
+        MonoidK[F].empty,
+        MonoidK[F].empty,
+        MonoidK[F].empty,
         MonoidK[F].empty,
         MonoidK[F].empty,
         MonoidK[F].empty,
@@ -106,6 +112,9 @@ object ast {
         optional("pattern")(src.pattern),
         optional("minLength")(src.minLength),
         optional("maxLength")(src.maxLength),
+        optional("fractionDigits")(src.fractionDigits),
+        optional("totalDigits")(src.totalDigits),
+        optional("minInclusive")(src.minInclusive),
         innerList("enumeration", Enumeration.build)(src.enumeration)
       ).mapN(SimpleTypeRestriction.apply[DstF])
     }
@@ -247,6 +256,7 @@ object ast {
   }
 
   final case class Any[F[_]](annotation: F[Option[Annotation[F]]],
+                             namespace: F[Option[String]],
                              processContents: F[Option[String]],
                              minOccurs: F[Option[String]],
                              maxOccurs: F[Option[String]])
@@ -258,12 +268,14 @@ object ast {
         MonoidK[F].empty,
         MonoidK[F].empty,
         MonoidK[F].empty,
+        MonoidK[F].empty,
         MonoidK[F].empty
       )
 
     def build(src: Any[SrcF]): BuildResultId[Any] = {
       (
         innerOptional("annotation", Annotation.build)(src.annotation),
+        optional("namespace")(src.processContents),
         optional("processContents")(src.processContents),
         optional("minOccurs")(src.minOccurs),
         optional("maxOccurs")(src.maxOccurs)
@@ -309,10 +321,49 @@ object ast {
     }
   }
 
+  final case class SimpleContentExtension[F[_]](
+    annotation: F[Option[Annotation[F]]],
+    base: F[QName],
+    attributes: F[List[Attribute[F]]]
+  ) extends AST[F]
+
+  object SimpleContentExtension extends Builder("SimpleContentExtension") {
+    def empty[F[_]: MonoidK](): SimpleContentExtension[F] =
+      apply(MonoidK[F].empty, MonoidK[F].empty, MonoidK[F].empty)
+
+    def build(
+      src: SimpleContentExtension[SrcF]
+    ): BuildResultId[SimpleContentExtension] = {
+      (
+        innerOptional("annotation", Annotation.build)(src.annotation),
+        value("base")(src.base),
+        innerList("attributes", Attribute.build)(src.attributes)
+      ).mapN(SimpleContentExtension.apply[DstF])
+    }
+  }
+
+  final case class SimpleContent[F[_]](
+    annotation: F[Option[Annotation[F]]],
+    extension: F[Option[SimpleContentExtension[F]]]
+  ) extends AST[F]
+
+  object SimpleContent extends Builder("SimpleContent") {
+    def empty[F[_]: MonoidK](): SimpleContent[F] =
+      apply(MonoidK[F].empty, MonoidK[F].empty)
+
+    def build(src: SimpleContent[SrcF]): BuildResultId[SimpleContent] = {
+      (
+        innerOptional("annotation", Annotation.build)(src.annotation),
+        innerOptional("extension", SimpleContentExtension.build)(src.extension)
+      ).mapN(SimpleContent.apply[DstF])
+    }
+  }
+
   final case class ComplexType[F[_]](
     annotation: F[Option[Annotation[F]]],
     name: F[Option[String]],
     complexContent: F[Option[ComplexContent[F]]],
+    simpleContent: F[Option[SimpleContent[F]]],
     sequence: F[Option[Sequence[F]]],
     choice: F[Option[Choice[F]]],
     attributes: F[List[Attribute[F]]],
@@ -334,6 +385,7 @@ object ast {
         MonoidK[F].empty,
         MonoidK[F].empty,
         MonoidK[F].empty,
+        MonoidK[F].empty,
         MonoidK[F].empty
       )
 
@@ -344,6 +396,7 @@ object ast {
         innerOptional("complexContent", ComplexContent.build)(
           src.complexContent
         ),
+        innerOptional("simpleContent", SimpleContent.build)(src.simpleContent),
         innerOptional("sequence", Sequence.build)(src.sequence),
         innerOptional("choice", Choice.build)(src.choice),
         innerList("attributes", Attribute.build)(src.attributes),
@@ -359,7 +412,7 @@ object ast {
                                  name: F[Option[String]],
                                  complexType: F[Option[ComplexType[F]]],
                                  simpleType: F[Option[SimpleType[F]]],
-                                 `type`: F[Option[String]],
+                                 `type`: F[Option[QName]],
                                  minOccurs: F[Option[String]],
                                  maxOccurs: F[Option[String]],
                                  nillable: F[Option[String]])
