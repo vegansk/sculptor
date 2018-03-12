@@ -300,15 +300,15 @@ class Generator(config: Config) {
 
   lazy val mkStringEnumImpl: Doc = {
     val t = config.iotsNs.value
-    text(s"""function mkStringEnum<E>(e: object, name: string): $t.Type<E> {
-  const values = getStringEnumValues(e)
-  const newType: $t.Type<E> = {
-    _A: $t._A,
-    name,
-    validate: (v, c) => values.indexOf(v) >= 0 ? $t.success<E>(v) : $t.failure<E>(v, c)
-  }
-  return newType
-}""")
+    text(s"""|function mkStringEnum<E>(e: object, name: string): $t.Type<E> {
+             |  const values = getStringEnumValues(e)
+             |  return new $t.Type<E>(
+             |    name,
+             |    (v): v is E => values.indexOf(v as string) >= 0,
+             |    (v, c) => values.indexOf(v as string) >= 0 ? $t.success<E>(v as E) : $t.failure<E>(v, c),
+             |    $t.identity
+             |  )
+             |}""".stripMargin)
   }
 
   lazy val inlineMkStringEnum: Doc =

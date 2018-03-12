@@ -6,15 +6,16 @@ val npmStart = taskKey[Unit]("Runs project via npm")
 
 val tsgenOptions = TsgenOptions(
   imports = List(
-    TsgenImport("iots", "io-ts"),
+    TsgenImport("t", "io-ts"),
     TsgenImport("T", "core/types"),
     ),
   types = List(
     TsgenType("xs:date", "Date", "T.date"),
+    TsgenType("xs:time", "Date", "T.date"),
     TsgenType("xs:dateTime", "Date", "T.date")
   ),
   header = Option("/** tslint:disable: all */"),
-  iotsNs = "iots",
+  iotsNs = "t",
   nativeTypes = true,
   generateEnumsDocumentationGetters = true,
   generatePartialTypes = true

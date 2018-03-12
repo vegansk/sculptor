@@ -24,6 +24,11 @@
                         <xs:documentation>Отправитель документа</xs:documentation>
                     </xs:annotation>
                 </xs:element>
+                <xs:element minOccurs="0" name="document_applicant" type="document_applicant_t">
+                    <xs:annotation>
+                        <xs:documentation>Податель документа</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
                 <xs:element minOccurs="0" name="document_person" type="document_person_t">
                     <xs:annotation>
                         <xs:documentation>Субъект, в отношении которого подан документ</xs:documentation>
@@ -48,6 +53,11 @@
                 <xs:element name="content" type="document_content_t">
                     <xs:annotation>
                         <xs:documentation>Содержимое документа</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" name="scan_image" type="attachment_info_t">
+                    <xs:annotation>
+                        <xs:documentation>Скан образ документа</xs:documentation>
                     </xs:annotation>
                 </xs:element>
                 <xs:element minOccurs="0" name="notifications" type="notifications_info_t">
@@ -176,12 +186,17 @@
                     <xs:documentation>Анкета зарегистрированного лица (ЮЛ)</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToTransferShares">
+            <xs:enumeration value="FormOfLegalPledgee">
+                <xs:annotation>
+                    <xs:documentation>Анкета залогодержателя (ЮЛ)</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="TransferSharesOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение о списании/зачислении ценных бумаг</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToConsolidateAccounts">
+            <xs:enumeration value="ConsolidateAccountsOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение на объединение лицевых счетов</xs:documentation>
                 </xs:annotation>
@@ -191,32 +206,32 @@
                     <xs:documentation>Запрос на выдачу информации из реестра</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToBlock">
+            <xs:enumeration value="BlockOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение на блокирование</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToUnblock">
+            <xs:enumeration value="UnblockOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение на отмену блокирования</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToPledge">
+            <xs:enumeration value="PledgeOrder">
                 <xs:annotation>
                     <xs:documentation>Залоговое распоряжение</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToChangePledge">
+            <xs:enumeration value="ChangePledgeOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение о внесении изменений в условия залога</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToUnpledge">
+            <xs:enumeration value="UnpledgeOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение о прекращении залога</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="OrderToTransferPledgeRights">
+            <xs:enumeration value="PledgeRightsTransferOrder">
                 <xs:annotation>
                     <xs:documentation>Распоряжение о переуступке права требования по залогу</xs:documentation>
                 </xs:annotation>
@@ -244,6 +259,11 @@
             <xs:enumeration value="InformationOnBeneficiaries">
                 <xs:annotation>
                     <xs:documentation>Сведения о бенефициарных владельцах и/или выгодоприобретателях</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="StatementOfHoldings">
+                <xs:annotation>
+                    <xs:documentation>Выписка из реестра владельцев именных ценных бумаг</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
             <xs:enumeration value="Other">
@@ -337,28 +357,6 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:simpleType name="person_kind_et">
-        <xs:annotation>
-            <xs:documentation>Вид субъекта</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="Account">
-                <xs:annotation>
-                    <xs:documentation>Зарегистрированное лицо</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
-            <xs:enumeration value="Issuer">
-                <xs:annotation>
-                    <xs:documentation>Эмитент</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
-            <xs:enumeration value="Other">
-                <xs:annotation>
-                    <xs:documentation>Другие</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
-        </xs:restriction>
-    </xs:simpleType>
     <xs:complexType name="ogrn_t">
         <xs:annotation>
             <xs:documentation>ОГРН юридического лица</xs:documentation>
@@ -440,11 +438,6 @@
             <xs:element name="type" type="legal_registration_document_type_t">
                 <xs:annotation>
                     <xs:documentation>Тип документа о регистрации юридического лица</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="series" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Серия документа</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="num" type="xs:string">
@@ -2302,28 +2295,9 @@
                     <xs:documentation>Местоположение ресурса</xs:documentation>
                 </xs:annotation>
             </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="document_content_t">
-        <xs:annotation>
-            <xs:documentation>Содержимое документа</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:choice>
-                <xs:element name="unstructured" type="unstructured_document_content_t">
-                    <xs:annotation>
-                        <xs:documentation>Неструктурированное содержимое документа</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="structured" type="structured_document_content_t">
-                    <xs:annotation>
-                        <xs:documentation>Структурированное содержимое документа</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:choice>
-            <xs:element minOccurs="0" name="scan_image" type="attachment_info_t">
+            <xs:element minOccurs="0" name="filename" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>Скан образ документа</xs:documentation>
+                    <xs:documentation>Имя файла</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
@@ -2361,23 +2335,6 @@
         </xs:annotation>
         <xs:sequence>
             <xs:element maxOccurs="unbounded" name="appendix" type="document_appendix_t"/>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="unstructured_document_content_t">
-        <xs:annotation>
-            <xs:documentation>Неструктурированное содержимое документа</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element minOccurs="0" name="security" type="security_info_t">
-                <xs:annotation>
-                    <xs:documentation>Ценная бумага (используется для частичной структуризации передаточного распоряжения)</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="content" minOccurs="0" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Данные документа</xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="payment_state_et">
@@ -2574,12 +2531,12 @@
                     <xs:documentation>Идентификатор строки списка услуг</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:choice>
-                <xs:element name="doc_type" type="document_type_et">
-                    <xs:annotation>
-                        <xs:documentation>Тип документа</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
+            <xs:element name="doc_type" type="document_type_et">
+                <xs:annotation>
+                    <xs:documentation>Тип документа</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice minOccurs="0">
                 <xs:element name="transaction_type" type="transaction_type_et">
                     <xs:annotation>
                         <xs:documentation>Тип передаточного распоряжения</xs:documentation>
@@ -2601,6 +2558,11 @@
                     <xs:documentation>Цена</xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="total" type="money_t" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Всего (с НДС)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="payment_state" type="payment_state_et">
                 <xs:annotation>
                     <xs:documentation>Статус оплаты</xs:documentation>
@@ -2620,9 +2582,602 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="structured_document_content_t">
+    <xs:simpleType name="block_reason_et">
         <xs:annotation>
-            <xs:documentation>Структурированное содержимое документа</xs:documentation>
+            <xs:documentation>Основание для блокирования</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="SeizureOfSecurities">
+                <xs:annotation>
+                    <xs:documentation>Арест ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Death">
+                <xs:annotation>
+                    <xs:documentation>В связи со смертью</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="SecuritiesRepurchase">
+                <xs:annotation>
+                    <xs:documentation>При выкупе ЦБ (ст.84.8)</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="EncumbranceOfThirdPartyRights">
+                <xs:annotation>
+                    <xs:documentation>Обременение правами третьих лиц</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Other">
+                <xs:annotation>
+                    <xs:documentation>По иным основаниям</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="block_order_link_t">
+        <xs:annotation>
+            <xs:documentation>Ссылка на распоряжение на блокирование</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="date" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Дата установки блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="order_initiator" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Инициатор блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_basis_t">
+        <xs:annotation>
+            <xs:documentation>Основание для залога ЦБ</xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="contract" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Информация о договоре залога</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="criminal_case">
+                <xs:annotation>
+                    <xs:documentation>Информация об уголовном деле</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="num" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>Номер уголовного дела</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element minOccurs="0" name="person" type="xs:string">
+                            <xs:annotation>
+                                <xs:documentation>ФИО лица, за которое вносился залог</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="block_order_conditions_t">
+        <xs:annotation>
+            <xs:documentation>Условия блокирования</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="end_date" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Дата окончания блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block_votes" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Блокирование голосов</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="block_dividends" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Блокирование права получения дивидендов</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="comment" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Комментарий</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="block_order_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированая часть распоряжения на блокирование</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="block_reason" type="block_reason_et">
+                <xs:annotation>
+                    <xs:documentation>Основание для блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="order_initiator" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Инициатор распоряжения</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="previous_block" type="block_order_link_t">
+                <xs:annotation>
+                    <xs:documentation>Описание предыдущего блокирования для повторного блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledged_securities_block" type="pledge_basis_t">
+                <xs:annotation>
+                    <xs:documentation>Блокирование заложенных ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="account" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Счет в реестре</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="conditions" type="block_order_conditions_t">
+                <xs:annotation>
+                    <xs:documentation>Условия блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="block_order_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированая часть распоряжения на блокирование</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="block_order_t">
+        <xs:annotation>
+            <xs:documentation>Распоряжение на блокирование</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="security" type="security_info_t">
+                <xs:annotation>
+                    <xs:documentation>Ценная бумага</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="structured" type="block_order_structured_t"/>
+                <xs:element name="unstructured" type="block_order_unstructured_t"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unblock_order_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированная часть распоряжения на отмену блокирования</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="block_order" type="block_order_link_t">
+                <xs:annotation>
+                    <xs:documentation>Отменяемое блокирование</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="account" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Счет в реестре</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="unblock_order_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированная часть распоряжения на отмену блокирования</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="unblock_order_t">
+        <xs:annotation>
+            <xs:documentation>Распоряжение на отмену блокирования</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="security" type="security_info_t">
+                <xs:annotation>
+                    <xs:documentation>Ценная бумага</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="partially" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>На часть ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="structured" type="unblock_order_structured_t"/>
+                <xs:element name="unstructured" type="unblock_order_unstructured_t"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="pledge_order_link_t">
+        <xs:annotation>
+            <xs:documentation>Ссылка на залоговое распоряжение (номер и дата)</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="pledge_securities_quantity_condition_t">
+        <xs:annotation>
+            <xs:documentation>Количество ЦБ в условии залога</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ. Если не указано, то условие распространяется на все ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_securities_condition_t">
+        <xs:annotation>
+            <xs:documentation>Вид и количество ЦБ в условии залога</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="classification" type="security_classification_et" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Вид ценной бумаги</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="category" type="security_category_et">
+                <xs:annotation>
+                    <xs:documentation>Категория ценной бумаги по предоставляемым правам</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ. Если не указано, то условие распространяется на все ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_out_of_court_foreclosure_documents_t">
+        <xs:annotation>
+            <xs:documentation>Документы, предоставляемые залогодержателем реестродержателю при внесудебном обращении взыскания</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="statement_from_transactions_register" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Выписка из реестра сделок организатора торгов, подтверждающая заключение сделки</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="broker_sales_contract" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Договор купли-продажи ЦБ, заключенный комиссионером, и договор комиссии между залогодержателем и комиссионером</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="failed_rebidding_protocol" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Протокол несостоявшихся повторных торгов</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="foreclosure_notifications_copies" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Копии уведомлений залогодержателем залогодателя (о начале обращения взыскания и (или) о приобретении заложенных ЦБ)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sales_contract" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Договор купли-продажи заложенных ЦБ, заключенный по результатам торгов</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_out_of_court_foreclosure_condition_t">
+        <xs:annotation>
+            <xs:documentation>Условия обращения взыскания на заложенные ЦБ во внесудебном порядке</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="foreclosure_date" type="xs:date" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Дата обращения взыскания</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="expiration_date" type="xs:string" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>Срок реализации заложенных ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="documents" type="pledge_out_of_court_foreclosure_documents_t">
+                <xs:annotation>
+                    <xs:documentation>Документы, предоставляемые залогодержателем реестродержателю</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_fulfilment_of_obligations_on_bonds_condition_t">
+        <xs:annotation>
+            <xs:documentation>Условие обеспечения исполнения обязательств по облигациям</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="bonds_info" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_conditions_t">
+        <xs:annotation>
+            <xs:documentation>Условия залога</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="allow_transfter_without_pledgee_consent" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Передача заложенных допускается без согласия залогодержателя</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="forbid_repledge" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Поcледующий залог запрещается</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="forbid_rights_assign_without_pledgee_consent" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Уступка прав по договору залога без согласия залогодержателя запрещается</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="apply_pledge_after_conversion_of_pledged_securities" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Залог распространяется на ЦБ после конвертации заложенных ценных бумаг</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="apply_pledge_to_additional_securities"
+                type="pledge_securities_condition_t">
+                <xs:annotation>
+                    <xs:documentation>Залог распространяется на дополнительно зачисляемые на счет залогодателя ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledgee_is_beneficiary"
+                type="pledge_securities_quantity_condition_t">
+                <xs:annotation>
+                    <xs:documentation>Получателем дохода является залогодержатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledgee_has_right_to_vote"
+                type="pledge_securities_quantity_condition_t">
+                <xs:annotation>
+                    <xs:documentation>Правом голоса обладает залогодержатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="out_of_court_foreclosure_of_pledged_securities"
+                type="pledge_out_of_court_foreclosure_condition_t">
+                <xs:annotation>
+                    <xs:documentation>Обращение взыскания на заложенные ЦБ осуществляется во внесудебном порядке</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element minOccurs="0" name="fulfilment_of_obligations_on_bonds"
+                    type="pledge_fulfilment_of_obligations_on_bonds_condition_t">
+                    <xs:annotation>
+                        <xs:documentation>Залог в обеспечение исполнения обязательств по облигациям</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element minOccurs="0" name="additional_conditions" type="xs:string">
+                    <xs:annotation>
+                        <xs:documentation>Дополнительные условия залога</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="pledge_order_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированная часть залогового распоряжения</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="basis" type="pledge_basis_t">
+                <xs:annotation>
+                    <xs:documentation>Основания для внесения в реестр записи о залоге</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="previous_pledge" type="pledge_order_link_t">
+                <xs:annotation>
+                    <xs:documentation>Ссылка на предыдущий залог для повторного залога</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pledger" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Залогодатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pledgee" type="pledgee_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Залогодержатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="conditions" type="pledge_conditions_t">
+                <xs:annotation>
+                    <xs:documentation>Условия залога</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="pledge_order_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированная часть залогового распоряжения</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="pledge_order_t">
+        <xs:annotation>
+            <xs:documentation>Залоговое распоряжение</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="security" type="security_info_t">
+                <xs:annotation>
+                    <xs:documentation>Ценная бумага</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="structured" type="pledge_order_structured_t"/>
+                <xs:element name="unstructured" type="pledge_order_unstructured_t"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="unpledge_order_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированная часть распоряжения о прекращении залога</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="basis" type="pledge_basis_t">
+                <xs:annotation>
+                    <xs:documentation>Основания прекращаемого залога</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pledger" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Залогодатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pledgee" type="pledgee_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Залогодержатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="unpledge_order_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированная часть распоряжения о прекращении залога</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="unpledge_order_t">
+        <xs:annotation>
+            <xs:documentation>Распоряжение о прекращении залога</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="security" type="security_info_t">
+                <xs:annotation>
+                    <xs:documentation>Ценная бумага</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Количество ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="partially" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>На часть ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="structured" type="unpledge_order_structured_t"/>
+                <xs:element name="unstructured" type="unpledge_order_unstructured_t"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="security_balance_quantity_t">
+        <xs:annotation>
+            <xs:documentation>Кол-во ЦБ в балансе</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="total" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Общее количество ценных бумаг на счете</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="blocked" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Блокировано</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="blocked_pledged" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Блокировано заложенных</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="blocked_unpaid" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Блокировано неоплаченых</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledged" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Заложено</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledged_unpaid" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Заложено неоплаченых</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="unpaid" type="fraction_t">
+                <xs:annotation>
+                    <xs:documentation>Обременение обязательством оплаты ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="security_balance_t">
+        <xs:annotation>
+            <xs:documentation>Баланс по ценной бумаге</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="security" type="security_info_t">
+                <xs:annotation>
+                    <xs:documentation>Ценная бумага</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quantity" type="security_balance_quantity_t">
+                <xs:annotation>
+                    <xs:documentation>Количество</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="securities_balances_t">
+        <xs:annotation>
+            <xs:documentation>Баланс по всем ЦБ на счету</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element maxOccurs="unbounded" name="balance" type="security_balance_t"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="statement_of_holdings_t">
+        <xs:annotation>
+            <xs:documentation>Выписка из реестра владельцев именных ценных бумаг</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="date" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Дата, на которую составлена выписка (по часовому поясу МВР)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="time" type="xs:time">
+                <xs:annotation>
+                    <xs:documentation>Время, на которое составлена выписка (по часовому поясу МВР)</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="account" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Зарегистрированное лицо, по счету которого предоставляется отчет</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="balances" type="securities_balances_t">
+                <xs:annotation>
+                    <xs:documentation>Баланс по всем ЦБ на счету</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="document_content_t">
+        <xs:annotation>
+            <xs:documentation>Содержимое документа</xs:documentation>
         </xs:annotation>
         <xs:choice>
             <xs:element name="request_for_report" type="request_for_report_t">
@@ -2640,18 +3195,38 @@
                     <xs:documentation>Передаточное распоряжение</xs:documentation>
                 </xs:annotation>
             </xs:element>
-        </xs:choice>
-    </xs:complexType>
-    <xs:complexType name="request_for_report_t">
-        <xs:annotation>
-            <xs:documentation>Запрос отчета</xs:documentation>
-        </xs:annotation>
-        <xs:sequence>
-            <xs:element name="type" type="report_type_et">
+            <xs:element name="block_order" type="block_order_t">
                 <xs:annotation>
-                    <xs:documentation>Тип запроса</xs:documentation>
+                    <xs:documentation>Распоряжение на блокирование</xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="unblock_order" type="unblock_order_t">
+                <xs:annotation>
+                    <xs:documentation>Распоряжение на отмену блокирования</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pledge_order" type="pledge_order_t">
+                <xs:annotation>
+                    <xs:documentation>Залоговое распоряжение</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="unpledge_order" type="unpledge_order_t">
+                <xs:annotation>
+                    <xs:documentation>Распоряжение о прекращении залога</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statement_of_holdings" type="statement_of_holdings_t">
+                <xs:annotation>
+                    <xs:documentation>Выписка из реестра владельцев именных ценных бумаг</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="request_for_report_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированная часть запроса отчета</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
             <xs:element name="account" type="account_identifier_t">
                 <xs:annotation>
                     <xs:documentation>Идентификатор ЗЛ</xs:documentation>
@@ -2686,6 +3261,36 @@
                     <xs:documentation>Ссылка на операцию</xs:documentation>
                 </xs:annotation>
             </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="request_for_report_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированная часть запроса отчета</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="request_for_report_t">
+        <xs:annotation>
+            <xs:documentation>Запрос отчета</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="type" type="report_type_et">
+                <xs:annotation>
+                    <xs:documentation>Тип запроса</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:choice>
+                <xs:element name="structured" type="request_for_report_structured_t">
+                    <xs:annotation>
+                        <xs:documentation>Структурированный запрос отчета</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="unstructured" type="request_for_report_unstructured_t">
+                    <xs:annotation>
+                        <xs:documentation>Неструктурированный запрос отчета</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="date_interval_t">
@@ -2749,6 +3354,28 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="mixed_fraction_t">
+        <xs:annotation>
+            <xs:documentation>Смешанная дробь</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="integral" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Целая часть</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="numerator" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Числитель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="denominator" type="xs:positiveInteger">
+                <xs:annotation>
+                    <xs:documentation>Знаменатель</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="fraction_t">
         <xs:annotation>
             <xs:documentation>Натуральная или десятичная дробь</xs:documentation>
@@ -2759,29 +3386,10 @@
                     <xs:documentation>Десятичная дробь</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="1" name="natural">
+            <xs:element minOccurs="1" name="mixed" type="mixed_fraction_t">
                 <xs:annotation>
                     <xs:documentation>Натуральная дробь</xs:documentation>
                 </xs:annotation>
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="integral" type="xs:integer">
-                            <xs:annotation>
-                                <xs:documentation>Целая часть</xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="numerator" type="xs:integer">
-                            <xs:annotation>
-                                <xs:documentation>Числитель</xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                        <xs:element name="denominator" type="xs:positiveInteger">
-                            <xs:annotation>
-                                <xs:documentation>Знаменатель</xs:documentation>
-                            </xs:annotation>
-                        </xs:element>
-                    </xs:sequence>
-                </xs:complexType>
             </xs:element>
         </xs:choice>
     </xs:complexType>
@@ -2985,21 +3593,6 @@
                     <xs:documentation>Номинальный держатель центрального депозитария</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
-            <xs:enumeration value="ForeignNominee">
-                <xs:annotation>
-                    <xs:documentation>Иностранный номинальный держатель</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
-            <xs:enumeration value="ForeignAuthorizedHolder">
-                <xs:annotation>
-                    <xs:documentation>Иностранный уполномоченный держатель</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
-            <xs:enumeration value="DepoProgram">
-                <xs:annotation>
-                    <xs:documentation>Счет депозитарных программ</xs:documentation>
-                </xs:annotation>
-            </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="person_info_t">
@@ -3049,6 +3642,83 @@
             <xs:element name="name" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Наименование счета ОС</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="individual_foreign_document_type_et">
+        <xs:annotation>
+            <xs:documentation>Код типа документа на право пребывания в РФ</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MigrationCard">
+                <xs:annotation>
+                    <xs:documentation>Миграционная карта</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ResidencePermit">
+                <xs:annotation>
+                    <xs:documentation>Вид на жительство</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="TemporaryResidencePermit">
+                <xs:annotation>
+                    <xs:documentation>Разрешение на временное проживание</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Visa">
+                <xs:annotation>
+                    <xs:documentation>Виза</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Other">
+                <xs:annotation>
+                    <xs:documentation>Иной документ</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="individual_foreign_document_type_t">
+        <xs:annotation>
+            <xs:documentation>Тип документа на право пребывания в РФ</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="code" type="individual_foreign_document_type_et">
+                <xs:annotation>
+                    <xs:documentation>Код типа документа на право пребывания в РФ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Наименование типа документа на право пребывания в РФ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="individual_foreign_document_t">
+        <xs:annotation>
+            <xs:documentation>Документ на право пребывания в РФ</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="type" type="individual_foreign_document_type_t"/>
+            <xs:element minOccurs="0" name="series" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Серия документа</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="num" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Номер документа</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="tenure_from" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Срок пребывания с</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="tenure_to" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Срок пребывания по</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
@@ -3227,7 +3897,7 @@
                     <xs:documentation>Наименование/ФИО</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="identification_data" type="xs:string">
+            <xs:element name="identification_data" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Идентификационные данные</xs:documentation>
                 </xs:annotation>
@@ -3287,13 +3957,10 @@
         <xs:annotation>
             <xs:documentation>Информация, идентифицирующая ЗЛ как отправителя</xs:documentation>
         </xs:annotation>
-        <xs:sequence>
-            <xs:element name="kind" type="account_kind_et"/>
-            <xs:choice>
-                <xs:element name="individual" type="person_identifier_t"/>
-                <xs:element name="legal" type="person_identifier_t"/>
-            </xs:choice>
-        </xs:sequence>
+        <xs:choice>
+            <xs:element name="individual" type="person_identifier_t"/>
+            <xs:element name="legal" type="person_identifier_t"/>
+        </xs:choice>
     </xs:complexType>
     <xs:complexType name="document_sender_t">
         <xs:annotation>
@@ -3317,6 +3984,12 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
+    <xs:simpleType name="document_applicant_t">
+        <xs:annotation>
+            <xs:documentation>Податель документа</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
     <xs:simpleType name="document_person_kind_et">
         <xs:annotation>
             <xs:documentation>Тип субъекта, в отношении которого подается документ</xs:documentation>
@@ -3329,7 +4002,7 @@
             </xs:enumeration>
             <xs:enumeration value="OtherPerson">
                 <xs:annotation>
-                    <xs:documentation>В отношении себя</xs:documentation>
+                    <xs:documentation>В отношении другого лица</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
             <xs:enumeration value="GroupOfPersons">
@@ -3494,14 +4167,14 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
-    <xs:complexType name="coowner_form_info_t">
+    <xs:complexType name="coowner_info_t">
         <xs:annotation>
             <xs:documentation>Информация о совладельце в анкете ЗЛ</xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="share_ownership" type="xs:boolean">
                 <xs:annotation>
-                    <xs:documentation>Признак общей долевой собственности</xs:documentation>
+                    <xs:documentation>Признак совместной собственности</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element minOccurs="0" name="portion" type="fraction_t">
@@ -3511,9 +4184,9 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="form_of_shareholder_t">
+    <xs:complexType name="form_of_shareholder_structured_t">
         <xs:annotation>
-            <xs:documentation>Анкета зарегистрированного лица</xs:documentation>
+            <xs:documentation>Структурированная анкета зарегистрированного лица</xs:documentation>
         </xs:annotation>
         <xs:sequence>
             <xs:element name="kind" type="account_kind_et">
@@ -3533,7 +4206,7 @@
                     </xs:annotation>
                 </xs:element>
             </xs:choice>
-            <xs:element name="coowner_info" type="coowner_form_info_t" minOccurs="0">
+            <xs:element name="coowner_info" type="coowner_info_t" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Информация о совладельце</xs:documentation>
                 </xs:annotation>
@@ -3548,16 +4221,6 @@
                     <xs:documentation>Реквизиты для выплаты дохода по ценным бумагам</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="public_official" type="public_official_info_t">
-                <xs:annotation>
-                    <xs:documentation>Информация о публичном официальном лице</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="comment" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>Комментарий</xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="auto_update_form" type="xs:boolean">
                 <xs:annotation>
                     <xs:documentation>Согласие в случае непредоставления анкеты в течении года считать сведения обновленными</xs:documentation>
@@ -3565,12 +4228,35 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="public_official_info_t">
+    <xs:simpleType name="form_of_shareholder_unstructured_t">
         <xs:annotation>
-            <xs:documentation>Информация о публичном официальном лице</xs:documentation>
+            <xs:documentation>Неструктурированная анкета зарегистрированного лица</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
+    <xs:complexType name="form_of_shareholder_t">
+        <xs:annotation>
+            <xs:documentation>Анкета зарегистрированного лица</xs:documentation>
+        </xs:annotation>
+        <xs:choice>
+            <xs:element name="structured" type="form_of_shareholder_structured_t">
+                <xs:annotation>
+                    <xs:documentation>Структурированная анкета зарегистрированного лица</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="unstructured" type="form_of_shareholder_unstructured_t">
+                <xs:annotation>
+                    <xs:documentation>Неструктурированная анкета зарегистрированного лица</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+    <xs:complexType name="foreign_public_official_info_t">
+        <xs:annotation>
+            <xs:documentation>Информация об иностранном публичном официальном лице</xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element minOccurs="0" name="foreign_type" type="foreign_public_official_type_et">
+            <xs:element name="type" type="foreign_public_official_type_et">
                 <xs:annotation>
                     <xs:documentation>Тип иностранного публичного должностного лица</xs:documentation>
                 </xs:annotation>
@@ -3580,7 +4266,19 @@
                     <xs:documentation>Сведения</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="russian_public_official" type="xs:string" minOccurs="0">
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="public_official_info_t">
+        <xs:annotation>
+            <xs:documentation>Информация о публичном должностном лице</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="foreign" type="foreign_public_official_info_t">
+                <xs:annotation>
+                    <xs:documentation>Иностранное публичное должностное лицо</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="russian" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Публичное должностное лицо РФ</xs:documentation>
                 </xs:annotation>
@@ -3787,6 +4485,45 @@
             </xs:element>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="individual_ogrnip_t">
+        <xs:annotation>
+            <xs:documentation>ОГРНИП</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="num" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>ОГРНИП</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="date" type="xs:date">
+                <xs:annotation>
+                    <xs:documentation>Дата выдачи</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="place" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Место выдачи</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="individual_subtype_t">
+        <xs:annotation>
+            <xs:documentation>Подтип ФЛ</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="code" type="individual_subtype_et">
+                <xs:annotation>
+                    <xs:documentation>Код подтипа ФЛ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="ogrnip" type="individual_ogrnip_t">
+                <xs:annotation>
+                    <xs:documentation>ОГРНИП</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="individual_form_t">
         <xs:annotation>
             <xs:documentation>Анкета ФЛ</xs:documentation>
@@ -3817,7 +4554,7 @@
                     <xs:documentation>Дееспособность</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="subtype" type="individual_subtype_et">
+            <xs:element minOccurs="0" name="subtype" type="individual_subtype_t">
                 <xs:annotation>
                     <xs:documentation>Подтип ФЛ</xs:documentation>
                 </xs:annotation>
@@ -3827,12 +4564,17 @@
                     <xs:documentation>Документ, удостоверяющий личность</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="place_of_registration" type="unstructured_address_t">
+            <xs:element minOccurs="0" name="foreign_document" type="individual_foreign_document_t">
+                <xs:annotation>
+                    <xs:documentation>Документ на право пребывания в РФ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="place_of_registration" type="unstructured_address_t" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Место регистрации</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="residence" type="unstructured_address_t">
+            <xs:element name="residence" type="unstructured_address_t" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Место жительства</xs:documentation>
                 </xs:annotation>
@@ -3845,6 +4587,11 @@
             <xs:element minOccurs="0" name="snils" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>СНИЛС</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="public_official" type="public_official_info_t">
+                <xs:annotation>
+                    <xs:documentation>Информация о публичном официальном лице</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element minOccurs="0" name="responce_issuance_method"
@@ -3872,6 +4619,11 @@
             <xs:element minOccurs="0" name="email" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>Электронная почта</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="comment" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Комментарий</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
@@ -3952,6 +4704,34 @@
                     <xs:documentation>Субъект РФ</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
+            <xs:enumeration value="PublicAssociation">
+                <xs:annotation>
+                    <xs:documentation>Общественное объединение</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="CreditOrganization">
+                <xs:annotation>
+                    <xs:documentation>Кредитная организация</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="RussianCentralBank">
+                <xs:annotation>
+                    <xs:documentation>Центробанк РФ</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="InvestmentFund">
+                <xs:annotation>
+                    <xs:documentation>Инвестиционный фонд</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="okato_t">
+        <xs:annotation>
+            <xs:documentation>Код ОКАТО</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="^[0-9]{11}$"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="legal_form_t">
@@ -3989,12 +4769,12 @@
                     <xs:documentation>Информация о регистрации юридического лица</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="location_address" type="unstructured_address_t">
+            <xs:element name="location_address" type="unstructured_address_t" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Адрес места нахождения</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="post_address" type="unstructured_address_t">
+            <xs:element name="post_address" type="unstructured_address_t" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Почтовый адрес</xs:documentation>
                 </xs:annotation>
@@ -4017,6 +4797,11 @@
             <xs:element minOccurs="0" name="okved" type="xs:string">
                 <xs:annotation>
                     <xs:documentation>ОКВЭД</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="okato" type="okato_t">
+                <xs:annotation>
+                    <xs:documentation>Код ОКАТО</xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element minOccurs="0" name="responce_issuance_method"
@@ -4046,8 +4831,73 @@
                     <xs:documentation>Электронная почта</xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element minOccurs="0" name="comment" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Комментарий</xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="transaction_account_identifier_t">
+        <xs:annotation>
+            <xs:documentation>Идентификатор ЗЛ, используемый в трансфертах</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="account" type="account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Идентификатор ЗЛ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="ultimate_owner" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Конечный владелец</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="instruction_to_deliver_structured_t">
+        <xs:annotation>
+            <xs:documentation>Структурированная часть передаточного распоряжения</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="0" name="cash_payment" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Наличный расчет между участниками сделки</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="base_documents" type="transaction_base_documents_t">
+                <xs:annotation>
+                    <xs:documentation>Список документов оснований для передачи прав собственности</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="debit_account" type="transaction_account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Счет списания</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="credit_account" type="transaction_account_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Счет зачисления</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="csd_nominee_order_reference" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Референс поручения НД ЦД</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="pledgee" type="pledgee_identifier_t">
+                <xs:annotation>
+                    <xs:documentation>Информация о счете залогодержателя</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="instruction_to_deliver_unstructured_t">
+        <xs:annotation>
+            <xs:documentation>Неструктурированная часть передаточного распоряжения</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string"/>
+    </xs:simpleType>
     <xs:complexType name="instruction_to_deliver_t">
         <xs:annotation>
             <xs:documentation>Передаточное распоряжение</xs:documentation>
@@ -4068,34 +4918,38 @@
                     <xs:documentation>Сумма сделки</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="cash_payment " type="xs:boolean">
-                <xs:annotation>
-                    <xs:documentation>Наличный расчет между участниками сделки</xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="type" type="transaction_type_et">
                 <xs:annotation>
                     <xs:documentation>Тип операции</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element minOccurs="0" name="base_documents" type="transaction_base_documents_t">
+            <xs:choice>
+                <xs:element name="structured" type="instruction_to_deliver_structured_t">
+                    <xs:annotation>
+                        <xs:documentation>Структурированная часть передаточного распоряжения</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="unstructured" type="instruction_to_deliver_unstructured_t">
+                    <xs:annotation>
+                        <xs:documentation>Неструктурированная часть передаточного распоряжения</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:choice>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="transaction_base_document_type_t">
+        <xs:annotation>
+            <xs:documentation>Тип документа основания для передачи прав собственности</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="code" type="transaction_base_document_type_et">
                 <xs:annotation>
-                    <xs:documentation>Список документов оснований для передачи прав собственности</xs:documentation>
+                    <xs:documentation>Код типа документа</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="debit_account" type="account_identifier_t">
+            <xs:element minOccurs="0" name="name" type="xs:string">
                 <xs:annotation>
-                    <xs:documentation>Счет списания</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="credit_account" type="account_identifier_t">
-                <xs:annotation>
-                    <xs:documentation>Счет зачисления</xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element minOccurs="0" name="pledgee" type="pledgee_identifier_t">
-                <xs:annotation>
-                    <xs:documentation>Информация о счете залогодержателя</xs:documentation>
+                    <xs:documentation>Наименование документа, если его тип - Other</xs:documentation>
                 </xs:annotation>
             </xs:element>
         </xs:sequence>
@@ -4105,17 +4959,17 @@
             <xs:documentation>Документ основание для передачи прав собственности</xs:documentation>
         </xs:annotation>
         <xs:sequence>
-            <xs:element name="type" type="transaction_base_document_type_et">
+            <xs:element name="type" type="transaction_base_document_type_t">
                 <xs:annotation>
                     <xs:documentation>Тип документа</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="num" type="xs:string">
+            <xs:element name="num" type="xs:string" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Номер документа</xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="date" type="xs:date">
+            <xs:element name="date" type="xs:date" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>Дата документа</xs:documentation>
                 </xs:annotation>
@@ -4170,6 +5024,96 @@
             <xs:enumeration value="CommissionAgreement">
                 <xs:annotation>
                     <xs:documentation>Договор комиссии</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="CustodyAgreement">
+                <xs:annotation>
+                    <xs:documentation>Депозитарный договор</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="DepositAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор вклада/хранения (депозитное соглашение)</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="BarterAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор мены</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="GiftContract">
+                <xs:annotation>
+                    <xs:documentation>Договор дарения</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="InterdepositoryAgreement">
+                <xs:annotation>
+                    <xs:documentation>Междепозитарный договор</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ClientOrder">
+                <xs:annotation>
+                    <xs:documentation>Поручение клиента</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="NominalHoldingAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор о номинальном держании</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="AgencyAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор поручения</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="PledgeAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор залога</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="FiduciaryManagementAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор доверительного управления</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="CourtDecision">
+                <xs:annotation>
+                    <xs:documentation>Решение, определение суда</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="CourtOrder">
+                <xs:annotation>
+                    <xs:documentation>Исполнительный лист, постановление судебного пристава</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="InheritanceRightsCertificate">
+                <xs:annotation>
+                    <xs:documentation>Свидетельство о праве на наследство по закону</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="RepoAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор РЕПО</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="VerificationFunctionAgreement">
+                <xs:annotation>
+                    <xs:documentation>Договор на осуществление контрольных функций</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="VoluntaryTenderOffer">
+                <xs:annotation>
+                    <xs:documentation>Добровольное предложение о приобретении ценных бумаг</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="MandatoryTenderOffer">
+                <xs:annotation>
+                    <xs:documentation>Обязательное предложение о приобретении ценных бумаг</xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="Other">
+                <xs:annotation>
+                    <xs:documentation>Прочее</xs:documentation>
                 </xs:annotation>
             </xs:enumeration>
         </xs:restriction>
