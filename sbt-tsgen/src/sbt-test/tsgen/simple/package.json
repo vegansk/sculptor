@@ -5,15 +5,15 @@
   "main": "build/index.js",
   "scripts": {
     "start": "NODE_PATH=build/src node build/src/index.js",
-    "build": "node node_modules/typescript/lib/tsc.js",
+    "build": "node --max_old_space_size=4096 node_modules/typescript/lib/tsc.js",
     "clean": "rm -rf build"
   },
   "author": "Anatoly Galiulin <galiulin.anatoly@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^2.6.2"
+    "typescript": "^2.7.2"
   },
   "dependencies": {
-    "io-ts": "^0.8.2"
+    "io-ts": "^1.0.5"
   }
 }
