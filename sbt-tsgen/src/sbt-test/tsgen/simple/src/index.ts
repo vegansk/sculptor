@@ -7,10 +7,10 @@ let x: P.ScanInfoT = {
   location: "unknown"
 }
 
-console.log(t.decode(x, P.ScanInfoTType))
+console.log(P.ScanInfoTType.decode(x))
 
 let y: F.DateIntervalT = {
   from: new Date()
 }
 
-console.log(t.decode(y, F.DateIntervalTType))
+console.log(F.DateIntervalTType.decode(y))
