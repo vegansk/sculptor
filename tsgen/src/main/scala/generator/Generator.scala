@@ -176,10 +176,23 @@ class Generator(config: Config) {
   )
   private val partial: Doc = qName(QName.of(config.iotsNs, Ident("partial")))
 
+  def iotsType(t: TypeRef): Doc =
+    qName(QName(NEL.of(config.iotsNs, Ident("Type")))) +
+      char('<') +
+      typeName(t) +
+      char('>')
+
   def complexTypeConstDecl(ct: ComplexTypeDecl): Doc = {
     val prefix = exportPrefix(ct.exported) +
-      spread(List(const, ident(ct.`type`.constName), eqSign, intersection)) +
-      text("([")
+      spread(
+        List(
+          const,
+          ident(ct.`type`.constName) + char(':'),
+          iotsType(ct.`type`),
+          eqSign,
+          intersection
+        )
+      ) + text("([")
     val suffix = text("],") + space + char('"') + text(ct.`type`.name.value) + text(
       "\")"
     )
@@ -240,7 +253,8 @@ class Generator(config: Config) {
       spread(
         List(
           const,
-          ident(e.`type`.constName),
+          ident(e.`type`.constName) + char(':'),
+          iotsType(e.`type`),
           eqSign,
           text("mkStringEnum") + char('<') + ident(e.`type`.name) +
             text(">(") + ident(e.`type`.name) + comma +
@@ -276,7 +290,13 @@ class Generator(config: Config) {
   def newtypeConstDecl(t: NewtypeDecl): Doc = {
     val c = exportPrefix(t.exported) +
       spread(
-        List(const, ident(t.`type`.constName), eqSign, typeConst(t.baseType))
+        List(
+          const,
+          ident(t.`type`.constName) + char(':'),
+          iotsType(t.`type`),
+          eqSign,
+          typeConst(t.baseType)
+        )
       )
     stack(comment(t.comment) ++ c.pure[List])
   }
