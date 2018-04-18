@@ -8,12 +8,12 @@ object Dependencies {
     val scalaXml = "1.0.6"
     val scalaGraph = "1.12.1"
     val specs2 = "3.9.2"
-    val cats = "1.0.0-RC1"
-    val catsEffect = "0.5"
+    val cats = "1.0.1"
+    val catsEffect = "0.10"
     val shapeless = "2.3.2"
     val pprint = "0.5.3"
     val kindProjector = "0.9.4"
-    val paiges = "0.2.0"
+    val paiges = "0.2.1"
     val scalacheck = "1.13.5"
   }
 
