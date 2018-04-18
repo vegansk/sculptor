@@ -1,4 +1,5 @@
 import sbt._
+import sbt.ScriptedPlugin.autoImport._
 import Keys._
 import wartremover._
 
@@ -94,7 +95,9 @@ object Sculptor {
 
     val plugin: PC = _.settings(
       sbtPlugin := true,
-      sbtVersion := Dependencies.Versions.sbt
+      sbtVersion := Dependencies.Versions.sbt,
+      scriptedLaunchOpts ++= Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value),
+      scriptedBufferLog := false
     )
 
     val xsd: PC = _.configure(common, publish)
