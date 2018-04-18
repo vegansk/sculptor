@@ -6,6 +6,7 @@ import cats._
 import cats.implicits._
 import cats.data.{NonEmptyList => NEL, _}
 import scalax.collection.{State => _, _}, GraphEdge._
+import scalax.collection.GraphPredef.EdgeLikeIn
 
 import sculptor.xsd.{ast => x}
 import ast._
@@ -93,8 +94,8 @@ object Transform {
         for {
           deps <- getDependencies
           graph = Graph(deps: _*)
-          sorted <- graph.topologicalSort
-            .map(_.toList.map(_.value))
+          sorted <- stableTopologicalSort(graph)
+            .map(_.toList.flatMap(_._2.toList))
             .fold[Result[List[TypeDecl]]](
               _ => error(s"Found cyclic dependency: ${graph.findCycle}"),
               _.traverse { ref =>
@@ -465,4 +466,19 @@ object Transform {
         Errors.cantTransform
       )(t)
     }
+
+  private def stableTopologicalSort[E[X] <: EdgeLikeIn[X]](
+    graph: Graph[TypeRef.defined, E]
+  ): Either[graph.NodeT, graph.LayeredTopologicalOrder[graph.NodeT]] = {
+    val compareByName = graph.NodeOrdering { (a, b) =>
+      String.CASE_INSENSITIVE_ORDER
+        .compare(a.value.name.value, b.value.name.value)
+    }
+
+    graph.topologicalSort
+      .map { ts =>
+        ts.toLayered
+          .withLayerOrdering(compareByName)
+      }
+  }
 }
