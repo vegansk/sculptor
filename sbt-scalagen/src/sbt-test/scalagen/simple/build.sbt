@@ -6,8 +6,8 @@ val cats = "org.typelevel" %% "cats-core" % "1.0.1"
 val circe = "io.circe" %% "circe-core" % "0.9.2"
 val circeJava8 = "io.circe" %% "circe-java8" % "0.9.2"
 val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-val kantanXPath = "com.nrinaudo" %% "kantan.xpath" % "0.3.2"
-val kantanXPathJava8 = "com.nrinaudo" %% "kantan.xpath-java8" % "0.3.2"
+val kantanXPath = "com.nrinaudo" %% "kantan.xpath" % "0.4.0"
+val kantanXPathJava8 = "com.nrinaudo" %% "kantan.xpath-java8" % "0.4.0"
 
 val caOptions = ScalagenOptions(
   packageName = Option("corpact.schema"),

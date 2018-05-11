@@ -70,7 +70,7 @@ object Main extends App {
       optionalDoc <- jsonDoc.as[opt.Document]
       strongDoc <- opt.Document.strong(optionalDoc).toEither
       xml0 <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(strongDoc))
-      docFromXml <- xml0.toString.evalXPath[Document](xp"/DOCUMENT").toEither
+      docFromXml <- xml0.toString.evalXPath[Document](xp"/DOCUMENT")
       xml <- Right(Document.toXml(xmlCodecs)("DOCUMENT")(docFromXml))
     } yield xml
 
@@ -92,9 +92,9 @@ object Main extends App {
     )
 
     val result = for {
-      doc <- xml0.toString.evalXPath[CorporateActionNarrative](xp"/CorporateActionNarrative").toEither
+      doc <- xml0.toString.evalXPath[CorporateActionNarrative](xp"/CorporateActionNarrative")
       xml1 <- Right(CorporateActionNarrative.toXml(xmlCodecs)("CorporateActionNarrative")(doc))
-      _ <- xml1.toString.evalXPath[CorporateActionNarrative](xp"/CorporateActionNarrative").toEither
+      _ <- xml1.toString.evalXPath[CorporateActionNarrative](xp"/CorporateActionNarrative")
     } yield xml1
 
     result.map(xml => println(xmlFormat.format(xml)))
