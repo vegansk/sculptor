@@ -817,9 +817,7 @@ class Generator(config: Config) {
         val result = mkInstanceVal(e.`type`, "NodeDecoder") +
           bracketBy(
             text("StringDecoder.fromPartial(Function.unlift(") +
-              typeName(e.`type`) + text(
-              ".fromString).andThen(Result.Success(_)))"
-            )
+              typeName(e.`type`) + text(".fromString).andThen(Right(_)))")
           )(text("codecs.fromString("), char(')'))
         result.some
       }

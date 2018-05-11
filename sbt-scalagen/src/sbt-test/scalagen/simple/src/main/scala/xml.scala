@@ -6,6 +6,7 @@ import kantan.xpath.{NodeDecoder, DecodeError, codecs}
 import kantan.xpath.implicits._
 import kantan.codecs.Result
 import kantan.codecs.strings.StringDecoder
+import cats.implicits._
 
 object instances {
 
