@@ -201,9 +201,14 @@ class Generator(config: Config) {
           '('
         )
         val postfix = char(')')
-        bracketBy(intercalate(comma + line, config.externalTypes.map { t =>
-          xmlSerializerName(t.name) + text(s": String => ${t.name} => Node")
-        }))(prefix, postfix).some
+        bracketBy(
+          intercalate(
+            comma + line,
+            config.externalTypes.map(_.name).distinct.map { name =>
+              xmlSerializerName(name) + text(s": String => ${name} => Node")
+            }
+          )
+        )(prefix, postfix).some
       }
       case _ => None
     }
