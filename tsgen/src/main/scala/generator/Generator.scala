@@ -180,6 +180,8 @@ class Generator(config: Config) {
     qName(QName(NEL.of(config.iotsNs, Ident("Type")))) +
       char('<') +
       typeName(t) +
+      text(", ") +
+      qName(QName.of(config.iotsNs, Ident("mixed"))) +
       char('>')
 
   def complexTypeConstDecl(ct: ComplexTypeDecl): Doc = {
