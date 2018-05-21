@@ -18,13 +18,8 @@ object nativeGeneratorSpec extends mutable.Specification
 
     val gen = generator.create(
       generator.Config(
-        Ident("t"),
-        "/* header */".some,
-        true,
-        true,
-        false,
-        false,
-        false
+        "t",
+        "/* header */".some
       )
     )
     import gen._

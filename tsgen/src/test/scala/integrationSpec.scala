@@ -40,13 +40,8 @@ object integrationSpec extends mutable.Specification {
   )
 
   val genConfig = GenConfig(
-    Ident("t"),
-    None,
-    false,
-    true,
-    false,
-    false,
-    false
+    "t",
+    nativeTypes = false
   )
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {

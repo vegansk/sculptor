@@ -15,6 +15,7 @@ package tsgen {
                           types: List[Type] = Nil,
                           iotsNs: String = "t",
                           header: Option[String] = None,
+                          customIotsType: Option[String] = None,
                           nativeTypes: Boolean = false,
                           generateComments: Boolean = true,
                           generateEnumsDocumentationGetters: Boolean = false,
@@ -44,8 +45,9 @@ package object tsgen {
 
   private def toGeneratorConfig(cfg: Config): generator.Config = {
     generator.Config(
-      iotsNs = Ident(cfg.iotsNs),
+      iotsNs = cfg.iotsNs,
       header = cfg.header,
+      customIotsType = cfg.customIotsType,
       nativeTypes = cfg.nativeTypes,
       generateComments = cfg.generateComments,
       generateEnumsDocumentationGetters = cfg.generateEnumsDocumentationGetters,

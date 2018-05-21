@@ -18,25 +18,18 @@ object generatorSpec extends mutable.Specification
 
     val gen = generator.create(
       generator.Config(
-        iotsNs = Ident("t"),
+        iotsNs = "t",
         header = "/* header */".some,
-        nativeTypes = true,
-        generateComments = false,
-        generateEnumsDocumentationGetters = false,
-        generatePartialTypes = false,
-        generatePartialConstants = false
+        generateComments = false
       )
     )
 
     val genNoNative = generator.create(
       generator.Config(
-        iotsNs = Ident("t"),
+        iotsNs = "t",
         header = "/* header */".some,
         nativeTypes = false,
-        generateComments = false,
-        generateEnumsDocumentationGetters = false,
-        generatePartialTypes = false,
-        generatePartialConstants = false
+        generateComments = false
       )
     )
     import gen._
@@ -77,7 +70,7 @@ object generatorSpec extends mutable.Specification
 
       complexTypeConstDecl(ct) must beEqvTo(
         Doc.text(
-          "export const TestType: t.Type<Test, t.mixed> = t.intersection([" +
+          "export const TestType: t.Type<Test> = t.intersection([" +
             "t.interface({str: t.string, date: T.date}), " +
             "t.partial({id: t.number})" +
             "], \"Test\")"
@@ -131,7 +124,7 @@ object generatorSpec extends mutable.Specification
 
       enumConstDecl(e) must beEqvTo(
         Doc.text(
-          """export const TestEnumType: t.Type<TestEnum, t.mixed> = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
+          """export const TestEnumType: t.Type<TestEnum> = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
         )
       )
 
@@ -170,6 +163,32 @@ import * as T from "core/utils/types""""
           enumDecl(e)
       )
 
+    }
+
+    "customize io-ts type" >> {
+      val gen = generator.create(
+        generator.Config(
+          iotsNs = "t",
+          customIotsType = "TheType".some,
+          generateComments = false
+        )
+      )
+      import gen._
+
+      enumConstDecl(e) must beEqvTo(
+        Doc.text(
+          """export const TestEnumType: TheType<TestEnum> = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
+        )
+      )
+
+      complexTypeConstDecl(ct) must beEqvTo(
+        Doc.text(
+          "export const TestType: TheType<Test> = t.intersection([" +
+            "t.interface({str: t.string, date: T.date}), " +
+            "t.partial({id: t.number})" +
+            "], \"Test\")"
+        )
+      )
     }
 
   }
