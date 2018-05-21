@@ -27,6 +27,8 @@ class Generator(config: Config) {
 
   val `import`: Doc = text("import")
 
+  val iotsNsIdent: Ident = Ident(config.iotsNs)
+
   def bracketBy(d: Doc)(left: Doc, right: Doc): Doc =
     left + (lineBreak + d).nested(tabSize) + lineBreak + right
 
@@ -46,7 +48,7 @@ class Generator(config: Config) {
     text(qNameString(name))
 
   def array(`type`: Doc): Doc =
-    qName(QName(NEL.of(config.iotsNs, Ident("array")))) + char('(') + `type` + char(
+    qName(QName(NEL.of(iotsNsIdent, Ident("array")))) + char('(') + `type` + char(
       ')'
     )
 
@@ -59,16 +61,16 @@ class Generator(config: Config) {
     `type` + text("[]")
 
   def nullable(`type`: Doc): Doc =
-    qName(QName(NEL.of(config.iotsNs, Ident("union")))) +
+    qName(QName(NEL.of(iotsNsIdent, Ident("union")))) +
       text("([") +
       intercalate(
         comma,
-        List(`type`, qName(QName.of(config.iotsNs, Ident("null"))))
+        List(`type`, qName(QName.of(iotsNsIdent, Ident("null"))))
       ) +
       text("])")
 
   private def typeOfExpr(name: Ident): Doc =
-    qName(QName(NEL.of(config.iotsNs, Ident("TypeOf")))) +
+    qName(QName(NEL.of(iotsNsIdent, Ident("TypeOf")))) +
       text("<typeof") + space + ident(name) + char('>')
 
   def exportPrefix(exported: Boolean): Doc =
@@ -141,7 +143,7 @@ class Generator(config: Config) {
     }
 
   def typeConst(t: TypeRef): Doc = t match {
-    case TypeRef.std(v) => qName(QName.of(config.iotsNs, v))
+    case TypeRef.std(v) => qName(QName.of(iotsNsIdent, v))
     case TypeRef.defined(_, v) => ident(v)
     case TypeRef.external(_, v) => qName(v)
   }
@@ -169,20 +171,21 @@ class Generator(config: Config) {
     spread(List(ident(f.name) + char(':'), typeExpr(f)) ++ comment(f.comment))
 
   private val intersection: Doc = qName(
-    QName.of(config.iotsNs, Ident("intersection"))
+    QName.of(iotsNsIdent, Ident("intersection"))
   )
-  private val interface: Doc = qName(
-    QName.of(config.iotsNs, Ident("interface"))
-  )
-  private val partial: Doc = qName(QName.of(config.iotsNs, Ident("partial")))
+  private val interface: Doc = qName(QName.of(iotsNsIdent, Ident("interface")))
+  private val partial: Doc = qName(QName.of(iotsNsIdent, Ident("partial")))
 
-  def iotsType(t: TypeRef): Doc =
-    qName(QName(NEL.of(config.iotsNs, Ident("Type")))) +
+  def iotsType(t: TypeRef): Doc = {
+    val tName = config.customIotsType match {
+      case Some(name) => QName.fromString(name)
+      case _ => QName(NEL.of(iotsNsIdent, Ident("Type")))
+    }
+    qName(tName) +
       char('<') +
       typeName(t) +
-      text(", ") +
-      qName(QName.of(config.iotsNs, Ident("mixed"))) +
       char('>')
+  }
 
   def complexTypeConstDecl(ct: ComplexTypeDecl): Doc = {
     val constExpr = config.nativeTypes match {
@@ -320,7 +323,7 @@ class Generator(config: Config) {
   )
 
   lazy val mkStringEnumImpl: Doc = {
-    val t = config.iotsNs.value
+    val t = config.iotsNs
     text(s"""|function mkStringEnum<E>(e: object, name: string): $t.Type<E> {
              |  const values = getStringEnumValues(e)
              |  return new $t.Type<E>(
