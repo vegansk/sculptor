@@ -18,13 +18,25 @@ object generatorSpec extends mutable.Specification
 
     val gen = generator.create(
       generator.Config(
-        Ident("t"),
-        "/* header */".some,
-        false,
-        false,
-        false,
-        false,
-        false
+        iotsNs = Ident("t"),
+        header = "/* header */".some,
+        nativeTypes = true,
+        generateComments = false,
+        generateEnumsDocumentationGetters = false,
+        generatePartialTypes = false,
+        generatePartialConstants = false
+      )
+    )
+
+    val genNoNative = generator.create(
+      generator.Config(
+        iotsNs = Ident("t"),
+        header = "/* header */".some,
+        nativeTypes = false,
+        generateComments = false,
+        generateEnumsDocumentationGetters = false,
+        generatePartialTypes = false,
+        generatePartialConstants = false
       )
     )
     import gen._
@@ -72,11 +84,24 @@ object generatorSpec extends mutable.Specification
         )
       )
 
+      genNoNative.complexTypeConstDecl(ct) must beEqvTo(
+        Doc.text(
+          "export const TestType = t.intersection([" +
+            "t.interface({str: t.string, date: T.date}), " +
+            "t.partial({id: t.number})" +
+            "], \"Test\")"
+        )
+      )
+
     }
 
     "handle complex type interface declaration" >> {
 
       complexTypeIntfDecl(ct) must beEqvTo(
+        Doc.text("export interface Test {id?: number, str: string, date: Date}")
+      )
+
+      genNoNative.complexTypeIntfDecl(ct) must beEqvTo(
         Doc.text("export interface Test extends t.TypeOf<typeof TestType> {}")
       )
 
