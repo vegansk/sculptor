@@ -65,7 +65,7 @@ object generatorSpec extends mutable.Specification
 
       complexTypeConstDecl(ct) must beEqvTo(
         Doc.text(
-          "export const TestType: t.Type<Test> = t.intersection([" +
+          "export const TestType: t.Type<Test, t.mixed> = t.intersection([" +
             "t.interface({str: t.string, date: T.date}), " +
             "t.partial({id: t.number})" +
             "], \"Test\")"
@@ -106,7 +106,7 @@ object generatorSpec extends mutable.Specification
 
       enumConstDecl(e) must beEqvTo(
         Doc.text(
-          """export const TestEnumType: t.Type<TestEnum> = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
+          """export const TestEnumType: t.Type<TestEnum, t.mixed> = mkStringEnum<TestEnum>(TestEnum, "TestEnum")"""
         )
       )
 
