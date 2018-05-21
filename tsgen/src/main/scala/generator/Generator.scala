@@ -185,16 +185,15 @@ class Generator(config: Config) {
       char('>')
 
   def complexTypeConstDecl(ct: ComplexTypeDecl): Doc = {
+    val constExpr = config.nativeTypes match {
+      case true =>
+        List(ident(ct.`type`.constName) + char(':'), iotsType(ct.`type`))
+      case _ => List(ident(ct.`type`.constName))
+    }
     val prefix = exportPrefix(ct.exported) +
-      spread(
-        List(
-          const,
-          ident(ct.`type`.constName) + char(':'),
-          iotsType(ct.`type`),
-          eqSign,
-          intersection
-        )
-      ) + text("([")
+      spread(List(const) ++ constExpr ++ List(eqSign, intersection)) + text(
+      "(["
+    )
     val suffix = text("],") + space + char('"') + text(ct.`type`.name.value) + text(
       "\")"
     )
