@@ -69,7 +69,9 @@ object Sculptor {
         Wart.Any,
         Wart.Nothing,
         // Parsers are recursive
-        Wart.Recursion
+        Wart.Recursion,
+        // We need implicit conversions for DSL
+        Wart.ImplicitConversion
       ),
       scalacOptions in (Compile, console) ~= {
         _.filterNot(Set(
@@ -100,6 +102,12 @@ object Sculptor {
       scriptedBufferLog := false
     )
 
+    val ast: PC = _.configure(common, publish)
+      .settings(
+        name := "sculptor-ast",
+        libraryDependencies ++= Dependencies.ast
+      )
+
     val xsd: PC = _.configure(common, publish)
       .settings(
         name := "sculptor-xsd",
@@ -128,6 +136,10 @@ object Sculptor {
         name := "sbt-sculptor-scalagen",
       )
   }
+
+  lazy val ast = project
+    .in(file("ast"))
+    .configure(Config.ast)
 
   lazy val xsd = project
     .in(file("xsd"))
