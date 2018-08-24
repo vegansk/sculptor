@@ -31,6 +31,12 @@ object Dependencies {
   val paigesCats = "org.typelevel" %% "paiges-cats" % Versions.paiges
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck
 
+  val ast = Seq(
+    cats
+  ) ++ Seq(
+    specs2
+  ).map(_ % "test")
+
   val xsd = Seq(
     scalaXml,
     cats,
