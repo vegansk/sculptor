@@ -81,6 +81,12 @@ object RecordBuilderState {
 trait RecordBuilder[State <: RecordBuilderState] {
   def generic(parameter: GenericDef, rest: GenericDef*): RecordBuilder[State]
   def noGeneric: RecordBuilder[State]
+  def field(
+    name: String,
+    typeRef: TypeRef,
+    comment: Option[String] = None,
+    validator: Option[Validator] = None
+  ): RecordBuilder[RecordBuilderState.Complete]
   def fields(
     field: FieldBuilder[FieldBuilderState.Complete],
     rest: FieldBuilder[FieldBuilderState.Complete]*
@@ -133,6 +139,10 @@ object EnumBuilder {
 trait ADTConstructorBuilder {
   def generic(parameter: GenericDef, rest: GenericDef*): ADTConstructorBuilder
   def noGeneric: ADTConstructorBuilder
+  def field(name: String,
+            typeRef: TypeRef,
+            comment: Option[String] = None,
+            validator: Option[Validator] = None): ADTConstructorBuilder
   def fields(
     field: FieldBuilder[FieldBuilderState.Complete],
     rest: FieldBuilder[FieldBuilderState.Complete]*

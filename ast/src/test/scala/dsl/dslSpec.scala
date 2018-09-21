@@ -14,7 +14,7 @@ object dslSpec extends mutable.Specification {
 
     // final case class NewInt(value: Int) extends AnyVal
     val simpleNewType = newtype("NewInt")
-      .baseType(spec("Int"))
+      .baseType("Int".spec)
       .comment("NewInt type")
 
     "build simple newtypes" >> {
@@ -22,8 +22,8 @@ object dslSpec extends mutable.Specification {
     }
 
     val genericNewType = newtype("ListOfEitherS")
-      .generic(GenericDef.of("A", spec("BaseType")))
-      .baseType(spec("List", spec("Either", spec("String"), gen("A"))))
+      .generic("A".genExt("BaseType".spec))
+      .baseType("List".spec("Either".spec("String".spec, "A".gen)))
 
     "build generic newtypes" >> {
       // final case class ListOfEitherS[A <: BaseType](value: List[Either[String, A]]) extends AnyVal
@@ -32,7 +32,7 @@ object dslSpec extends mutable.Specification {
     }
 
     val simpleAlias = alias("NewInt")
-      .baseType(spec("Int"))
+      .baseType("Int".spec)
       .comment("NewInt type")
 
     "build simple aliases" >> {
@@ -41,8 +41,8 @@ object dslSpec extends mutable.Specification {
     }
 
     val genericAlias = alias("ListOfEitherS")
-      .generic(GenericDef.of("A", spec("BaseType")))
-      .baseType(spec("List", spec("Either", spec("String"), gen("A"))))
+      .generic("A".genExt("BaseType".spec))
+      .baseType("List".spec("Either".spec("String".spec, "A".gen)))
 
     "build generic aliases" >> {
       // type ListOfEitherS[A <: BaseType] = List[Either[String, A]]
@@ -59,8 +59,8 @@ object dslSpec extends mutable.Specification {
     }
 
     val rec = record("Record")
-      .generic(GenericDef.of("A", spec("BaseType")))
-      .fields(field("x").ofType(gen("A")))
+      .generic(("A".genExt("BaseType".spec)))
+      .fields(field("x").ofType("A".gen))
       .comment("Comment")
       .validator(ValidationFunction("Positive"))
 
@@ -87,10 +87,10 @@ object dslSpec extends mutable.Specification {
     }
 
     val maybeAdt = adt("Maybe")
-      .generic(GenericDef.of("A"))
+      .generic("A".gen)
       .constructors(
         cons("Nothing"),
-        cons("Just").generic(GenericDef.of("A")).fields(field("value").ofType(gen("A")))
+        cons("Just").generic("A".gen).fields(field("value").ofType("A".gen))
       )
 
     "build ADTs" >> {

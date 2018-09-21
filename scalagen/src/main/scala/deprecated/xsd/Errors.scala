@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 package xsd
 
 import sculptor.xsd.{ast => x}

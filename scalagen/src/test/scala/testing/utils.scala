@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen
 package testing
 
 import scala.xml._

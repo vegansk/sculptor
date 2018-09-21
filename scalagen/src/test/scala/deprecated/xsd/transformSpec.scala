@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 package xsd
 
 import org.specs2._
@@ -8,7 +7,7 @@ import cats.implicits._
 
 object transformSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with sculptor.scalagen.testing.CatsEqMatcher {
 
   "scala module" should {
 

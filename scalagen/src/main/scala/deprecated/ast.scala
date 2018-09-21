@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 
 import cats._
 import cats.implicits._

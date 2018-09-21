@@ -8,12 +8,16 @@ import cats.implicits._
 final case class Ident(name: String) extends AnyVal
 
 /** Full qualified name */
-final case class FQName(name: Ident, prefix: List[Ident] = Nil)
+final case class FQName(name: Ident, prefix: List[Ident] = Nil) {
+  def mkString(sep: String): String =
+    (prefix ++ List(name)).map(_.name).mkString(sep)
+}
+
 object FQName {
   def of(name: String): FQName = {
     name.split("\\.").toList.toNel.fold(FQName(Ident(name))) { l =>
       val names = l.map(Ident(_))
-      FQName(names.head, names.tail)
+      FQName(names.last, names.init)
     }
   }
 }
@@ -34,6 +38,12 @@ object TypeRef {
     Specialized(FQName.of(name), parameters.toList)
 
   def gen(name: String): Generic = Generic(Ident(name))
+
+  def cata[A](specialized: Specialized => A,
+              generic: Generic => A)(t: TypeRef): A = t match {
+    case s: Specialized => specialized(s)
+    case g: Generic => generic(g)
+  }
 }
 
 /** Generic parameter definition */
