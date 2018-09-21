@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 
 import org.specs2._
 import scala.xml._
@@ -8,9 +7,9 @@ import cats.implicits._
 import org.typelevel.paiges._
 
 object integrationSpec extends mutable.Specification {
-  import testing.utils._
-  import scalagen.xsd.{Config => XsdConfig, _}
-  import scalagen.generator.{
+  import sculptor.scalagen.testing.utils._
+  import sculptor.scalagen.deprecated.xsd.{Config => XsdConfig, _}
+  import generator.{
     Config => GenConfig, Parameters => GenParameters, ExternalType => GenType, _
   }
   import sculptor.xsd.{ast => x}

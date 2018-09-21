@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 package xsd
 
 import cats.data.{NonEmptyList => NEL}
@@ -8,7 +7,7 @@ import cats.implicits._
 /** Extracted ASTs for tests */
 object testAst {
   import ast._
-  import testing.utils._
+  import sculptor.scalagen.testing.utils._
 
   object simpleTypeToEnum {
     lazy val src = parseXsdTypes(

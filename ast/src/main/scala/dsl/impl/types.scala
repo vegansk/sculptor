@@ -3,6 +3,7 @@ package ast
 package dsl
 package impl
 
+import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
 
@@ -84,6 +85,23 @@ final case class RecordBuilderImpl[State <: RecordBuilderState] private (
   def fields(field: FieldBuilder[FieldBuilderState.Complete],
              rest: FieldBuilder[FieldBuilderState.Complete]*) =
     fieldDefs(field.build, rest.map(_.build): _*)
+  def field(name: String,
+            typeRef: TypeRef,
+            comment: Option[String] = None,
+            validator: Option[Validator] = None) = {
+    val fb = ((FieldBuilderImpl
+      .create(name)
+      .ofType(typeRef)): Id[FieldBuilder[FieldBuilderState.Complete]])
+      .map(v => comment.fold(v)(v.comment _))
+      .map(v => validator.fold(v)(v.validator _))
+    this.copy(
+      value = value.copy(
+        fields =
+          if (value.fields.head.name.name.isEmpty) NonEmptyList.of(fb.build)
+          else value.fields ++ List(fb.build)
+      )
+    )
+  }
   def fieldDefs(field: FieldDef, rest: FieldDef*) =
     this.copy(value = value.copy(fields = NonEmptyList.of(field, rest: _*)))
   def comment(v: String) =
@@ -147,6 +165,17 @@ final case class ADTConstructorBuilderImpl private (value: ADTConstructor)
     this.copy(value = value.copy(parameters = parameter :: rest.toList))
   def noGeneric =
     this.copy(value = value.copy(parameters = Nil))
+  def field(name: String,
+            typeRef: TypeRef,
+            comment: Option[String] = None,
+            validator: Option[Validator] = None) = {
+    val fb = ((FieldBuilderImpl
+      .create(name)
+      .ofType(typeRef)): Id[FieldBuilder[FieldBuilderState.Complete]])
+      .map(v => comment.fold(v)(v.comment _))
+      .map(v => validator.fold(v)(v.validator _))
+    this.copy(value = value.copy(fields = value.fields ++ List(fb.build)))
+  }
   def fields(field: FieldBuilder[FieldBuilderState.Complete],
              rest: FieldBuilder[FieldBuilderState.Complete]*) =
     fieldDefs(field.build, rest.map(_.build): _*)

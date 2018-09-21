@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen
 package testing
 
 import org.typelevel.paiges._
@@ -8,13 +7,13 @@ import cats._
 object paiges {
 
   implicit val docEq: Eq[Doc] = new Eq[Doc] {
-    // TODO: Remove this WTF!
+    // TODO: Find a better way to compare Docs
     def eqv(x: Doc, y: Doc): Boolean = {
-      val x0 = x.render(0).split("\\n").map(_.trim).mkString("\n")
-      val y0 = y.render(0).split("\\n").map(_.trim).mkString("\n")
+      val x0 = x.render(80).split("\\n").map(_.trim).filterNot(_.isEmpty).mkString("").trim
+      val y0 = y.render(80).split("\\n").map(_.trim).filterNot(_.isEmpty).mkString("").trim
       if(x0 != y0) {
-        x0.split("\\n").foreach(v => println(s"*$v*"))
-        y0.split("\\n").foreach(v => println(s"*$v*"))
+        println(s"*$x0*")
+        println(s"*$y0*")
       }
       x0 == y0
     }

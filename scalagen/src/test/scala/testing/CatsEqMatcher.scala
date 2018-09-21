@@ -1,6 +1,4 @@
-package sculptor
-package scalagen
-package testing
+package sculptor.scalagen.testing
 
 import cats._
 import org.specs2.matcher._

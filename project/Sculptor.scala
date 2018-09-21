@@ -157,7 +157,7 @@ object Sculptor {
 
   lazy val scalagen = project
     .in(file("scalagen"))
-    .dependsOn(xsd)
+    .dependsOn(xsd, ast)
     .configure(Config.scalagen)
 
   lazy val sbtScalagen = project

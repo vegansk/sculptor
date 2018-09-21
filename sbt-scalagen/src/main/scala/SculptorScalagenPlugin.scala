@@ -1,7 +1,7 @@
 package sbtsculptor.scalagen
 
 import sbt._
-import sculptor.scalagen
+import sculptor.scalagen.{deprecated => scalagen}
 
 object SculptorScalagenPlugin extends AutoPlugin {
 

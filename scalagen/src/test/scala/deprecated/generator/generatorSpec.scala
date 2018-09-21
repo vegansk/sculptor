@@ -1,5 +1,4 @@
-package sculptor
-package scalagen
+package sculptor.scalagen.deprecated
 package generator
 
 import org.specs2._
@@ -9,7 +8,7 @@ import org.typelevel.paiges._
 
 object generatorSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with sculptor.scalagen.testing.CatsEqMatcher {
 
   "scala generator" should {
 
@@ -75,10 +74,7 @@ object generatorSpec extends mutable.Specification
                     |    override val description = "valueB"
                     |  }
                     |
-                    |  lazy val values = Set[Test](
-                    |    A,
-                    |    B
-                    |  )
+                    |  lazy val values = Set[Test](A, B)
                     |
                     |  val fromString: String => Option[Test] = {
                     |    s => values.find(_.code === s)
