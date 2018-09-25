@@ -15,4 +15,7 @@ package object impl {
 
   def getIndent: Result[Int] =
     EitherT.liftF(State.get[GeneratorState].map(s => Config.tabSize(s.config)))
+
+  def getFeatures: Result[List[Feature]] =
+    EitherT.liftF(State.get[GeneratorState].map(s => Config.features(s.config)))
 }

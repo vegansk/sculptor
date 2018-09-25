@@ -41,6 +41,20 @@ object RecordGenSpec extends mutable.Specification
       )
     }
 
+    "generate Eq typeclass" >> {
+      val r = record("Record").generic("A".gen)
+        .field("id", "Int".spec)
+        .field("nameO", "Option".spec("A".gen))
+        .build
+
+      run(RecordGen.generate(r), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+        Doc.text("""|final case class Record[A](id: Int, nameO: Option[A])
+                    |
+                    |object Record {
+                    |  implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals
+                    |}""".stripMargin).asRight
+      )
+    }
   }
 
 }

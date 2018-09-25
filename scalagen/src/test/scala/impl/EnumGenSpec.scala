@@ -28,7 +28,7 @@ object EnumGenSpec extends mutable.Specification
         .build
 
       run(EnumGen.generate(e), cfg) must beEqvTo(
-        Doc.text("""|sealed trait Colors
+        Doc.text("""|sealed trait Colors extends Product with Serializable
                     |
                     |object Colors {
                     |  case object Red extends Colors
@@ -46,6 +46,33 @@ object EnumGenSpec extends mutable.Specification
                     |    case "green" => Green
                     |    case "blue" => Blue
                     |  }
+                    |}
+                    |""".stripMargin).asRight
+      )
+    }
+
+    "generate Eq typeclass" >> {
+      val e = enum("Colors")
+        .values(
+          enumValue("Red").value("red")
+        )
+        .build
+
+      run(EnumGen.generate(e), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+        Doc.text("""|sealed trait Colors extends Product with Serializable
+                    |
+                    |object Colors {
+                    |  case object Red extends Colors
+                    |
+                    |  val asString: Colors => String = {
+                    |    case Red => "red"
+                    |  }
+                    |
+                    |  val fromString: PartialFunction[String, Colors] = {
+                    |    case "red" => Red
+                    |  }
+                    |
+                    |  implicit val ColorsEq: Eq[Colors] = Eq.fromUniversalEquals
                     |}
                     |""".stripMargin).asRight
       )
