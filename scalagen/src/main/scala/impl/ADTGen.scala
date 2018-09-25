@@ -28,24 +28,28 @@ object ADTGen extends GenHelpers {
   def generateImplBody(r: ADT, adtType: Doc, indent: Int): Result[Doc] =
     r.constructors.toList
       .traverse(generateConstructor(_, adtType, indent))
-      .map(Doc.intercalate(dblLine, _))
+      .map(Doc.intercalate(Doc.line, _))
 
-  def generate(r: ADT): Result[Doc] =
+  def generate(a: ADT): Result[Doc] =
     for {
 
       indent <- getIndent
 
-      typ = createTypeExpr(r.name.name, r.parameters.map(createGenericParam))
+      typ = createTypeExpr(a.name.name, a.parameters.map(createGenericParam))
 
-      objType = createTypeExpr(r.name.name, Nil)
+      objType = createTypeExpr(a.name.name, Nil)
 
-      trait_ = sealedTrait(typ)
+      trait_ = adtSealedTrait(typ)
 
       implPrefix = objectPrefix(objType)
 
-      implBody <- generateImplBody(r, typ, indent)
+      implBody <- generateImplBody(a, typ, indent)
 
-      impl = implBody.tightBracketBy(implPrefix, objectPostfix, indent)
+      features <- features.collectFeatures(_.handleADT(a))
+
+      impl = Doc
+        .intercalate(dblLine, implBody :: features)
+        .tightBracketBy(implPrefix, objectPostfix, indent)
 
     } yield Doc.intercalate(dblLine, List(trait_, impl))
 

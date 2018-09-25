@@ -1,6 +1,7 @@
 package sculptor.scalagen.impl
 
 import org.typelevel.paiges._
+import cats.implicits._
 
 import sculptor.ast._
 
@@ -20,5 +21,18 @@ object NewtypeGen extends GenHelpers {
 
       indent <- getIndent
 
-    } yield body.tightBracketBy(prefix, Doc.char(')'), indent)
+      newtype = body.tightBracketBy(prefix, newtypePostfix, indent)
+
+      features <- features.collectFeatures(_.handleNewtype(n))
+
+      result = features.toNel.fold(newtype) { f =>
+        val prefix = objectPrefix(createTypeExpr(n.name.name, Nil))
+        val companion = Doc
+          .intercalate(dblLine, f.toList)
+          .tightBracketBy(prefix, objectPostfix, indent)
+
+        Doc.intercalate(dblLine, List(newtype, companion))
+      }
+
+    } yield result
 }

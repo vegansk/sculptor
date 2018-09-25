@@ -65,13 +65,17 @@ object EnumGen extends GenHelpers {
 
       typ = createTypeExpr(e.name.name, Nil)
 
-      trait_ = sealedTrait(typ)
+      trait_ = adtSealedTrait(typ)
 
       enumPrefix = objectPrefix(typ)
 
       body <- generateEnumBody(e, typ, indent)
 
-      enum_ = body.tightBracketBy(enumPrefix, objectPostfix, indent)
+      features <- features.collectFeatures(_.handleEnum(e))
+
+      enum_ = Doc
+        .intercalate(dblLine, body :: features)
+        .tightBracketBy(enumPrefix, objectPostfix, indent)
 
     } yield Doc.intercalate(dblLine, List(trait_, enum_))
 

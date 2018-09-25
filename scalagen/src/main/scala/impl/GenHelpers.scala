@@ -27,14 +27,16 @@ trait GenHelpers {
       )
       .getOrElse(Doc.empty)
 
-  def createTypeExpr(name: String, parameters: List[Doc]): Doc =
-    Doc.text(name) + parameters.toNel
-      .map(
-        l =>
-          Doc.char('[') + Doc.intercalate(Doc.text(", "), l.toList) + Doc
-            .char(']')
-      )
+  def createParameters(l0: List[Doc]): Doc =
+    l0.toNel
+      .map { l =>
+        Doc.char('[') + Doc.intercalate(Doc.text(", "), l.toList) + Doc
+          .char(']')
+      }
       .getOrElse(Doc.empty)
+
+  def createTypeExpr(name: String, parameters: List[Doc]): Doc =
+    Doc.text(name) + createParameters(parameters)
 
   def createField0(name: Ident, `type`: TypeRef): Doc =
     Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
@@ -47,6 +49,8 @@ trait GenHelpers {
 
   def caseClassPrefix(`type`: Doc): Doc =
     Doc.text("final case class ") + `type` + Doc.char('(')
+
+  val newtypePostfix = Doc.text(") extends AnyVal")
 
   val caseClassPostfix = Doc.char(')')
 
@@ -64,5 +68,8 @@ trait GenHelpers {
 
   def extend(what: Doc, `with`: Doc): Doc =
     what + Doc.text(" extends ") + `with`
+
+  def adtSealedTrait(typ: Doc): Doc =
+    extend(sealedTrait((typ)), Doc.text("Product with Serializable"))
 
 }

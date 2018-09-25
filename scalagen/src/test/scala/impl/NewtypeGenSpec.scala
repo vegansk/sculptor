@@ -24,7 +24,7 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class MyInt(value: Int)").asRight
+        Doc.text("final case class MyInt(value: Int) extends AnyVal").asRight
       )
 
     }
@@ -37,7 +37,7 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class Result[A](value: Either[String, A])").asRight
+        Doc.text("final case class Result[A](value: Either[String, A]) extends AnyVal").asRight
       )
     }
 
@@ -49,7 +49,21 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class PetsList[P <: Pet with FourLegged](value: List[P])").asRight
+        Doc.text("final case class PetsList[P <: Pet with FourLegged](value: List[P]) extends AnyVal").asRight
+      )
+    }
+
+    "generate Eq typeclass" >> {
+      val n = newtype("EqInt")
+        .baseType("Int".spec)
+        .build
+
+      run(NewtypeGen.generate(n), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+        Doc.text("""|final case class EqInt(value: Int) extends AnyVal
+                    |
+                    |object EqInt {
+                    |  implicit val EqIntEq: Eq[EqInt] = Eq.fromUniversalEquals
+                    |}""".stripMargin).asRight
       )
     }
 

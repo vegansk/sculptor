@@ -1,6 +1,7 @@
 package sculptor.scalagen.impl
 
 import org.typelevel.paiges._
+import cats.implicits._
 
 import sculptor.ast._
 
@@ -17,6 +18,23 @@ object RecordGen extends GenHelpers {
 
       body = Doc.intercalate(fieldDelim, fields)
 
-    } yield body.tightBracketBy(caseClassPrefix(typ), caseClassPostfix, indent)
+      record = body.tightBracketBy(
+        caseClassPrefix(typ),
+        caseClassPostfix,
+        indent
+      )
+
+      features <- features.collectFeatures(_.handleRecord(r))
+
+      result = features.toNel.fold(record) { f =>
+        val prefix = objectPrefix(createTypeExpr(r.name.name, Nil))
+        val companion = Doc
+          .intercalate(dblLine, f.toList)
+          .tightBracketBy(prefix, objectPostfix, indent)
+
+        Doc.intercalate(dblLine, List(record, companion))
+      }
+
+    } yield result
 
 }
