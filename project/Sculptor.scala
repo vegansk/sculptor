@@ -10,10 +10,10 @@ object Sculptor {
     type PC = Project => Project
 
     val commonOptions = Seq(
-      "-deprecation", // Emit warning and location for usages of deprecated APIs.
-      "-encoding",
-      "utf-8", // Specify character encoding used by source files.
-      "-explaintypes", // Explain type errors in more detail.
+    "-deprecation", // Emit warning and location for usages of deprecated APIs.
+    "-encoding",
+    "utf-8", // Specify character encoding used by source files.
+    "-explaintypes", // Explain type errors in more detail.
       "-feature", // Emit warning and location for usages of features that should be imported explicitly.
       "-language:existentials", // Existential types (besides wildcard types) can be written and inferred
       "-language:experimental.macros", // Allow macro definition (besides implementation and application)
@@ -134,6 +134,11 @@ object Sculptor {
     val sbtScalagen: PC = _.configure(common, plugin, publish)
       .settings(
         name := "sbt-sculptor-scalagen",
+        )
+
+    val sbtSculptor: PC = _.configure(common, plugin, publish)
+      .settings(
+        name := "sbt-sculptor",
       )
   }
 
@@ -164,5 +169,10 @@ object Sculptor {
     .in(file("sbt-scalagen"))
     .configure(Config.sbtScalagen)
     .dependsOn(scalagen)
+
+  lazy val sbtSculptor = project
+    .in(file("sbt-sculptor"))
+    .configure(Config.sbtSculptor)
+    .dependsOn(scalagen, tsgen)
 
 }

@@ -8,11 +8,13 @@ object Feature {
 
 }
 
-final case class Config(private val tabSize: Option[Int] = Option.empty,
-                        private val features: List[Feature] = List.empty)
+final case class Config(private val tabSize: Int = 2,
+                        private val features: List[Feature] = List.empty,
+                        private val lineWidth: Int = 120)
 
 object Config {
-  def tabSize(c: Config): Int = c.tabSize.filter(_ > 0).getOrElse(2)
+  def tabSize(c: Config): Int = c.tabSize
   def features(c: Config): List[Feature] =
     Map(c.features.map(f => (f.getClass, f)): _*).values.toList
+  def lineWidth(c: Config): Int = c.lineWidth
 }

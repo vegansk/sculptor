@@ -1,31 +1,31 @@
 package sbtsculptor.scalagen
 
 import sbt._
-import sculptor.scalagen.{deprecated => scalagen}
+import sculptor.scalagen._
 
 object SculptorScalagenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type ScalagenOptions = scalagen.Config
+    type ScalagenOptions = deprecated.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenOptions = scalagen.Config
+    val ScalagenOptions = deprecated.Config
 
-    type ScalagenType = scalagen.Type
+    type ScalagenType = deprecated.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenType = scalagen.Type
+    val ScalagenType = deprecated.Type
 
-    type ScalagenImport = scalagen.Import
+    type ScalagenImport = deprecated.Import
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenImport = scalagen.Import
+    val ScalagenImport = deprecated.Import
 
-    type ScalagenOptionalTypes = scalagen.OptionalTypes
+    type ScalagenOptionalTypes = deprecated.OptionalTypes
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenOptionalTypes = scalagen.OptionalTypes
+    val ScalagenOptionalTypes = deprecated.OptionalTypes
 
-    type ScalagenParameters = scalagen.Parameters
+    type ScalagenParameters = deprecated.Parameters
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenParameters = scalagen.Parameters
+    val ScalagenParameters = deprecated.Parameters
 
     final case class ScalagenConfig(xsdFile: File,
                                     outFile: File,
@@ -52,7 +52,7 @@ object SculptorScalagenPlugin extends AutoPlugin {
 
   private def generate(cfg: ScalagenConfig): Unit = {
     val _ = cfg.outFile.getParentFile.mkdirs
-    scalagen
+    deprecated
       .generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options)
       .unsafeRunSync
   }

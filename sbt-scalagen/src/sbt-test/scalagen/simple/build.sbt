@@ -2,7 +2,7 @@ scalaVersion in ThisBuild := "2.12.4"
 
 lazy val generateSources = taskKey[Unit]("generateSources")
 
-val cats = "org.typelevel" %% "cats-core" % "1.0.1"
+val cats = "org.typelevel" %% "cats-core" % "1.4.0"
 val circe = "io.circe" %% "circe-core" % "0.9.2"
 val circeJava8 = "io.circe" %% "circe-java8" % "0.9.2"
 val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
