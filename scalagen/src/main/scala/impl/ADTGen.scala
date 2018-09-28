@@ -28,7 +28,7 @@ object ADTGen extends GenHelpers {
   def generateImplBody(r: ADT, adtType: Doc, indent: Int): Result[Doc] =
     r.constructors.toList
       .traverse(generateConstructor(_, adtType, indent))
-      .map(Doc.intercalate(Doc.char(';') + Doc.line, _))
+      .map(Doc.intercalate(line, _))
 
   def generate(a: ADT): Result[Doc] =
     for {

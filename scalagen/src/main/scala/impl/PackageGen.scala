@@ -5,11 +5,11 @@ import org.typelevel.paiges._
 
 import sculptor.ast._
 
-object PackageGen {
+object PackageGen extends GenHelpers {
 
-  private val packageSep = Doc.line + Doc.line
+  private val packageSep = dblLine
 
-  private val typesSep = Doc.line
+  private val typesSep = dblLine
 
   private def packageDoc(name: FQName) =
     ok(Doc.text(s"""package ${name.mkString(".")}"""))
@@ -19,7 +19,7 @@ object PackageGen {
       NewtypeGen.generate,
       AliasGen.generate,
       RecordGen.generate,
-      _ => error("Not implemented"),
+      EnumGen.generate,
       ADTGen.generate
     )(t)
 

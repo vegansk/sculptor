@@ -64,7 +64,8 @@ trait GenHelpers {
 
   val fieldDelim = Doc.char(',') + Doc.line
 
-  val dblLine = Doc.line + Doc.line
+  val line = Doc.lineNoFlat
+  val dblLine = line + line
 
   def extend(what: Doc, `with`: Doc): Doc =
     what + Doc.text(" extends ") + `with`
