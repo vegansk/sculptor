@@ -3,17 +3,17 @@ import Keys._
 
 object Dependencies {
   object Versions {
-    val sbt = "1.0.4"
+    val sbt = "1.1.2"
     val scala212 = "2.12.4"
     val scalaXml = "1.0.6"
     val scalaGraph = "1.12.1"
     val specs2 = "3.9.2"
-    val cats = "1.0.1"
-    val catsEffect = "0.10"
+    val cats = "1.4.0"
+    val catsEffect = "1.0.0"
     val shapeless = "2.3.2"
     val pprint = "0.5.3"
     val kindProjector = "0.9.4"
-    val paiges = "0.2.1"
+    val paiges = "0.2.2-SNAPSHOT"
     val scalacheck = "1.13.5"
   }
 
@@ -27,8 +27,8 @@ object Dependencies {
   val shapeless = "com.chuusai" %% "shapeless" % Versions.shapeless
   val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint
   val kindProjector = "org.spire-math" %% "kind-projector" % Versions.kindProjector
-  val paigesCore = "org.typelevel" %% "paiges-core" % Versions.paiges
-  val paigesCats = "org.typelevel" %% "paiges-cats" % Versions.paiges
+  val paigesCore = "com.github.eldis" %% "paiges-core" % Versions.paiges
+  val paigesCats = "com.github.eldis" %% "paiges-cats" % Versions.paiges
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck
 
   val ast = Seq(

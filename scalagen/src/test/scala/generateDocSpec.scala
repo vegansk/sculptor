@@ -8,7 +8,7 @@ object generateDocSpec extends mutable.Specification
     with ScalaCheck
     with testing.CatsEqMatcher {
 
-  val simpleCfg = Config(tabSize = 2.some)
+  val simpleCfg = Config(tabSize = 2)
 
   "scalagen.generateDoc" should {
 
