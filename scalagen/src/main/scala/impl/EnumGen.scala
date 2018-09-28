@@ -24,7 +24,7 @@ object EnumGen extends GenHelpers {
 
     ok(
       Doc
-        .intercalate(Doc.line, cases.toList)
+        .intercalate(line, cases.toList)
         .tightBracketBy(prefix, postfix, indent)
     )
   }
@@ -42,7 +42,7 @@ object EnumGen extends GenHelpers {
 
     ok(
       Doc
-        .intercalate(Doc.line, cases.toList)
+        .intercalate(line, cases.toList)
         .tightBracketBy(prefix, postfix, indent)
     )
   }
@@ -51,7 +51,7 @@ object EnumGen extends GenHelpers {
     for {
       values <- e.values.toList
         .traverse(generateEnumValue(_, enumType))
-        .map(Doc.intercalate(Doc.line, _))
+        .map(Doc.intercalate(line, _))
 
       asString <- generateAsString(e, enumType, indent)
 

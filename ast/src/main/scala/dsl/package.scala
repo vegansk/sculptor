@@ -43,5 +43,6 @@ package object dsl {
     def spec: TypeRef.Specialized = TypeRef.spec(name)
     def spec(p: TypeRef, rest: TypeRef*): TypeRef.Specialized =
       TypeRef.spec(name, (p :: rest.toList): _*)
+    def en: EnumValueBuilder = enumValue(name)
   }
 }

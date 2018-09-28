@@ -17,9 +17,13 @@ object Simple {
     .field("id", "Int".spec)
     .field("name", "String".spec)
 
+  val e = enum("Enum").values(
+    "A".en, "B".en, "C".en
+  )
+
   val packageAst = pkg("test.types")
     .types(
-      nt, r, a
+      nt, r, a, e
     )
     .build
 
