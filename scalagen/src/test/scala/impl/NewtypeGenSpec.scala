@@ -67,5 +67,21 @@ object NewtypeGenSpec extends mutable.Specification
       )
     }
 
+    "generate circe codecs" >> {
+      val n = newtype("EqInt")
+        .baseType("Int".spec)
+        .build
+
+      run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+        s"""|final case class EqInt(value: Int) extends AnyVal
+            |
+            |object EqInt {
+            |  implicit val EqIntEncoder: Encoder[EqInt] = Encoder[Int].contramap(_.value)
+            |
+            |  implicit val EqIntDecoder: Decoder[EqInt] = Decoder[Int].map(EqInt(_))
+            |}""".stripMargin.asRight
+      )
+    }
+
   }
 }

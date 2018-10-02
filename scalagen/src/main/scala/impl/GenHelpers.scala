@@ -13,7 +13,7 @@ trait GenHelpers {
       createTypeExpr(g.name.name, Nil)
 
     def specialized(s: TypeRef.Specialized) =
-      createTypeExpr(s.name.mkString("."), s.parameters.map(createTypeRef))
+      createTypeExpr0(s.name.mkString("."), s.parameters.map(createTypeRef))
 
     TypeRef.cata(specialized, generic)(r)
   }
@@ -27,15 +27,25 @@ trait GenHelpers {
       )
       .getOrElse(Doc.empty)
 
-  def createParameters(l0: List[Doc]): Doc =
+  def createParameters0(l0: List[Doc], paramPostfix: Doc = Doc.empty): Doc = {
     l0.toNel
       .map { l =>
-        Doc.char('[') + Doc.intercalate(Doc.text(", "), l.toList) + Doc
+        Doc.char('[') + Doc.intercalate(
+          Doc.text(", "),
+          l.toList.map(_ + paramPostfix)
+        ) + Doc
           .char(']')
       }
       .getOrElse(Doc.empty)
+  }
 
-  def createTypeExpr(name: String, parameters: List[Doc]): Doc =
+  def createParameters(l0: List[GenericDef]): Doc =
+    createParameters0(l0.map(p => Doc.text(p.`type`.name.name)))
+
+  def createTypeExpr0(name: String, parameters: List[Doc]): Doc =
+    Doc.text(name) + createParameters0(parameters)
+
+  def createTypeExpr(name: String, parameters: List[GenericDef]): Doc =
     Doc.text(name) + createParameters(parameters)
 
   def createField0(name: Ident, `type`: TypeRef): Doc =
@@ -65,7 +75,7 @@ trait GenHelpers {
   val fieldDelim = Doc.char(',') + Doc.line
 
   val line = Doc.lineNoFlat
-  val dblLine = line + line
+  val dblLine = Doc.lineNoFlatNoIndent + Doc.lineNoFlat
 
   def extend(what: Doc, `with`: Doc): Doc =
     what + Doc.text(" extends ") + `with`

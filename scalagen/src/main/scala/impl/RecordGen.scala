@@ -12,7 +12,7 @@ object RecordGen extends GenHelpers {
 
       indent <- getIndent
 
-      typ = createTypeExpr(r.name.name, r.parameters.map(createGenericParam))
+      typ = createTypeExpr(r.name.name, r.parameters)
 
       fields = r.fields.toList.map(f => createField(f))
 

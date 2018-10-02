@@ -2,7 +2,6 @@ package sculptor.scalagen.impl
 package features
 
 import org.typelevel.paiges._
-import cats.implicits._
 
 import sculptor.ast._
 
@@ -15,7 +14,7 @@ object CatsEqTypeclass extends Feature with GenHelpers {
         (
           if (s.parameters.isEmpty) "val" else "def",
           s.name.name.name,
-          createParameters(s.parameters.map(createTypeRef))
+          createParameters0(s.parameters.map(createTypeRef))
       ),
       g => ("val", g.name.name, Doc.empty)
     )(r)
@@ -26,15 +25,15 @@ object CatsEqTypeclass extends Feature with GenHelpers {
   }
 
   override def handleNewtype(n: Newtype) =
-    fromUniversalEquals(n.ref).map(_.some)
+    fromUniversalEquals(n.ref).map(List(_))
 
   override def handleRecord(r: Record) =
-    fromUniversalEquals(r.ref).map(_.some)
+    fromUniversalEquals(r.ref).map(List(_))
 
   override def handleADT(a: ADT) =
-    fromUniversalEquals(a.ref).map(_.some)
+    fromUniversalEquals(a.ref).map(List(_))
 
   override def handleEnum(e: Enum) =
-    fromUniversalEquals(e.ref).map(_.some)
+    fromUniversalEquals(e.ref).map(List(_))
 
 }

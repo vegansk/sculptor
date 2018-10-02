@@ -126,8 +126,10 @@ final case class Record(name: Ident,
 
 /** Enumeration value */
 final case class EnumValue(name: Ident,
-                           value: Option[String] = None,
-                           comment: Option[String] = None)
+                           private[ast] val value0: Option[String] = None,
+                           comment: Option[String] = None) {
+  def value: String = value0.getOrElse(name.name)
+}
 
 /** Enumeration */
 final case class Enum(name: Ident,
@@ -141,7 +143,8 @@ final case class Enum(name: Ident,
 final case class ADTConstructor(name: Ident,
                                 parameters: List[GenericDef],
                                 fields: List[FieldDef],
-                                comment: Option[String] = None)
+                                comment: Option[String] = None,
+                                tag: Option[String] = None)
 
 /** ADT definition */
 final case class ADT(name: Ident,

@@ -10,7 +10,7 @@ object AliasGen extends GenHelpers {
   def generate(a: Alias): Result[Doc] =
     for {
       `type` <- ok(
-        createTypeExpr(a.name.name, a.parameters.map(createGenericParam))
+        createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
       )
       alias <- TypeRefGen
         .generate(a.baseType)
