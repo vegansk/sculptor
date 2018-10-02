@@ -11,9 +11,7 @@ object ADTGen extends GenHelpers {
                           adtType: Doc,
                           indent: Int): Result[Doc] =
     for {
-      typ <- ok(
-        createTypeExpr(c.name.name, c.parameters.map(createGenericParam _))
-      )
+      typ <- ok(createTypeExpr(c.name.name, c.parameters))
       typeDef = {
         if (c.fields.isEmpty && c.parameters.isEmpty)
           caseObject(typ)
@@ -35,7 +33,7 @@ object ADTGen extends GenHelpers {
 
       indent <- getIndent
 
-      typ = createTypeExpr(a.name.name, a.parameters.map(createGenericParam))
+      typ = createTypeExpr(a.name.name, a.parameters)
 
       objType = createTypeExpr(a.name.name, Nil)
 

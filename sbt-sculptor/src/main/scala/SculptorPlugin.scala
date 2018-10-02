@@ -15,7 +15,7 @@ object SculptorPlugin extends AutoPlugin {
 
       type Feature = scalagen.Feature
       @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-      val Feature = scalagen.Config
+      val Feature = scalagen.Feature
     }
 
     final case class ScalagenConfig(pkg: ast.Package,

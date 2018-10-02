@@ -27,11 +27,13 @@ object PackageGen extends GenHelpers {
     for {
       packageName <- packageDoc(p.name)
       types <- p.types.traverse(typeDoc)
+      prefix <- getPrefixCode
     } yield
       Doc.intercalate(
         packageSep,
         packageName
-          :: types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
+          :: prefix.toList
+          ++ types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
       )
 
 }

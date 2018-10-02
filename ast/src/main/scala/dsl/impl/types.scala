@@ -127,7 +127,7 @@ object RecordBuilderImpl {
 final case class EnumValueBuilderImpl private (enumValue: EnumValue)
     extends EnumValueBuilder {
   def value(v: String) =
-    this.copy(enumValue = enumValue.copy(value = v.some))
+    this.copy(enumValue = enumValue.copy(value0 = v.some))
   def comment(v: String) =
     this.copy(enumValue = enumValue.copy(comment = v.some))
 

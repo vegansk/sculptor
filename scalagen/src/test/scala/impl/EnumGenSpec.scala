@@ -77,5 +77,29 @@ object EnumGenSpec extends mutable.Specification
                     |""".stripMargin).asRight
       )
     }
+
+    "generate circe codecs" >> {
+      val e = enum("Colors")
+        .values(
+          enumValue("Red").value("red")
+        )
+        .build
+
+      run(EnumGen.generate(e).map(_.render(cfg.lineWidth)), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+        s"""|sealed trait Colors extends Product with Serializable
+            |
+            |object Colors {
+            |  case object Red extends Colors
+            |
+            |  val asString: Colors => String = {case Red => "red"}
+            |
+            |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+            |
+            |  implicit val ColorsEncoder: Encoder[Colors] = Encoder[String].contramap(Colors.asString(_))
+            |
+            |  implicit val ColorsDecoder: Decoder[Colors] = Decoder[String].emap(v => Colors.fromString.lift(v).toRight("Invalid enum value Colors." + v))
+            |}""".stripMargin.asRight
+      )
+    }
   }
 }

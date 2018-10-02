@@ -62,6 +62,7 @@ object Sculptor {
       scalaVersion := Dependencies.Versions.scala212,
       organization := "com.github.vegansk",
       scalacOptions ++= commonOptions,
+      resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       wartremoverErrors in (Compile, compile) ++= Warts.allBut(
         // Allow defaul arguments
         Wart.DefaultArguments,

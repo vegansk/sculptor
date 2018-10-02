@@ -10,7 +10,7 @@ object NewtypeGen extends GenHelpers {
   def generate(n: Newtype): Result[Doc] =
     for {
       `type` <- ok(
-        createTypeExpr(n.name.name, n.parameters.map(createGenericParam))
+        createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
       )
 
       valueType <- TypeRefGen.generate(n.baseType)

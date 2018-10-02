@@ -17,9 +17,7 @@ object EnumGen extends GenHelpers {
     val postfix = objectPostfix
 
     val cases = e.values.map { v =>
-      Doc.text(
-        s"""case ${v.name.name} => "${v.value.getOrElse(v.name.name)}""""
-      )
+      Doc.text(s"""case ${v.name.name} => "${v.value}"""")
     }
 
     ok(
@@ -35,9 +33,7 @@ object EnumGen extends GenHelpers {
     val postfix = objectPostfix
 
     val cases = e.values.map { v =>
-      Doc.text(
-        s"""case "${v.value.getOrElse(v.name.name)}" => ${v.name.name}"""
-      )
+      Doc.text(s"""case "${v.value}" => ${v.name.name}""")
     }
 
     ok(

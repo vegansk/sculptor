@@ -1,5 +1,6 @@
 package sculptor.scalagen
 
+import org.typelevel.paiges._
 import cats.data._
 
 package object impl {
@@ -18,4 +19,9 @@ package object impl {
 
   def getFeatures: Result[List[Feature]] =
     EitherT.liftF(State.get[GeneratorState].map(s => Config.features(s.config)))
+
+  def getPrefixCode: Result[Option[Doc]] =
+    EitherT.liftF(
+      State.get[GeneratorState].map(s => Config.prefixCode(s.config))
+    )
 }
