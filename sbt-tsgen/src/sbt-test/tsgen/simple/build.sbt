@@ -36,12 +36,12 @@ lazy val root = project.in(file("."))
     tsgenConfigurations := Seq(
       TsgenConfig(
         file("xsd") / "polaris-1.0.xsd",
-        file("src_generated") / "polaris-1.0.ts",
+        file("src_managed") / "polaris-1.0.ts",
         tsgenOptions
       ),
       TsgenConfig(
         file("xsd") / "fes-2.0.xsd",
-        file("src_generated") / "fes-2.0.ts",
+        file("src_managed") / "fes-2.0.ts",
         tsgenOptions
       )
     ),

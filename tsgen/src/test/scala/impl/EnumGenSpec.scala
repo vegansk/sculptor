@@ -26,7 +26,7 @@ object EnumGenSpec extends mutable.Specification
         .build
 
       run(EnumGen.generate(e).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """|enum Colors {
+        """|export enum Colors {
            |  Red = "red",
            |  Green = "green",
            |  Blue = "blue"

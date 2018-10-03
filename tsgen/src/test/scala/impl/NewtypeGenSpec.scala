@@ -22,7 +22,7 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """interface MyInt extends number {__brand: "MyInt"}""".asRight
+        """export type MyInt = number & {__brand: "MyInt"}""".asRight
       )
 
     }
@@ -35,7 +35,7 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """interface Result<A> extends Either<string, A> {__brand: "Result<A>"}""".asRight
+        """export type Result<A> = Either<string, A> & {__brand: "Result<A>"}""".asRight
       )
     }
 
@@ -47,7 +47,7 @@ object NewtypeGenSpec extends mutable.Specification
         .build
 
       run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """interface PetsList<P extends Pet & FourLegged> extends Array<P> {__brand: "PetsList<P extends Pet & FourLegged>"}""".asRight
+        """export type PetsList<P extends Pet & FourLegged> = Array<P> & {__brand: "PetsList<P extends Pet & FourLegged>"}""".asRight
       )
     }
 

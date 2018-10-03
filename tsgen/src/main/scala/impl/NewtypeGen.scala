@@ -14,12 +14,12 @@ object NewtypeGen extends GenHelpers {
 
       valueType = createTypeRef(n.baseType)
 
-      prefix = Doc.text("interface ") + typ + Doc.text(" extends ") + valueType + Doc
-        .text(" {")
+      prefix = Doc.text("type ") + typ + Doc.text(" = ") + valueType + Doc
+        .text(" & {")
 
       body = createBrandField(typ)
 
-      newtype = body.tightBracketBy(prefix, newtypePostfix, indent)
+      newtype = exported(body.tightBracketBy(prefix, newtypePostfix, indent))
 
       features <- features.collectFeatures(_.handleNewtype(n))
 

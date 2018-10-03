@@ -1,0 +1,20 @@
+{
+  "name": "iots-generator-test",
+  "version": "0.0.1",
+  "description": "io-ts generator test for sculptor project",
+  "main": "build/index.js",
+  "scripts": {
+    "start": "NODE_PATH=build/src node build/src/index.js",
+    "build": "node --max_old_space_size=4096 node_modules/typescript/lib/tsc.js",
+    "clean": "rm -rf build"
+  },
+  "author": "Anatoly Galiulin <galiulin.anatoly@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^3.1.1"
+  },
+  "dependencies": {
+    "fp-ts": "^1.9.0",
+    "io-ts": "^1.3.0"
+  }
+}

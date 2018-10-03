@@ -16,11 +16,11 @@ object EnumGen extends GenHelpers {
       indent <- getIndent
 
       prefix = Doc.text(s"enum ${e.name.name} {")
-      postfix = objectPostfix
+      postfix = interfacePostfix
 
       body = generateEnumBody(e, indent)
 
-      enum_ = body.tightBracketBy(prefix, postfix, indent)
+      enum_ = exported(body.tightBracketBy(prefix, postfix, indent))
 
       features <- features.collectFeatures(_.handleEnum(e))
 
