@@ -6,7 +6,7 @@ import cats.implicits._
 
 object NewtypeGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   import sculptor.ast._
   import dsl._

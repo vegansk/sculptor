@@ -27,4 +27,9 @@ package object impl {
 
   def getAdtTag: Result[String] =
     EitherT.liftF(State.get[GeneratorState].map(s => Config.adtTag(s.config)))
+
+  def getOptionalEncoding: Result[Option[OptionalEncoding]] =
+    EitherT.liftF(
+      State.get[GeneratorState].map(s => Config.optionalEncoding(s.config))
+    )
 }

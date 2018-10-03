@@ -10,14 +10,13 @@ object ADTGen extends GenHelpers {
   private def generateConstructor(c: ADTConstructor, indent: Int): Result[Doc] =
     for {
       adtTag <- getAdtTag
+      optEnc <- getOptionalEncoding
       typ = createTypeExpr(c.name.name, c.parameters)
       result = Doc
         .intercalate(
           line,
           Doc.text(s"""$adtTag: """") + typ + Doc.char('"') ::
-            c.fields.map { f =>
-            Doc.text(s"${f.name.name}: ") + createTypeRef(f.`type`)
-          }
+            c.fields.map(createField(_, optEnc))
         )
         .tightBracketBy(
           exported(interfacePrefix(typ)),

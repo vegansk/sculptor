@@ -9,7 +9,7 @@ import cats.implicits._
 
 object transformSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   "iots module" should {
 

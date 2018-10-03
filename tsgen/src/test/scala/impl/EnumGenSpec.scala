@@ -6,7 +6,7 @@ import org.specs2._
 
 object EnumGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   import sculptor.ast._
   import dsl._

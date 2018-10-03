@@ -11,9 +11,11 @@ object RecordGen extends GenHelpers {
 
       indent <- getIndent
 
+      optEnc <- getOptionalEncoding
+
       typ = createTypeExpr(r.name.name, r.parameters)
 
-      fields = r.fields.toList.map(f => createField(f))
+      fields = r.fields.toList.map(f => createField(f, optEnc))
 
       body = Doc.intercalate(line, fields)
 

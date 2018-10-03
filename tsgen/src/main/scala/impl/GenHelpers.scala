@@ -51,8 +51,31 @@ trait GenHelpers {
   def createField0(name: Ident, `type`: TypeRef): Doc =
     Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
 
-  def createField(f: FieldDef): Doc =
+  def createFuncParam(f: FieldDef): Doc =
     createField0(f.name, f.`type`)
+
+  def createField1(name: Ident, `type`: Doc, optional: Boolean): Doc =
+    Doc.text(name.name) + (if (optional) Doc.char('?') else Doc.empty) + Doc
+      .text(": ") + `type`
+
+  def createField(f: FieldDef,
+                  optionalEncoding: Option[OptionalEncoding]): Doc = {
+    val (optional, typ) = optionalEncoding.fold((false, f.`type`)) { e =>
+      TypeRef.cata(
+        s =>
+          s.parameters.headOption.fold((false, s: TypeRef)) { p =>
+            if (s.name.mkString(".") === e.optionalType) (true, p)
+            else (false, s)
+        },
+        _ => (false, f.`type`)
+      )(f.`type`)
+    }
+    createField1(
+      f.name,
+      createTypeRef(typ),
+      optionalEncoding.map(_.allFieldsOptional).getOrElse(false) || optional
+    )
+  }
 
   def interfacePrefix(`type`: Doc): Doc =
     Doc.text("interface ") + `type` + Doc.text(" {")
@@ -80,7 +103,7 @@ trait GenHelpers {
       .char('(')
     val postfix = Doc.text("): ") + resultType + Doc.text(" =>")
 
-    prefix + Doc.intercalate(Doc.text(", "), params.map(createField)) + postfix
+    prefix + Doc.intercalate(Doc.text(", "), params.map(createFuncParam)) + postfix
   }
 
   def createBrandField(typ: Doc): Doc =
