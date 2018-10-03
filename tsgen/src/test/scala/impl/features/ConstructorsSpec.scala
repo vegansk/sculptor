@@ -4,19 +4,15 @@ package features
 
 import org.specs2._
 import cats.implicits._
-import org.typelevel.paiges._
 
 object ConstructorsSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   import sculptor.ast._
   import dsl._
 
   val cfg = Config(features = List(Feature.Constructors))
-
-  def runFeature(r: Result[List[Doc]], cfg: Config): sculptor.tsgen.Result[String] =
-    run(r.map(l => Doc.intercalate(Doc.lineNoFlat * 2, l).render(cfg.lineWidth)), cfg)
 
   "Constructors" should {
 

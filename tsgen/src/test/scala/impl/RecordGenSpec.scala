@@ -6,7 +6,7 @@ import org.specs2._
 
 object RecordGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   import sculptor.ast._
   import dsl._
@@ -15,32 +15,43 @@ object RecordGenSpec extends mutable.Specification
 
   "RecordGen" should {
 
-    "generate simple records" >> {
+    val r = record("Record").generic("A".gen)
+      .field("id", "number".spec)
+      .field("nameO", "Option".spec("A".gen))
+      .build
 
-      val r = record("Record")
-        .field("id", "number".spec)
-        .field("nameO", "Option".spec("string".spec))
-        .build
-
-      run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """|export interface Record {
-           |  id: number
-           |  nameO: Option<string>
-           |}""".stripMargin.asRight
-      )
-    }
-
-    "generate generic records" >> {
-
-      val r = record("Record").generic("A".gen)
-        .field("id", "number".spec)
-        .field("nameO", "Option".spec("A".gen))
-        .build
-
+    "generate records" >> {
       run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
         """|export interface Record<A> {
            |  id: number
            |  nameO: Option<A>
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "handle optional encoding" >> {
+      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding("Option"))) must beEqvTo(
+        """|export interface Record<A> {
+           |  id: number
+           |  nameO?: A
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "handle all fields optional encoding" >> {
+      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
+        """|export interface Record<A> {
+           |  id?: number
+           |  nameO?: Option<A>
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "handle all fields optional encoding with optional class" >> {
+      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding("Option", true))) must beEqvTo(
+        """|export interface Record<A> {
+           |  id?: number
+           |  nameO?: A
            |}""".stripMargin.asRight
       )
     }

@@ -10,7 +10,7 @@ import org.typelevel.paiges._
 
 object generatorSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   "iots generator" should {
 

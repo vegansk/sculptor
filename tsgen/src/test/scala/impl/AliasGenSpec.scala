@@ -7,7 +7,7 @@ import org.typelevel.paiges._
 
 object AliasGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   import testing.paiges._
   import sculptor.ast._
