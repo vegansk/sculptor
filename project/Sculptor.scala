@@ -1,4 +1,5 @@
 import sbt._
+import plugins.SbtPlugin
 import sbt.ScriptedPlugin.autoImport._
 import Keys._
 import wartremover._
@@ -96,8 +97,7 @@ object Sculptor {
       }
     )
 
-    val plugin: PC = _.settings(
-      sbtPlugin := true,
+    val plugin: PC = _.enablePlugins(SbtPlugin, ScriptedPlugin).settings(
       sbtVersion := Dependencies.Versions.sbt,
       scriptedLaunchOpts ++= Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value),
       scriptedBufferLog := false
@@ -153,7 +153,7 @@ object Sculptor {
 
   lazy val tsgen = project
     .in(file("tsgen"))
-    .dependsOn(xsd)
+    .dependsOn(xsd, ast)
     .configure(Config.tsgen)
 
   lazy val sbtTsgen = project

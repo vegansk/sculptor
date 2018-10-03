@@ -1,5 +1,6 @@
 package sculptor
 package tsgen
+package deprecated
 package generator
 
 import org.specs2._

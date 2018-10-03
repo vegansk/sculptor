@@ -9,17 +9,15 @@ object NewtypeGen extends GenHelpers {
 
   def generate(n: Newtype): Result[Doc] =
     for {
-      `type` <- ok(
-        createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
-      )
+      indent <- getIndent
 
-      valueType <- TypeRefGen.generate(n.baseType)
+      typ = createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
 
-      prefix = Doc.text("final case class ") + `type` + Doc.char('(')
+      valueType = createTypeRef(n.baseType)
+
+      prefix = Doc.text("final case class ") + typ + Doc.char('(')
 
       body = Doc.text("value: ") + valueType
-
-      indent <- getIndent
 
       newtype = body.tightBracketBy(prefix, newtypePostfix, indent)
 

@@ -1,5 +1,6 @@
 package sculptor
 package tsgen
+package deprecated
 package generator
 
 import cats._
