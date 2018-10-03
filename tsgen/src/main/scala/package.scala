@@ -1,91 +1,39 @@
 package sculptor
 
-import java.io.File
+import org.typelevel.paiges.Doc
+import cats.implicits._
 import cats.effect._
-import scala.xml._
 import java.nio.file.{Paths, Files, StandardOpenOption}
 import java.nio.charset.StandardCharsets
 
-package tsgen {
-  final case class Import(name: String, path: String)
-
-  final case class Type(xsdName: String, name: String, constName: String)
-
-  final case class Config(imports: List[Import] = Nil,
-                          types: List[Type] = Nil,
-                          iotsNs: String = "t",
-                          header: Option[String] = None,
-                          customIotsType: Option[String] = None,
-                          nativeTypes: Boolean = false,
-                          generateComments: Boolean = true,
-                          generateEnumsDocumentationGetters: Boolean = false,
-                          generatePartialTypes: Boolean = false,
-                          generatePartialConstants: Boolean = false)
-}
+import ast.Package
 
 package object tsgen {
 
-  import ast._
-  import sculptor.xsd.{ast => x, parseSchema}
+  type Result[A] = Either[String, A]
 
-  private def toXsdConfig(cfg: Config, xsdNs: Option[String]): xsd.Config =
-    xsd.Config(
-      imports = cfg.imports.map { i =>
-        ImportDecl(Ident(i.name), i.path)
-      },
-      xsdNs = xsdNs,
-      externalTypes = cfg.types.map { t =>
-        xsd.ExternatType(
-          xsdName = x.QName.fromString(t.xsdName),
-          name = QName.fromString(t.name),
-          constName = QName.fromString(t.constName)
-        )
-      }
-    )
+  def generateDoc(p: Package, c: Config): Result[Doc] =
+    run(impl.PackageGen.generate(p: Package), c)
 
-  private def toGeneratorConfig(cfg: Config): generator.Config = {
-    generator.Config(
-      iotsNs = cfg.iotsNs,
-      header = cfg.header,
-      customIotsType = cfg.customIotsType,
-      nativeTypes = cfg.nativeTypes,
-      generateComments = cfg.generateComments,
-      generateEnumsDocumentationGetters = cfg.generateEnumsDocumentationGetters,
-      generatePartialTypes = cfg.generatePartialTypes,
-      generatePartialConstants = cfg.generatePartialConstants
-    )
-  }
+  def generateString(p: Package, c: Config): Result[String] =
+    generateDoc(p, c).map(_.render(Config.lineWidth(c)))
 
-  def generateFromFile(xsdFile: File, tsFile: File, cfg: Config): IO[Unit] =
+  def generateFile(p: Package, c: Config, f: java.io.File): IO[Unit] =
     for {
-      n <- IO[Node] { XML.loadFile(xsdFile) }
-      ts <- parseSchema(n)
-        .fold[IO[String]](
-          err => IO.raiseError(new Exception(err.toList.mkString(", "))),
-          res => {
-            xsd.transform(res.ast).value(toXsdConfig(cfg, res.schemaNs)) match {
-              case Right(module) =>
-                IO.pure {
-                  generator
-                    .create(toGeneratorConfig(cfg))
-                    .moduleDecl(module)
-                    .render(0)
-                }
-              case Left(err) => IO.raiseError(new Exception(err))
-            }
-          }
-        )
+      code <- IO.fromEither(generateString(p, c).leftMap(new Exception(_)))
       _ <- IO {
-        tsFile.getParentFile.mkdirs
+        f.getParentFile.mkdirs
       }
       _ <- IO {
         Files.write(
-          Paths.get(tsFile.getPath),
-          ts.getBytes(StandardCharsets.UTF_8),
+          Paths.get(f.getPath),
+          code.getBytes(StandardCharsets.UTF_8),
           StandardOpenOption.CREATE,
           StandardOpenOption.TRUNCATE_EXISTING,
         )
       }
     } yield ()
 
+  private[tsgen] def run[A](v: impl.Result[A], c: Config): Result[A] =
+    v.value.runA(impl.GeneratorState.init(c)).value
 }

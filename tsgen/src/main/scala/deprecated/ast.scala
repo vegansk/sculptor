@@ -1,5 +1,6 @@
 package sculptor
 package tsgen
+package deprecated
 
 import cats._
 import cats.implicits._

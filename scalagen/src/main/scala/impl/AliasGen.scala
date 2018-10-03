@@ -9,14 +9,12 @@ object AliasGen extends GenHelpers {
 
   def generate(a: Alias): Result[Doc] =
     for {
-      `type` <- ok(
-        createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
-      )
-      alias <- TypeRefGen
-        .generate(a.baseType)
-        .map(a => Doc.text("type ") + `type` + Doc.text(" = ") + a)
-
       indent <- getIndent
+
+      typ = createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
+      alias = Doc.text("type ") + typ + Doc.text(" = ") + createTypeRef(
+        a.baseType
+      )
 
       features <- features.collectFeatures(_.handleAlias(a))
 

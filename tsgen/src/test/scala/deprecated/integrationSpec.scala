@@ -1,5 +1,6 @@
 package sculptor
 package tsgen
+package deprecated
 
 import org.specs2._
 import scala.xml._
@@ -9,8 +10,8 @@ import org.typelevel.paiges._
 
 object integrationSpec extends mutable.Specification {
   import testing.utils._
-  import tsgen.xsd.{Config => XsdConfig, _}
-  import tsgen.generator.{Config => GenConfig}
+  import deprecated.xsd.{Config => XsdConfig, _}
+  import deprecated.generator.{Config => GenConfig}
   import sculptor.xsd.{ast => x}
   import ast._
 

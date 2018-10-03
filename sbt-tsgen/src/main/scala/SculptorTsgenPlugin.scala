@@ -7,24 +7,24 @@ object SculptorTsgenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type TsgenOptions = tsgen.Config
+    type TsgenOptions = tsgen.deprecated.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenOptions = tsgen.Config
+    val TsgenOptions = tsgen.deprecated.Config
 
-    type TsgenType = tsgen.Type
+    type TsgenType = tsgen.deprecated.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenType = tsgen.Type
+    val TsgenType = tsgen.deprecated.Type
 
-    type TsgenImport = tsgen.Import
+    type TsgenImport = tsgen.deprecated.Import
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenImport = tsgen.Import
+    val TsgenImport = tsgen.deprecated.Import
 
     final case class TsgenConfig(xsdFile: File,
                                  outFile: File,
                                  options: TsgenOptions)
 
     val tsgenConfigurations: SettingKey[Seq[TsgenConfig]] = settingKey(
-      "List of tsgen configurations"
+      "List of tsgen.deprecated configurations"
     )
 
     val tsgenGenerate: TaskKey[Unit] = taskKey(
@@ -42,7 +42,9 @@ object SculptorTsgenPlugin extends AutoPlugin {
 
   private def generate(cfg: TsgenConfig): Unit = {
     val _ = cfg.outFile.getParentFile.mkdirs
-    tsgen.generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options).unsafeRunSync
+    tsgen.deprecated
+      .generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options)
+      .unsafeRunSync
   }
 
   private lazy val tsgenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
