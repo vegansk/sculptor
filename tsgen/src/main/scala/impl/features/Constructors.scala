@@ -16,7 +16,7 @@ object Constructors extends Feature with GenHelpers {
     val prefix = functionPrefix(name.name, genParams, params, typ) + Doc.text(
       " {"
     )
-    body.tightBracketBy(prefix, objectPostfix, indent)
+    exported(body.tightBracketBy(prefix, functionPostfix, indent))
   }
 
   override def handleNewtype(n: Newtype) =

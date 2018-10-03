@@ -12,7 +12,7 @@ object AliasGen extends GenHelpers {
 
       typ = createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
       baseType = createTypeRef(a.baseType)
-      alias = Doc.text("type ") + typ + Doc.text(" = ") + baseType
+      alias = exported(Doc.text("type ") + typ + Doc.text(" = ") + baseType)
 
     } yield Doc.intercalate(dblLine, alias :: features)
 }

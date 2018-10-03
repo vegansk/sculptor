@@ -28,11 +28,11 @@ object ADTGenSpec extends mutable.Specification
         .build
 
       run(ADTGen.generate(a).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """|type Maybe<A> = Empty<A> | Just<A>
+        """|export type Maybe<A> = Empty<A> | Just<A>
            |
-           |interface Empty<A> {__tag: "Empty<A>"}
+           |export interface Empty<A> {__tag: "Empty<A>"}
            |
-           |interface Just<A> {
+           |export interface Just<A> {
            |  __tag: "Just<A>"
            |  value: A
            |}""".stripMargin.asRight

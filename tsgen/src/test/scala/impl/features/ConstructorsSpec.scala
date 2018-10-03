@@ -26,7 +26,7 @@ object ConstructorsSpec extends mutable.Specification
         .baseType("Either".spec("string".spec, "A".gen))
         .build
       runFeature(Constructors.handleNewtype(n), cfg) must beEqvTo(
-        """|const Result = <A>(value: Either<string, A>): Result<A> => {return value as Result<A>}""".stripMargin.asRight
+        """|export const Result = <A>(value: Either<string, A>): Result<A> => {return value as Result<A>}""".stripMargin.asRight
       )
     }
 
@@ -37,7 +37,7 @@ object ConstructorsSpec extends mutable.Specification
       .build
 
       runFeature(Constructors.handleRecord(r), cfg) must beEqvTo(
-        """|const Record = <T>(id: T, name: string): Record<T> => {
+        """|export const Record = <T>(id: T, name: string): Record<T> => {
            |  return {
            |    id,
            |    name
@@ -58,9 +58,9 @@ object ConstructorsSpec extends mutable.Specification
         .build
 
       runFeature(Constructors.handleADT(a), cfg) must beEqvTo(
-        """|const Empty = <A>(): Maybe<A> => {return {__tag: "Empty<A>"}}
+        """|export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty<A>"}}
            |
-           |const Just = <A>(value: A): Maybe<A> => {
+           |export const Just = <A>(value: A): Maybe<A> => {
            |  return {
            |    __tag: "Just<A>",
            |    value

@@ -19,7 +19,11 @@ object ADTGen extends GenHelpers {
             Doc.text(s"${f.name.name}: ") + createTypeRef(f.`type`)
           }
         )
-        .tightBracketBy(caseClassPrefix(typ), caseClassPostfix, indent)
+        .tightBracketBy(
+          exported(interfacePrefix(typ)),
+          interfacePostfix,
+          indent
+        )
     } yield result
 
   def generate(a: ADT): Result[Doc] =
@@ -35,7 +39,7 @@ object ADTGen extends GenHelpers {
           .map(c => createTypeExpr(c.name.name, c.parameters))
       )
 
-      adtType = Doc.text("type ") + typ + Doc.text(" = ") + consList
+      adtType = exported(Doc.text("type ") + typ + Doc.text(" = ") + consList)
 
       constructors <- a.constructors.toList
         .traverse(generateConstructor(_, indent))

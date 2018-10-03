@@ -22,7 +22,7 @@ object AliasGenSpec extends mutable.Specification
       val a = alias("MyInt").baseType(TypeRef.spec("number")).build
 
       run(AliasGen.generate(a).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        "type MyInt = number".asRight
+        "export type MyInt = number".asRight
       )
 
     }
@@ -32,7 +32,7 @@ object AliasGenSpec extends mutable.Specification
       val a = alias("Result").generic(TypeRef.gen("A")).baseType(TypeRef.spec("Either", TypeRef.spec("string"), TypeRef.gen("A"))).build
 
       run(AliasGen.generate(a).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        "type Result<A> = Either<string, A>".asRight
+        "export type Result<A> = Either<string, A>".asRight
       )
     }
 
@@ -41,7 +41,7 @@ object AliasGenSpec extends mutable.Specification
       val a = alias("PetsList").generic(GenericDef.of("P", TypeRef.spec("Pet"), TypeRef.spec("FourLegged"))).baseType(TypeRef.spec("Array", TypeRef.gen("P"))).build
 
       run(AliasGen.generate(a), cfg) must beEqvTo(
-        Doc.text("type PetsList<P extends Pet & FourLegged> = Array<P>").asRight
+        Doc.text("export type PetsList<P extends Pet & FourLegged> = Array<P>").asRight
       )
     }
 

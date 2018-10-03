@@ -54,14 +54,14 @@ trait GenHelpers {
   def createField(f: FieldDef): Doc =
     createField0(f.name, f.`type`)
 
-  def caseClassPrefix(`type`: Doc): Doc =
+  def interfacePrefix(`type`: Doc): Doc =
     Doc.text("interface ") + `type` + Doc.text(" {")
 
   val newtypePostfix = Doc.char('}')
 
-  val caseClassPostfix = Doc.char('}')
+  val functionPostfix = Doc.char('}')
 
-  val objectPostfix = Doc.char('}')
+  val interfacePostfix = Doc.char('}')
 
   val fieldDelim = Doc.char(',') + Doc.line
 
@@ -69,8 +69,8 @@ trait GenHelpers {
 
   val dblLine = Doc.lineNoFlatNoIndent + Doc.lineNoFlat
 
-  def extend(what: Doc, `with`: Doc): Doc =
-    what + Doc.text(" extends ") + `with`
+  def exported(what: Doc): Doc =
+    Doc.text("export ") + what
 
   def functionPrefix(name: String,
                      genParams: List[GenericDef],

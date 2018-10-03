@@ -23,7 +23,7 @@ object RecordGenSpec extends mutable.Specification
         .build
 
       run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """|interface Record {
+        """|export interface Record {
            |  id: number
            |  nameO: Option<string>
            |}""".stripMargin.asRight
@@ -38,7 +38,7 @@ object RecordGenSpec extends mutable.Specification
         .build
 
       run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
-        """|interface Record<A> {
+        """|export interface Record<A> {
            |  id: number
            |  nameO: Option<A>
            |}""".stripMargin.asRight

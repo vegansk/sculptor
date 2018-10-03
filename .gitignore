@@ -6,4 +6,4 @@ target
 .frontend
 node_modules/
 build/
-src_generated/
+src_managed/
