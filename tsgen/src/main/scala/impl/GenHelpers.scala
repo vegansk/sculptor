@@ -51,16 +51,19 @@ trait GenHelpers {
   def createField0(name: Ident, `type`: TypeRef): Doc =
     Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
 
-  def createFuncParam(f: FieldDef): Doc =
-    createField0(f.name, f.`type`)
+  def createFuncParam(opt: Option[OptionalEncoding])(f0: FieldDef): Doc = {
+    val (optional, f) = processField(opt)(f0)
+    createField1(f.name, createTypeRef(f.`type`), optional)
+  }
 
   def createField1(name: Ident, `type`: Doc, optional: Boolean): Doc =
     Doc.text(name.name) + (if (optional) Doc.char('?') else Doc.empty) + Doc
       .text(": ") + `type`
 
-  def createField(f: FieldDef,
-                  optionalEncoding: Option[OptionalEncoding]): Doc = {
-    val (optional, typ) = optionalEncoding.fold((false, f.`type`)) { e =>
+  def processField(
+    optionalEncoding: Option[OptionalEncoding]
+  )(f: FieldDef): (Boolean, FieldDef) = {
+    val (o, r) = optionalEncoding.fold((false, f.`type`)) { e =>
       TypeRef.cata(
         s =>
           s.parameters.headOption.fold((false, s: TypeRef)) { p =>
@@ -70,11 +73,16 @@ trait GenHelpers {
         _ => (false, f.`type`)
       )(f.`type`)
     }
-    createField1(
-      f.name,
-      createTypeRef(typ),
-      optionalEncoding.map(_.allFieldsOptional).getOrElse(false) || optional
+    (
+      optionalEncoding.map(_.allFieldsOptional).getOrElse(false) || o,
+      f.copy(`type` = r)
     )
+  }
+
+  def createField(f0: FieldDef,
+                  optionalEncoding: Option[OptionalEncoding]): Doc = {
+    val (optional, f) = processField(optionalEncoding)(f0)
+    createField1(f.name, createTypeRef(f.`type`), optional)
   }
 
   def interfacePrefix(`type`: Doc): Doc =
@@ -95,15 +103,15 @@ trait GenHelpers {
   def exported(what: Doc): Doc =
     Doc.text("export ") + what
 
-  def functionPrefix(name: String,
-                     genParams: List[GenericDef],
-                     params: List[FieldDef],
-                     resultType: Doc): Doc = {
+  def functionPrefix(opt: Option[OptionalEncoding])(name: String,
+                                                    genParams: List[GenericDef],
+                                                    params: List[FieldDef],
+                                                    resultType: Doc): Doc = {
     val prefix = Doc.text(s"const ${name} = ") + createParameters(genParams) + Doc
       .char('(')
     val postfix = Doc.text("): ") + resultType + Doc.text(" =>")
 
-    prefix + Doc.intercalate(Doc.text(", "), params.map(createFuncParam)) + postfix
+    prefix + Doc.intercalate(Doc.text(", "), params.map(createFuncParam(opt))) + postfix
   }
 
   def createBrandField(typ: Doc): Doc =

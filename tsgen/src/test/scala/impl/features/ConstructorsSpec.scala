@@ -64,5 +64,14 @@ object ConstructorsSpec extends mutable.Specification
            |}""".stripMargin.asRight
       )
     }
+
+    "handle optional encoding" >> {
+      val r = record("Record")
+        .field("field", "Option".spec("string".spec))
+        .build
+      runFeature(Constructors.handleRecord(r), cfg.copy(optionalEncoding = OptionalEncoding("Option"))) must beEqvTo(
+        """export const Record = (field?: string): Record => {return {field}}""".asRight
+      )
+    }
   }
 }

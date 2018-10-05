@@ -23,9 +23,12 @@ lazy val root = project.in(file("."))
         Simple.packageAst,
         TypeScript.Config(
           features = List(
-            TypeScript.Feature.Constructors
+            TypeScript.Feature.Constructors,
+            TypeScript.Feature.IoTsTypes(iotsNs = "t")
           ),
-          prefixCode = """import { Option } from "fp-ts/lib/Option""""
+          prefixCode = """|import { Option } from "fp-ts/lib/Option"
+                          |import * as t from "io-ts"""".stripMargin,
+          optionalEncoding = TypeScript.OptionalEncoding("Option")
         ),
         file("src_managed") / "types.ts"
       )

@@ -8,24 +8,26 @@ import sculptor.ast._
 
 object Constructors extends Feature with GenHelpers {
 
-  private def genConstructor(name: Ident,
-                             typ: Doc,
-                             genParams: List[GenericDef],
-                             params: List[FieldDef],
-                             indent: Int)(body: => Doc): Doc = {
-    val prefix = functionPrefix(name.name, genParams, params, typ) + Doc.text(
-      " {"
-    )
+  private def genConstructor(opt: Option[OptionalEncoding])(
+    name: Ident,
+    typ: Doc,
+    genParams: List[GenericDef],
+    params: List[FieldDef],
+    indent: Int
+  )(body: => Doc): Doc = {
+    val prefix = functionPrefix(opt)(name.name, genParams, params, typ) + Doc
+      .text(" {")
     exported(body.tightBracketBy(prefix, functionPostfix, indent))
   }
 
   override def handleNewtype(n: Newtype) =
     for {
       indent <- getIndent
+      opt <- getOptionalEncoding
       typ = createTypeRef(n.ref)
     } yield
       List(
-        genConstructor(
+        genConstructor(opt)(
           n.name,
           typ,
           n.parameters,
@@ -36,13 +38,15 @@ object Constructors extends Feature with GenHelpers {
         }
       )
 
-  private def genObjectConstructor(name: Ident,
-                                   typ: Doc,
-                                   genParams: List[GenericDef],
-                                   paramsPrefixes: List[Doc],
-                                   params: List[FieldDef],
-                                   indent: Int): Doc =
-    genConstructor(name, typ, genParams, params, indent) {
+  private def genObjectConstructor(opt: Option[OptionalEncoding])(
+    name: Ident,
+    typ: Doc,
+    genParams: List[GenericDef],
+    paramsPrefixes: List[Doc],
+    params: List[FieldDef],
+    indent: Int
+  ): Doc =
+    genConstructor(opt)(name, typ, genParams, params, indent) {
       Doc
         .intercalate(
           Doc.char(',') + line,
@@ -54,10 +58,11 @@ object Constructors extends Feature with GenHelpers {
   override def handleRecord(r: Record) =
     for {
       indent <- getIndent
+      opt <- getOptionalEncoding
       typ = createTypeRef(r.ref)
     } yield
       List(
-        genObjectConstructor(
+        genObjectConstructor(opt)(
           r.name,
           typ,
           r.parameters,
@@ -67,14 +72,13 @@ object Constructors extends Feature with GenHelpers {
         )
       )
 
-  private def genADTConstructor(a: ADT,
-                                c: ADTConstructor,
-                                tagName: String,
-                                indent: Int): Doc = {
+  private def genADTConstructor(
+    opt: Option[OptionalEncoding]
+  )(a: ADT, c: ADTConstructor, tagName: String, indent: Int): Doc = {
     val typ = createTypeRef(a.ref)
     val consTyp = createTypeExpr(c.name.name, c.parameters)
     val adtTag = Doc.text(s"""$tagName: """") + consTyp + Doc.char('"')
-    genObjectConstructor(
+    genObjectConstructor(opt)(
       c.name,
       typ,
       c.parameters,
@@ -87,7 +91,9 @@ object Constructors extends Feature with GenHelpers {
   override def handleADT(a: ADT) =
     for {
       indent <- getIndent
+      opt <- getOptionalEncoding
       tagName <- getAdtTag
-    } yield a.constructors.toList.map(genADTConstructor(a, _, tagName, indent))
+    } yield
+      a.constructors.toList.map(genADTConstructor(opt)(a, _, tagName, indent))
 
 }

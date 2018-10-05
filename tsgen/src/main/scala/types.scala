@@ -6,7 +6,11 @@ sealed trait Feature
 
 object Feature {
 
-  case object IoTsTypes extends Feature
+  final case class IoTsTypes(iotsNs: String = "",
+                             typePrefix: String = "",
+                             typeEnding: String = "Type",
+                             typeMapping: IotsMapping = StdIotsMappings)
+      extends Feature
   case object Constructors extends Feature
 
 }
