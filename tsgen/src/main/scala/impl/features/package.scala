@@ -8,7 +8,7 @@ import sculptor.tsgen.{Feature => FeatureConfig}
 package object features {
 
   private val getFeature: FeatureConfig => Feature = {
-    case FeatureConfig.IoTsTypes => IoTsTypes
+    case v: FeatureConfig.IoTsTypes => IoTsTypes(v)
     case FeatureConfig.Constructors => Constructors
   }
 

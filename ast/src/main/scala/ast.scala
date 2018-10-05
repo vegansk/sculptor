@@ -23,16 +23,22 @@ object FQName {
 }
 
 /** Types references ADT, used in type definitions */
-sealed trait TypeRef
+sealed trait TypeRef {
+  def asString: String
+}
 
 object TypeRef {
 
   /** Specialized type reference */
   final case class Specialized(name: FQName, parameters: List[TypeRef] = Nil)
-      extends TypeRef
+      extends TypeRef {
+    def asString = name.mkString(".")
+  }
 
   /** Generic type reference */
-  final case class Generic(name: Ident) extends TypeRef
+  final case class Generic(name: Ident) extends TypeRef {
+    def asString = name.name
+  }
 
   def spec(name: String, parameters: TypeRef*): Specialized =
     Specialized(FQName.of(name), parameters.toList)
@@ -63,6 +69,11 @@ sealed trait TypeDef {
   def name: Ident
   def comment: Option[String]
   def ref: TypeRef
+  def isNewtype: Boolean = false
+  def isAlias: Boolean = false
+  def isRecord: Boolean = false
+  def isEnum: Boolean = false
+  def isADT: Boolean = false
 }
 
 object TypeDef {
@@ -95,6 +106,8 @@ final case class Newtype(name: Ident,
     extends TypeDef {
   lazy val ref: TypeRef =
     TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+
+  override def isNewtype = true
 }
 
 /** Alias */
@@ -105,6 +118,8 @@ final case class Alias(name: Ident,
     extends TypeDef {
   lazy val ref: TypeRef =
     TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+
+  override def isAlias = true
 }
 
 /** Field definition */
@@ -122,6 +137,8 @@ final case class Record(name: Ident,
     extends TypeDef {
   lazy val ref: TypeRef =
     TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+
+  override def isRecord = true
 }
 
 /** Enumeration value */
@@ -137,6 +154,8 @@ final case class Enum(name: Ident,
                       comment: Option[String] = None)
     extends TypeDef {
   lazy val ref: TypeRef = TypeRef.Specialized(FQName(name))
+
+  override def isEnum = true
 }
 
 /** ADT constructor definition */
@@ -144,7 +163,10 @@ final case class ADTConstructor(name: Ident,
                                 parameters: List[GenericDef],
                                 fields: List[FieldDef],
                                 comment: Option[String] = None,
-                                tag: Option[String] = None)
+                                tag: Option[String] = None) {
+  def ref: TypeRef =
+    TypeRef.Specialized(FQName.of(name.name), parameters.map(_.`type`))
+}
 
 /** ADT definition */
 final case class ADT(name: Ident,
@@ -155,6 +177,8 @@ final case class ADT(name: Ident,
     extends TypeDef {
   lazy val ref: TypeRef =
     TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+
+  override def isADT = true
 }
 
 /** Types package */

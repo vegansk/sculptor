@@ -24,11 +24,12 @@ object PackageGen extends GenHelpers {
     for {
       types <- p.types.traverse(typeDoc)
       prefix <- getPrefixCode
+      features <- features.collectFeatures(_.handlePackage(p))
     } yield
       Doc.intercalate(
         packageSep,
-        prefix.toList
-          ++ types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
+        prefix.toList ++ features ++
+          types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
       )
 
 }

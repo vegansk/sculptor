@@ -2,205 +2,233 @@ package sculptor.tsgen
 package impl
 package features
 
-// import org.typelevel.paiges._
-// import cats.implicits._
+import org.typelevel.paiges._
+import cats.data.NonEmptyList
+import cats.implicits._
 
-// import sculptor.ast._
+import sculptor.ast._
+import sculptor.tsgen.{Feature => TsFeature, _}
 
-object IoTsTypes extends Feature with GenHelpers {
-  /*
-  private def genNames(encType: String,
-                       params0: List[GenericDef],
-                       objEncoder: Boolean) = {
-    val params1 = params0.map(p => Doc.text(p.`type`.name.name))
-    val params = createParameters0(params1)
-    val paramsEnc = createParameters0(params1, Doc.text(":Encoder"))
-    val paramsDec = createParameters0(params1, Doc.text(":Decoder"))
-    val (enc0, dec0) = params0.toNel.fold(
-      (
-        Doc.text(s"implicit val ${encType}Encoder"),
-        Doc.text(s"implicit val ${encType}Decoder")
+final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
+    extends Feature
+    with GenHelpers {
+
+  private val iots = if (cfg.iotsNs.isEmpty) "" else s"${cfg.iotsNs}."
+
+  private val genTypeConstName: String => Doc = n =>
+    Doc.text(s"${cfg.typePrefix}${n}${cfg.typeEnding}")
+
+  private def genIotsTypeRef(ref: TypeRef): Doc =
+    cfg
+      .typeMapping(cfg)
+      .lift(ref)
+      .map(Doc.text)
+      .getOrElse(
+        TypeRef.cata(
+          s => {
+            val c = genTypeConstName(s.asString)
+            c + (s.parameters match {
+              case Nil => Doc.empty
+              case l =>
+                Doc.char('(') + Doc.intercalate(
+                  Doc.text(", "),
+                  l.map(genIotsTypeRef)
+                ) + Doc.char(')')
+            })
+          },
+          g => genTypeConstName(g.asString)
+        )(ref)
       )
-    ) { l =>
-      (
-        Doc.text(s"implicit def ${encType}Encoder") + paramsEnc,
-        Doc.text(s"implicit def ${encType}Decoder") + paramsDec
-      )
-    }
-    (
-      enc0 + Doc.text(
-        s""": ${if (objEncoder) "ObjectEncoder" else "Encoder"}[$encType"""
-      ) + params + Doc.char(']'),
-      dec0 + Doc.text(s": Decoder[$encType") + params + Doc.char(']')
-    )
-  }
 
-  override def handleNewtype(n: Newtype) = {
-    val (enc, dec) = genNames(n.name.name, n.parameters, false)
-    val valType = createTypeRef(n.baseType)
-    ok(
-      List(
-        enc + Doc.text(" = Encoder[") + valType + Doc
-          .text("].contramap(_.value)"),
-        dec + Doc.text(" = Decoder[") + valType + Doc
-          .text(s"].map(${n.name.name}(_))")
-      )
-    )
-  }
-
-  override def handleEnum(e: Enum) = {
-    val name = e.name.name
-    val (enc, dec) = genNames(name, Nil, false)
-    ok(
-      List(
-        enc + Doc.text(s" = Encoder[String].contramap($name.asString(_))"),
-        dec + Doc.text(
-          s""" = Decoder[String].emap(v => $name.fromString.lift(v).toRight("Invalid enum value $name." + v))"""
-        )
-      )
-    )
-  }
-
-  private lazy val tagName: String =
-    if (cfg.adtTag.isEmpty) "__tag" else cfg.adtTag
-
-  private def genRecordEncoderBody(objName: String,
-                                   tag0: Option[String],
-                                   fields: List[FieldDef],
-                                   indent: Int): Doc = {
-    val prefix = Doc.text("JsonObject(")
-    val postfix = caseClassPostfix
-    val tag = tag0.toList.map(t => Doc.text(s""""${tagName}" := "$t""""))
-    Doc
-      .intercalate(
-        Doc.char(',') + line,
-        tag ++
-          fields.map(
-            f => Doc.text(s""""${f.name.name}" := $objName.${f.name.name}""")
-          )
-      )
-      .tightBracketBy(prefix, postfix, indent)
-  }
-
-  private def genRecordDecoderBody(typeName: String,
-                                   tag: Option[String],
-                                   params0: List[GenericDef],
-                                   cursorName: String,
-                                   fields: List[FieldDef],
-                                   indent: Int): Doc = {
-    val prefix = Doc.text("for {")
-    val params = createParameters(params0)
-    val postfix = objectPostfix +
-      Doc
-        .intercalate(
-          Doc.char(',') + Doc.lineOrSpace,
-          fields.map(f => Doc.text(f.name.name))
-        )
-        .tightBracketBy(
-          Doc.text(s" yield $typeName") + params + Doc.text("("),
-          caseClassPostfix,
-          indent
-        )
-    Doc
-      .intercalate(
-        line,
-        fields.map(
+  private def genIotsGenericPrefix(params: NonEmptyList[GenericDef]): Doc = {
+    val l = params.toList
+    Doc.char('<') +
+      Doc.intercalate(Doc.char(','), l.map(f => Doc.text(f.`type`.name.name))) +
+      Doc.text(">(") +
+      Doc.intercalate(
+        Doc.text(", "),
+        l.map(
           f =>
-            Doc.text(
-              s"""${f.name.name} <- $cursorName.downField("${f.name.name}").as["""
-            ) + createTypeRef(f.`type`) + Doc.char(']')
+            genIotsTypeRef(f.`type`) + Doc
+              .text(s": ${iots}Type<${f.`type`.name.name}>")
         )
+      ) +
+      Doc.text(") => ")
+  }
+
+  private def genTypeConstType(ref0: TypeRef,
+                               tag: Option[String],
+                               params: List[GenericDef]): Doc = {
+    val typePrefix = tag.fold("Type<")(t => s"""Tagged<"$t", """)
+    val ref = Doc.text(s"${iots}${typePrefix}") + createTypeRef(ref0) + Doc
+      .char('>')
+    params.toNel.fold(ref)(l => genIotsGenericPrefix(l) + ref)
+  }
+
+  private def genTypeConstPrefix(name: Ident,
+                                 tag: Option[String],
+                                 parameters: List[GenericDef],
+                                 ref: TypeRef): Doc =
+    exported(Doc.text("const ")) +
+      genTypeConstName(name.name) +
+      Doc.text(": ") + genTypeConstType(ref, tag, parameters) +
+      Doc.text(" = ") +
+      parameters.toNel.fold(Doc.empty)(genIotsGenericPrefix)
+
+  private def genAliasOrNewtype(name: Ident,
+                                parameters: List[GenericDef],
+                                ref: TypeRef,
+                                baseType: TypeRef): Doc =
+    genTypeConstPrefix(name, None, parameters, ref) +
+      Doc.text("<any>") +
+      genIotsTypeRef(baseType)
+
+  override def handleAlias(a: Alias) = ok(
+    List(genAliasOrNewtype(a.name, a.parameters, a.ref, a.baseType))
+  )
+
+  override def handleNewtype(n: Newtype) = ok(
+    List(genAliasOrNewtype(n.name, n.parameters, n.ref, n.baseType))
+  )
+
+  private def processOptionalRequiredFields[A](opt: Option[OptionalEncoding])(
+    required: List[FieldDef] => A,
+    optional: List[FieldDef] => A
+  )(l: List[FieldDef]): (A, A) = {
+    val (reql, optl) = l.map(processField(opt)).partition(!_._1)
+    (required(reql.map(_._2)), optional(optl.map(_._2)))
+  }
+
+  override def handlePackage(p: Package) = ok(
+    p.types
+      .find(t => t.isRecord || t.isADT)
+      .map { _ =>
+        Doc.text(
+          s"""|const typeImpl = <R extends ${iots}Props, O extends ${iots}Props>(r: R, o: O, name: string) =>
+            |  ${iots}intersection([${iots}interface(r), ${iots}partial(o)], name)""".stripMargin
+        )
+      }
+      .toList ++ p.types
+      .find(_.isEnum)
+      .map { _ =>
+        Doc.text(s"""|const getStringEnumValues = (o: object): string[] =>
+              |  Object.keys(o).map(_ => (o as { [n: string]: any })[_]).filter(v => typeof v === "string")
+              |
+              |const stringEnumImpl = <E>(e: object, name: string): ${iots}Type<E> => {
+              |  const values = getStringEnumValues(e)
+              |  return new ${iots}Type<E>(
+              |    name,
+              |    (v): v is E => values.indexOf(v as string) >= 0,
+              |    (v, c) => values.indexOf(v as string) >= 0 ? ${iots}success<E>(v as E) : ${iots}failure<E>(v, c),
+              |    ${iots}identity
+              |  )
+              |}""".stripMargin)
+      }
+      .toList
+  )
+
+  private def genFields(indent: Int,
+                        append: List[Doc] = Nil)(l: List[FieldDef]): Doc =
+    Doc
+      .intercalate(
+        Doc.char(',') + Doc.lineOrSpace,
+        append ++ l.toList
+          .map(f => Doc.text(s"${f.name.name}: ") + genIotsTypeRef(f.`type`))
       )
-      .tightBracketBy(prefix, postfix, indent)
+      .tightBracketBy(Doc.char('{'), Doc.char('}'), indent)
+
+  private def genRecordTypeConstImpl(name: Ident,
+                                     reqFields: Doc,
+                                     optFields: Doc,
+                                     indent: Int): Doc = {
+    val prefix = Doc.text("typeImpl(")
+    Doc
+      .intercalate(
+        Doc.char(',') + Doc.lineOrSpace,
+        List(reqFields, optFields, Doc.text(s""""${name.name}""""))
+      )
+      .tightBracketBy(prefix, Doc.char(')'), indent)
+  }
+
+  private def genRecordTypeConst(opt: Option[OptionalEncoding], indent: Int)(
+    name: Ident,
+    tag: Option[String],
+    parameters: List[GenericDef],
+    fieldsPrefix: List[Doc],
+    fields: List[FieldDef],
+    ref: TypeRef
+  ): Doc = {
+    val (reqf, optf) = processOptionalRequiredFields(opt)(
+      genFields(indent, fieldsPrefix),
+      genFields(indent)
+    )(fields)
+    genTypeConstPrefix(name, tag, parameters, ref) + genRecordTypeConstImpl(
+      name,
+      reqf,
+      optf,
+      indent
+    )
   }
 
   override def handleRecord(r: Record) =
     for {
+      opt <- getOptionalEncoding
       indent <- getIndent
-      name = r.name.name
-      typ = createTypeRef(r.ref)
-      (enc, dec) = genNames(name, r.parameters, true)
-      encPrefix = enc + Doc.text(s" = ObjectEncoder.instance[") + typ + Doc
-        .text("] { v =>")
-      encoder = genRecordEncoderBody("v", None, r.fields.toList, indent)
-        .tightBracketBy(encPrefix, objectPostfix, indent)
-      decPrefix = dec + Doc.text(s" = Decoder.instance[") + typ + Doc.text(
-        "] { c =>"
-      )
-      decoder = genRecordDecoderBody(
-        name,
-        None,
-        r.parameters,
-        "c",
-        r.fields.toList,
-        indent
-      ).tightBracketBy(decPrefix, objectPostfix, indent)
-      result = List(encoder, decoder)
-    } yield result
-
-  private def genADTEncoderBody(a: ADT, indent: Int) = {
-    Doc.intercalate(line, a.constructors.toList.map { c =>
-      val tagValue = c.tag.getOrElse(c.name.name)
-      val objName = if (c.fields.isEmpty) "_" else "v"
-      val consRef = createTypeExpr(c.name.name, c.parameters)
-      Doc.text(s"case $objName:") + consRef + Doc.text(" => ") +
-        genRecordEncoderBody(objName, tagValue.some, c.fields, indent)
-    })
-  }
-
-  private def genADTDecoderBody(a: ADT, cursorName: String, indent: Int) = {
-    val prefix =
-      Doc.text(s"""$cursorName.downField("$tagName").as[String].flatMap {""")
-    val postfix = objectPostfix
-    Doc
-      .intercalate(
-        line,
-        a.constructors.toList.map { c =>
-          val tagValue = c.tag.getOrElse(c.name.name)
-          val consRef = createTypeExpr(c.name.name, c.parameters)
-          val prefix0 = Doc.text(s"""case "$tagValue" => """)
-          if (c.fields.isEmpty)
-            prefix0 + Doc.text(s"Right(") + consRef + Doc.text("())")
-          else
-            prefix0 + genRecordDecoderBody(
-              c.name.name,
-              tagValue.some,
-              c.parameters,
-              cursorName,
-              c.fields,
-              indent
-            )
-        } ++ List(
-          Doc.text(
-            s"""case tag => Left(DecodingFailure("Invalid ADT tag value ${a.name.name}." + tag, $cursorName.history))"""
-          )
+    } yield
+      List(
+        genRecordTypeConst(opt, indent)(
+          r.name,
+          None,
+          r.parameters,
+          Nil,
+          r.fields.toList,
+          r.ref
         )
       )
-      .tightBracketBy(prefix, postfix, indent)
+
+  private def genADTTaggedUnionImpl(indent: Int,
+                                    tagName: String)(a: ADT): Doc = {
+    val prefix = Doc.text(s"""${iots}taggedUnion("${tagName}", [""")
+    Doc
+      .intercalate(
+        Doc.char(',') + Doc.lineOrSpace,
+        a.constructors.toList.map(c => genIotsTypeRef(c.ref))
+      )
+      .tightBracketBy(prefix, Doc.text(s"""], "${a.name.name}")"""), indent)
+  }
+
+  private def genADTTypeConst(indent: Int, tagName: String)(a: ADT): Doc = {
+    genTypeConstPrefix(a.name, None, a.parameters, a.ref) +
+      genADTTaggedUnionImpl(indent, tagName)(a)
   }
 
   override def handleADT(a: ADT) =
     for {
+      opt <- getOptionalEncoding
       indent <- getIndent
-      name = a.name.name
-      typ = createTypeRef(a.ref)
-      (enc, dec) = genNames(name, a.parameters, true)
-      encPrefix = enc + Doc.text(s" = ObjectEncoder.instance[") + typ + Doc
-        .text("] {")
-      encoder = genADTEncoderBody(a, indent).tightBracketBy(
-        encPrefix,
-        objectPostfix,
-        indent
+      tagName <- getAdtTag
+      cons = a.constructors.toList.map { c =>
+        val ref = c.ref
+        val tag = Doc.text(s"""$tagName: t.literal("""") + createTypeRef(ref) + Doc
+          .text("""")""")
+        genRecordTypeConst(opt, indent)(
+          c.name,
+          tagName.some,
+          a.parameters,
+          List(tag),
+          c.fields,
+          ref
+        )
+      }
+    } yield cons ++ List(genADTTypeConst(indent, tagName)(a))
+
+  override def handleEnum(e: Enum) =
+    for {
+      indent <- getIndent
+      name = e.name.name
+    } yield
+      List(
+        genTypeConstPrefix(e.name, None, Nil, e.ref) +
+          Doc.text(s"""stringEnumImpl<$name>($name, "$name")""")
       )
-      decPrefix = dec + Doc.text(s" = Decoder.instance[") + typ + Doc.text(
-        "] { c =>"
-      )
-      decoder = genADTDecoderBody(a, "c", indent).tightBracketBy(
-        decPrefix,
-        objectPostfix,
-        indent
-      )
-      result = List(encoder, decoder)
-    } yield result
- */
 }

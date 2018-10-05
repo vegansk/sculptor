@@ -38,6 +38,17 @@ object SculptorPlugin extends AutoPlugin {
       type Feature = tsgen.Feature
       @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
       val Feature = tsgen.Feature
+
+      type OptionalEncoding = tsgen.OptionalEncoding
+      @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+      val OptionalEncoding = tsgen.OptionalEncoding
+
+      type IotsName = tsgen.IotsName
+
+      type IotsMapping = tsgen.IotsMapping
+
+      @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+      val StdIotsMappings = tsgen.StdIotsMappings
     }
 
     final case class TsgenConfig(pkg: ast.Package,
