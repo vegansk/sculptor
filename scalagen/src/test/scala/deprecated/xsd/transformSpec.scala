@@ -7,7 +7,7 @@ import cats.implicits._
 
 object transformSpec extends mutable.Specification
     with ScalaCheck
-    with sculptor.scalagen.testing.CatsEqMatcher {
+    with sculptor.scalagen.testing.Helpers {
 
   "scala module" should {
 

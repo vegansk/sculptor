@@ -3,66 +3,52 @@ package impl
 
 import cats.implicits._
 import org.specs2._
-import org.typelevel.paiges._
 
 object RecordGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
-  import testing.paiges._
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "RecordGen" should {
 
     "generate simple records" >> {
-
       val r = record("Record")
         .field("id", "Int".spec)
         .field("nameO", "Option".spec("String".spec))
         .build
-
-      run(RecordGen.generate(r), cfg) must beEqvTo(
-        Doc.text("final case class Record(id: Int, nameO: Option[String])").asRight
+      runGen(RecordGen.generate(r), cfg) must beEqvTo(
+        "final case class Record(id: Int, nameO: Option[String])".asRight
       )
     }
 
+    val rec = record("Record")
+    .comment("The Record")
+    .generic("A".gen)
+      .field("id", "Int".spec, "The id")
+      .field("nameO", "Option".spec("A".gen), "The name")
+      .build
+
     "generate generic records" >> {
 
-      val r = record("Record").generic("A".gen)
-        .field("id", "Int".spec)
-        .field("nameO", "Option".spec("A".gen))
-        .build
-
-      run(RecordGen.generate(r), cfg) must beEqvTo(
-        Doc.text("final case class Record[A](id: Int, nameO: Option[A])").asRight
+      runGen(RecordGen.generate(rec), cfg) must beEqvTo(
+        "final case class Record[A](id: Int, nameO: Option[A])".asRight
       )
     }
 
     "generate Eq typeclass" >> {
-      val r = record("Record").generic("A".gen)
-        .field("id", "Int".spec)
-        .field("nameO", "Option".spec("A".gen))
-        .build
-
-      run(RecordGen.generate(r), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
-        Doc.text("""|final case class Record[A](id: Int, nameO: Option[A])
-                    |
-                    |object Record {
-                    |  implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals
-                    |}""".stripMargin).asRight
+      runGen(RecordGen.generate(rec), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+        """|final case class Record[A](id: Int, nameO: Option[A])
+           |
+           |object Record {implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals}""".stripMargin.asRight
       )
     }
 
     "generate circe codecs" >> {
-      val r = record("Record").generic("A".gen)
-        .field("id", "Int".spec)
-        .field("nameO", "Option".spec("A".gen))
-        .build
-
-      run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+      runGen(RecordGen.generate(rec), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
            |object Record {
@@ -80,6 +66,14 @@ object RecordGenSpec extends mutable.Specification
            |    } yield Record[A](id, nameO)
            |  }
            |}""".stripMargin.asRight
+      )
+    }
+
+    "generate comments" >> {
+      runGen(RecordGen.generate(rec), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Record Record[A]: The Record
+           |
+           |final case class Record[A](id: Int /* The id */, nameO: Option[A] /* The name */)""".stripMargin.asRight
       )
     }
   }

@@ -2,6 +2,7 @@ import Sculptor._
 
 lazy val ast = Sculptor.ast
 lazy val xsd = Sculptor.xsd
+lazy val common = Sculptor.common
 lazy val tsgen = Sculptor.tsgen
 lazy val sbtTsgen = Sculptor.sbtTsgen
 lazy val scalagen = Sculptor.scalagen

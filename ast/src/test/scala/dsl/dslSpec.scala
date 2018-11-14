@@ -117,7 +117,8 @@ object dslSpec extends mutable.Specification {
           simpleNewType.build, genericNewType.build,
           simpleAlias.build, genericAlias.build,
           rec.build, en.build, maybeAdt.build
-        )
+        ),
+        None
       )
     }
 

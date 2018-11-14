@@ -3,26 +3,24 @@ package impl
 
 import org.specs2._
 import cats.implicits._
-import org.typelevel.paiges._
 
 object AliasGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
-  import testing.paiges._
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "AliasGen" should {
 
+    val myInt = alias("MyInt").baseType(TypeRef.spec("Int")).comment("The Int type alias").build
+
     "handle simple aliases" >> {
 
-      val a = alias("MyInt").baseType(TypeRef.spec("Int")).build
-
-      run(AliasGen.generate(a), cfg) must beEqvTo(
-        Doc.text("type MyInt = Int").asRight
+      runGen(AliasGen.generate(myInt), cfg) must beEqvTo(
+        "type MyInt = Int".asRight
       )
 
     }
@@ -31,8 +29,8 @@ object AliasGenSpec extends mutable.Specification
 
       val a = alias("Result").generic(TypeRef.gen("A")).baseType(TypeRef.spec("Either", TypeRef.spec("String"), TypeRef.gen("A"))).build
 
-      run(AliasGen.generate(a), cfg) must beEqvTo(
-        Doc.text("type Result[A] = Either[String, A]").asRight
+      runGen(AliasGen.generate(a), cfg) must beEqvTo(
+        "type Result[A] = Either[String, A]".asRight
       )
     }
 
@@ -40,8 +38,16 @@ object AliasGenSpec extends mutable.Specification
 
       val a = alias("PetsList").generic(GenericDef.of("P", TypeRef.spec("Pet"), TypeRef.spec("FourLegged"))).baseType(TypeRef.spec("List", TypeRef.gen("P"))).build
 
-      run(AliasGen.generate(a), cfg) must beEqvTo(
-        Doc.text("type PetsList[P <: Pet with FourLegged] = List[P]").asRight
+      runGen(AliasGen.generate(a), cfg) must beEqvTo(
+        "type PetsList[P <: Pet with FourLegged] = List[P]".asRight
+      )
+    }
+
+    "generate comments" >> {
+      runGen(AliasGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Alias MyInt: The Int type alias
+           |
+           |type MyInt = Int""".stripMargin.asRight
       )
     }
 

@@ -23,7 +23,8 @@ final case class Config(tabSize: Int = 2,
                         lineWidth: Int = 120,
                         adtTag: String = "",
                         prefixCode: String = "",
-                        optionalEncoding: OptionalEncoding = OptionalEncoding())
+                        optionalEncoding: OptionalEncoding = OptionalEncoding(),
+                        generateComments: Boolean = true)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -36,4 +37,6 @@ object Config {
   def optionalEncoding(c: Config): Option[OptionalEncoding] =
     Option(c.optionalEncoding)
       .filter(c => !c.optionalType.isEmpty || c.allFieldsOptional)
+  def generateComments(c: Config): Boolean =
+    c.generateComments
 }

@@ -12,6 +12,8 @@ object NewtypeGen extends GenHelpers {
 
       typ = createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
 
+      comment <- getGenerateComments.map(doc(_)(typeComment(n, typ)))
+
       valueType = createTypeRef(n.baseType)
 
       prefix = Doc.text("type ") + typ + Doc.text(" = ") + valueType + Doc
@@ -23,5 +25,6 @@ object NewtypeGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleNewtype(n))
 
-    } yield Doc.intercalate(dblLine, newtype :: features)
+    } yield
+      Doc.intercalate(dblLine, comment.toList ++ List(newtype) ++ features)
 }

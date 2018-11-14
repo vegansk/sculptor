@@ -5,8 +5,9 @@ import org.typelevel.paiges._
 import cats.implicits._
 
 import sculptor.ast._
+import sculptor.common._
 
-trait GenHelpers {
+trait GenHelpers extends CommonGenHelpers {
 
   def createTypeRef(r: TypeRef): Doc = {
     def generic(g: TypeRef.Generic) =
@@ -51,8 +52,12 @@ trait GenHelpers {
   def createField0(name: Ident, `type`: TypeRef): Doc =
     Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
 
-  def createField(f: FieldDef): Doc =
-    createField0(f.name, f.`type`)
+  def createField(withComment: Boolean)(f: FieldDef): Doc =
+    createField0(f.name, f.`type`) + Option(withComment)
+      .filter(identity)
+      .flatMap(_ => f.comment)
+      .map(c => Doc.text(s" /* $c */"))
+      .getOrElse(Doc.empty)
 
   def sealedTrait(typ: Doc): Doc =
     Doc.text("sealed trait ") + typ
@@ -82,5 +87,4 @@ trait GenHelpers {
 
   def adtSealedTrait(typ: Doc): Doc =
     extend(sealedTrait((typ)), Doc.text("Product with Serializable"))
-
 }

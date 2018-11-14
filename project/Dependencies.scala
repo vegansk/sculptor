@@ -46,6 +46,11 @@ object Dependencies {
     pprint
   ).map(_ % "test")
 
+  val common = Seq(
+    cats,
+    paigesCore
+  )
+
   val tsgen = Seq(
     scalaXml,
     scalaGraphCore,

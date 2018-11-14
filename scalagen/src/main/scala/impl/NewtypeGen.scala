@@ -13,6 +13,12 @@ object NewtypeGen extends GenHelpers {
 
       typ = createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
 
+      genComments <- getGenerateComments
+
+      comment = Option(genComments)
+        .filter(identity)
+        .map(_ => typeComment(n, typ))
+
       valueType = createTypeRef(n.baseType)
 
       prefix = Doc.text("final case class ") + typ + Doc.char('(')
@@ -23,14 +29,11 @@ object NewtypeGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleNewtype(n))
 
-      result = features.toNel.fold(newtype) { f =>
+      result = comment.toList ++ List(newtype) ++ features.toNel.map { f =>
         val prefix = objectPrefix(createTypeExpr(n.name.name, Nil))
-        val companion = Doc
+        Doc
           .intercalate(dblLine, f.toList)
           .tightBracketBy(prefix, objectPostfix, indent)
-
-        Doc.intercalate(dblLine, List(newtype, companion))
-      }
-
-    } yield result
+      }.toList
+    } yield Doc.intercalate(dblLine, result)
 }

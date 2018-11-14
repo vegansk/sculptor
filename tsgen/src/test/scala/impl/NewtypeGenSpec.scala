@@ -11,20 +11,19 @@ object NewtypeGenSpec extends mutable.Specification
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "NewtypeGen" should {
 
+    val myInt = newtype("MyInt")
+      .baseType("number".spec)
+      .comment("The Int")
+      .build
+
     "handle simple aliases" >> {
-
-      val n = newtype("MyInt")
-        .baseType("number".spec)
-        .build
-
-      run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
+      runGen(NewtypeGen.generate(myInt), cfg) must beEqvTo(
         """export type MyInt = number & {__brand: "MyInt"}""".asRight
       )
-
     }
 
     "handle generic aliases" >> {
@@ -34,7 +33,7 @@ object NewtypeGenSpec extends mutable.Specification
         .baseType("Either".spec("string".spec, "A".gen))
         .build
 
-      run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
+      runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
         """export type Result<A> = Either<string, A> & {__brand: "Result<A>"}""".asRight
       )
     }
@@ -46,10 +45,17 @@ object NewtypeGenSpec extends mutable.Specification
         .baseType("Array".spec("P".gen))
         .build
 
-      run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
+      runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
         """export type PetsList<P extends Pet & FourLegged> = Array<P> & {__brand: "PetsList<P extends Pet & FourLegged>"}""".asRight
       )
     }
 
+    "generate comments" >> {
+      runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Newtype MyInt: The Int
+           |
+           |export type MyInt = number & {__brand: "MyInt"}""".stripMargin.asRight
+      )
+    }
   }
 }

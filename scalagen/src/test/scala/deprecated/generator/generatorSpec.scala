@@ -8,7 +8,7 @@ import org.typelevel.paiges._
 
 object generatorSpec extends mutable.Specification
     with ScalaCheck
-    with sculptor.scalagen.testing.CatsEqMatcher {
+    with sculptor.scalagen.testing.Helpers {
 
   "scala generator" should {
 

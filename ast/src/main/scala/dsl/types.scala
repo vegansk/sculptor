@@ -84,7 +84,7 @@ trait RecordBuilder[State <: RecordBuilderState] {
   def field(
     name: String,
     typeRef: TypeRef,
-    comment: Option[String] = None,
+    comment: String = "",
     validator: Option[Validator] = None
   ): RecordBuilder[RecordBuilderState.Complete]
   def fields(
@@ -141,7 +141,7 @@ trait ADTConstructorBuilder {
   def noGeneric: ADTConstructorBuilder
   def field(name: String,
             typeRef: TypeRef,
-            comment: Option[String] = None,
+            comment: String = "",
             validator: Option[Validator] = None): ADTConstructorBuilder
   def fields(
     field: FieldBuilder[FieldBuilderState.Complete],
@@ -187,6 +187,9 @@ trait PackageBuilder {
   def types(t: Builder[_ <: TypeDef],
             rest: Builder[_ <: TypeDef]*): PackageBuilder
   def typeDefs(t: TypeDef, rest: TypeDef*): PackageBuilder
+  def typ(t: Builder[_ <: TypeDef]): PackageBuilder
+  def typeDef(t: TypeDef): PackageBuilder
+  def comment(c: String): PackageBuilder
 
   def build: Package
 }

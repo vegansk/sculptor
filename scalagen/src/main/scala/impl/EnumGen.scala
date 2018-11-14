@@ -7,8 +7,14 @@ import sculptor.ast._
 
 object EnumGen extends GenHelpers {
 
-  def generateEnumValue(e: EnumValue, enumType: Doc): Result[Doc] =
-    ok(extend(caseObject(Doc.text(e.name.name)), enumType))
+  def generateEnumValue(genComment: Boolean)(e: EnumValue,
+                                             enumType: Doc): List[Doc] =
+    Option(genComment)
+      .filter(identity)
+      .flatMap(_ => e.comment)
+      .map(c => Doc.text(s"// $c"))
+      .toList ++
+      List(extend(caseObject(Doc.text(e.name.name)), enumType))
 
   def generateAsString(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
     val prefix = Doc.text("val asString: ") + enumType + Doc.text(
@@ -45,9 +51,13 @@ object EnumGen extends GenHelpers {
 
   def generateEnumBody(e: Enum, enumType: Doc, indent: Int): Result[Doc] =
     for {
-      values <- e.values.toList
-        .traverse(generateEnumValue(_, enumType))
-        .map(Doc.intercalate(line, _))
+      genComments <- getGenerateComments
+      values = Doc.intercalate(
+        line,
+        e.values.toList
+          .traverse(generateEnumValue(genComments)(_, enumType))
+          .flatten
+      )
 
       asString <- generateAsString(e, enumType, indent)
 
@@ -61,6 +71,8 @@ object EnumGen extends GenHelpers {
 
       typ = createTypeExpr(e.name.name, Nil)
 
+      comment <- getGenerateComments.map(doc(_)(typeComment(e, typ)))
+
       trait_ = adtSealedTrait(typ)
 
       enumPrefix = objectPrefix(typ)
@@ -73,6 +85,6 @@ object EnumGen extends GenHelpers {
         .intercalate(dblLine, body :: features)
         .tightBracketBy(enumPrefix, objectPostfix, indent)
 
-    } yield Doc.intercalate(dblLine, List(trait_, enum_))
+    } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, enum_))
 
 }

@@ -3,28 +3,27 @@ package impl
 
 import org.specs2._
 import cats.implicits._
-import org.typelevel.paiges._
 
 object NewtypeGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
-  import testing.paiges._
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "NewtypeGen" should {
 
+    val myInt = newtype("MyInt")
+      .baseType("Int".spec)
+      .comment("The Int type")
+      .build
+
     "handle simple aliases" >> {
 
-      val n = newtype("MyInt")
-        .baseType("Int".spec)
-        .build
-
-      run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class MyInt(value: Int) extends AnyVal").asRight
+      runGen(NewtypeGen.generate(myInt), cfg) must beEqvTo(
+        "final case class MyInt(value: Int) extends AnyVal".asRight
       )
 
     }
@@ -36,8 +35,8 @@ object NewtypeGenSpec extends mutable.Specification
         .baseType("Either".spec("String".spec, "A".gen))
         .build
 
-      run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class Result[A](value: Either[String, A]) extends AnyVal").asRight
+      runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
+        "final case class Result[A](value: Either[String, A]) extends AnyVal".asRight
       )
     }
 
@@ -48,40 +47,37 @@ object NewtypeGenSpec extends mutable.Specification
         .baseType("List".spec("P".gen))
         .build
 
-      run(NewtypeGen.generate(n), cfg) must beEqvTo(
-        Doc.text("final case class PetsList[P <: Pet with FourLegged](value: List[P]) extends AnyVal").asRight
+      runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
+        "final case class PetsList[P <: Pet with FourLegged](value: List[P]) extends AnyVal".asRight
       )
     }
 
     "generate Eq typeclass" >> {
-      val n = newtype("EqInt")
-        .baseType("Int".spec)
-        .build
-
-      run(NewtypeGen.generate(n), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
-        Doc.text("""|final case class EqInt(value: Int) extends AnyVal
-                    |
-                    |object EqInt {
-                    |  implicit val EqIntEq: Eq[EqInt] = Eq.fromUniversalEquals
-                    |}""".stripMargin).asRight
+      runGen(NewtypeGen.generate(myInt), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+        """|final case class MyInt(value: Int) extends AnyVal
+           |
+           |object MyInt {implicit val MyIntEq: Eq[MyInt] = Eq.fromUniversalEquals}""".stripMargin.asRight
       )
     }
 
     "generate circe codecs" >> {
-      val n = newtype("EqInt")
-        .baseType("Int".spec)
-        .build
-
-      run(NewtypeGen.generate(n).map(_.render(cfg.lineWidth)), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
-        s"""|final case class EqInt(value: Int) extends AnyVal
-            |
-            |object EqInt {
-            |  implicit val EqIntEncoder: Encoder[EqInt] = Encoder[Int].contramap(_.value)
-            |
-            |  implicit val EqIntDecoder: Decoder[EqInt] = Decoder[Int].map(EqInt(_))
-            |}""".stripMargin.asRight
+      runGen(NewtypeGen.generate(myInt), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+        """|final case class MyInt(value: Int) extends AnyVal
+           |
+           |object MyInt {
+           |  implicit val MyIntEncoder: Encoder[MyInt] = Encoder[Int].contramap(_.value)
+           |
+           |  implicit val MyIntDecoder: Decoder[MyInt] = Decoder[Int].map(MyInt(_))
+           |}""".stripMargin.asRight
       )
     }
 
+    "generate comments" >> {
+      runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Newtype MyInt: The Int type
+           |
+           |final case class MyInt(value: Int) extends AnyVal""".stripMargin.asRight
+      )
+    }
   }
 }

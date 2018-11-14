@@ -13,9 +13,15 @@ object RecordGen extends GenHelpers {
 
       optEnc <- getOptionalEncoding
 
+      genComment <- getGenerateComments
+
       typ = createTypeExpr(r.name.name, r.parameters)
 
-      fields = r.fields.toList.map(f => createField(f, optEnc))
+      comment = Option(genComment)
+        .filter(identity)
+        .map(_ => typeComment(r, typ))
+
+      fields = r.fields.toList.map(f => createField(genComment)(f, optEnc))
 
       body = Doc.intercalate(line, fields)
 
@@ -25,6 +31,6 @@ object RecordGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleRecord(r))
 
-    } yield Doc.intercalate(dblLine, record :: features)
+    } yield Doc.intercalate(dblLine, comment.toList ++ List(record) ++ features)
 
 }

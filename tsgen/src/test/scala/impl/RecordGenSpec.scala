@@ -11,17 +11,18 @@ object RecordGenSpec extends mutable.Specification
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "RecordGen" should {
 
     val r = record("Record").generic("A".gen)
-      .field("id", "number".spec)
-      .field("nameO", "Option".spec("A".gen))
+      .comment("The Record")
+      .field("id", "number".spec, "The id")
+      .field("nameO", "Option".spec("A".gen), "The name")
       .build
 
     "generate records" >> {
-      run(RecordGen.generate(r).map(_.render(cfg.lineWidth)), cfg) must beEqvTo(
+      runGen(RecordGen.generate(r), cfg) must beEqvTo(
         """|export interface Record<A> {
            |  id: number
            |  nameO: Option<A>
@@ -52,6 +53,17 @@ object RecordGenSpec extends mutable.Specification
         """|export interface Record<A> {
            |  id?: number
            |  nameO?: A
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "generate comments" >> {
+      runGen(RecordGen.generate(r), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Record Record<A>: The Record
+           |
+           |export interface Record<A> {
+           |  id: number // The id
+           |  nameO: Option<A> // The name
            |}""".stripMargin.asRight
       )
     }

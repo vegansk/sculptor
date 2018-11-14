@@ -3,25 +3,23 @@ package impl
 
 import org.specs2._
 import cats.implicits._
-import org.typelevel.paiges._
 
 object PackageGenSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
-  import testing.paiges._
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "PackageGen" should {
 
-    val p = pkg("test").build
+    val p = pkg("test").comment("Package comment").build
 
     "produce package" >> {
-      run(PackageGen.generate(p), cfg) must beEqvTo(
-        Doc.text("package test").asRight
+      runGen(PackageGen.generate(p), cfg) must beEqvTo(
+        "package test".asRight
       )
     }
 
@@ -29,12 +27,22 @@ object PackageGenSpec extends mutable.Specification
       val prefix = """|/* Comment */
                       |import cats._
                       |""".stripMargin
-      run(PackageGen.generate(p).map(_.render(cfg.lineWidth)), cfg.copy(prefixCode = prefix)) must beEqvTo(
+      runGen(PackageGen.generate(p), cfg.copy(prefixCode = prefix)) must beEqvTo(
         """|package test
            |
            |/* Comment */
            |import cats._
            |""".stripMargin.asRight
+      )
+    }
+
+    "generate comments" >> {
+      runGen(PackageGen.generate(p), cfg.copy(generateComments = true)) must beEqvTo(
+        """|/*
+           |Package comment
+           |*/
+           |
+           |package test""".stripMargin.asRight
       )
     }
 
