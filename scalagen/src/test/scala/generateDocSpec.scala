@@ -6,7 +6,7 @@ import org.typelevel.paiges._
 
 object generateDocSpec extends mutable.Specification
     with ScalaCheck
-    with testing.CatsEqMatcher {
+    with testing.Helpers {
 
   val simpleCfg = Config(tabSize = 2)
 

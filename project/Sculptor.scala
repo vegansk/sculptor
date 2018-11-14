@@ -59,7 +59,7 @@ object Sculptor {
       "-Ywarn-value-discard" // Warn when non-Unit expression results are unused.
     )
 
-    val common: PC = _.settings(
+    val commonSettings: PC = _.settings(
       scalaVersion := Dependencies.Versions.scala212,
       organization := "com.github.vegansk",
       scalacOptions ++= commonOptions,
@@ -85,7 +85,7 @@ object Sculptor {
       addCompilerPlugin(Dependencies.kindProjector)
     )
 
-    val publish: PC = _.settings(
+    val publishSettings: PC = _.settings(
       publishMavenStyle := true,
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
       publishTo := {
@@ -97,47 +97,53 @@ object Sculptor {
       }
     )
 
-    val plugin: PC = _.enablePlugins(SbtPlugin, ScriptedPlugin).settings(
+    val pluginSettings: PC = _.enablePlugins(SbtPlugin, ScriptedPlugin).settings(
       sbtVersion := Dependencies.Versions.sbt,
       scriptedLaunchOpts ++= Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value),
       scriptedBufferLog := false
     )
 
-    val ast: PC = _.configure(common, publish)
+    val ast: PC = _.configure(commonSettings, publishSettings)
       .settings(
         name := "sculptor-ast",
         libraryDependencies ++= Dependencies.ast
       )
 
-    val xsd: PC = _.configure(common, publish)
+    val xsd: PC = _.configure(commonSettings, publishSettings)
       .settings(
         name := "sculptor-xsd",
         libraryDependencies ++= Dependencies.xsd
       )
 
-    val tsgen: PC = _.configure(common, publish)
+    val common: PC = _.configure(commonSettings)
+      .settings(
+        name := "sculptor-common",
+        libraryDependencies ++= Dependencies.common
+      )
+
+    val tsgen: PC = _.configure(commonSettings, publishSettings)
       .settings(
         name := "sculptor-tsgen",
         libraryDependencies ++= Dependencies.tsgen
       )
 
-    val sbtTsgen: PC = _.configure(common, plugin, publish)
+    val sbtTsgen: PC = _.configure(commonSettings, pluginSettings, publishSettings)
       .settings(
         name := "sbt-sculptor-tsgen",
       )
 
-    val scalagen: PC = _.configure(common, publish)
+    val scalagen: PC = _.configure(commonSettings, publishSettings)
       .settings(
         name := "sculptor-scalagen",
         libraryDependencies ++= Dependencies.scalagen
       )
 
-    val sbtScalagen: PC = _.configure(common, plugin, publish)
+    val sbtScalagen: PC = _.configure(commonSettings, pluginSettings, publishSettings)
       .settings(
         name := "sbt-sculptor-scalagen",
         )
 
-    val sbtSculptor: PC = _.configure(common, plugin, publish)
+    val sbtSculptor: PC = _.configure(commonSettings, pluginSettings, publishSettings)
       .settings(
         name := "sbt-sculptor",
       )
@@ -151,9 +157,14 @@ object Sculptor {
     .in(file("xsd"))
     .configure(Config.xsd)
 
+  lazy val common = project
+    .in(file("common"))
+    .dependsOn(ast)
+    .configure(Config.common)
+
   lazy val tsgen = project
     .in(file("tsgen"))
-    .dependsOn(xsd, ast)
+    .dependsOn(xsd, ast, common)
     .configure(Config.tsgen)
 
   lazy val sbtTsgen = project
@@ -163,7 +174,7 @@ object Sculptor {
 
   lazy val scalagen = project
     .in(file("scalagen"))
-    .dependsOn(xsd, ast)
+    .dependsOn(xsd, ast, common)
     .configure(Config.scalagen)
 
   lazy val sbtScalagen = project

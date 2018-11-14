@@ -25,15 +25,19 @@ object PackageGen extends GenHelpers {
 
   def generate(p: Package): Result[Doc] =
     for {
+      genComments <- getGenerateComments
+      comment = Option(genComments)
+        .filter(identity)
+        .flatMap(_ => p.comment)
+        .map(c => Doc.text(s"/*\n${c}\n*/"))
       packageName <- packageDoc(p.name)
       types <- p.types.traverse(typeDoc)
       prefix <- getPrefixCode
     } yield
       Doc.intercalate(
         packageSep,
-        packageName
-          :: prefix.toList
-          ++ types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
+        comment.toList ++ List(packageName) ++ prefix.toList ++
+          types.toNel.map(l => Doc.intercalate(typesSep, l.toList)).toList
       )
 
 }

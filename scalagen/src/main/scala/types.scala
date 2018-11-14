@@ -14,7 +14,8 @@ object Feature {
 final case class Config(tabSize: Int = 2,
                         features: List[Feature] = List.empty,
                         lineWidth: Int = 120,
-                        prefixCode: String = "")
+                        prefixCode: String = "",
+                        generateComments: Boolean = true)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -23,4 +24,6 @@ object Config {
   def lineWidth(c: Config): Int = c.lineWidth
   def prefixCode(c: Config): Option[Doc] =
     Option(c.prefixCode).filterNot(_.isEmpty).map(Doc.text)
+  def generateComments(c: Config): Boolean =
+    c.generateComments
 }

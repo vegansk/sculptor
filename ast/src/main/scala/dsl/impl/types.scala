@@ -87,12 +87,12 @@ final case class RecordBuilderImpl[State <: RecordBuilderState] private (
     fieldDefs(field.build, rest.map(_.build): _*)
   def field(name: String,
             typeRef: TypeRef,
-            comment: Option[String] = None,
+            comment: String = "",
             validator: Option[Validator] = None) = {
     val fb = ((FieldBuilderImpl
       .create(name)
       .ofType(typeRef)): Id[FieldBuilder[FieldBuilderState.Complete]])
-      .map(v => comment.fold(v)(v.comment _))
+      .map(v => Option(comment).filterNot(_.isEmpty).fold(v)(v.comment _))
       .map(v => validator.fold(v)(v.validator _))
     this.copy(
       value = value.copy(
@@ -167,12 +167,12 @@ final case class ADTConstructorBuilderImpl private (value: ADTConstructor)
     this.copy(value = value.copy(parameters = Nil))
   def field(name: String,
             typeRef: TypeRef,
-            comment: Option[String] = None,
+            comment: String = "",
             validator: Option[Validator] = None) = {
     val fb = ((FieldBuilderImpl
       .create(name)
       .ofType(typeRef)): Id[FieldBuilder[FieldBuilderState.Complete]])
-      .map(v => comment.fold(v)(v.comment _))
+      .map(v => Option(comment).filterNot(_.isEmpty).fold(v)(v.comment _))
       .map(v => validator.fold(v)(v.validator _))
     this.copy(value = value.copy(fields = value.fields ++ List(fb.build)))
   }
@@ -230,11 +230,17 @@ final case class PackageBuilderImpl private (value: Package)
     typeDefs(t.build, rest.map(_.build): _*)
   def typeDefs(t: TypeDef, rest: TypeDef*) =
     this.copy(value = value.copy(types = t :: rest.toList))
+  def typ(t: Builder[_ <: TypeDef]) =
+    this.typeDef(t.build)
+  def typeDef(t: TypeDef) =
+    this.copy(value = value.copy(types = this.value.types ++ List(t)))
+  def comment(c: String) =
+    this.copy(value = value.copy(comment = c.some))
 
   def build = this.value
 }
 
 object PackageBuilderImpl {
   def create(name: String): PackageBuilder =
-    PackageBuilderImpl(Package(FQName.of(name), Nil))
+    PackageBuilderImpl(Package(FQName.of(name), Nil, None))
 }

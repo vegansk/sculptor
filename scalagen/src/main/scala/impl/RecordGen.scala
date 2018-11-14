@@ -12,9 +12,15 @@ object RecordGen extends GenHelpers {
 
       indent <- getIndent
 
+      genComments <- getGenerateComments
+
       typ = createTypeExpr(r.name.name, r.parameters)
 
-      fields = r.fields.toList.map(f => createField(f))
+      comment = Option(genComments)
+        .filter(identity)
+        .map(_ => typeComment(r, typ))
+
+      fields = r.fields.toList.map(createField(genComments))
 
       body = Doc.intercalate(fieldDelim, fields)
 
@@ -26,15 +32,13 @@ object RecordGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleRecord(r))
 
-      result = features.toNel.fold(record) { f =>
+      result = comment.toList ++ List(record) ++ features.toNel.map { f =>
         val prefix = objectPrefix(createTypeExpr(r.name.name, Nil))
-        val companion = Doc
+        Doc
           .intercalate(dblLine, f.toList)
           .tightBracketBy(prefix, objectPostfix, indent)
 
-        Doc.intercalate(dblLine, List(record, companion))
-      }
-
-    } yield result
+      }.toList
+    } yield Doc.intercalate(dblLine, result)
 
 }

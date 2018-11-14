@@ -6,24 +6,30 @@ import sculptor.ast._
 
 object EnumGen extends GenHelpers {
 
-  private def generateEnumBody(e: Enum, indent: Int) =
-    Doc.intercalate(Doc.char(',') + line, e.values.toList.map { v =>
-      Doc.text(s"""${v.name.name} = "${v.value}"""")
-    })
-
   def generate(e: Enum): Result[Doc] =
     for {
       indent <- getIndent
 
-      prefix = Doc.text(s"enum ${e.name.name} {")
+      typ = createTypeExpr(e.name.name, Nil)
+
+      genComment <- getGenerateComments
+
+      comment = Option(genComment)
+        .filter(identity)
+        .map(_ => typeComment(e, typ))
+
+      prefix = exported(Doc.text("enum ") + typ + Doc.text(" {"))
       postfix = interfacePostfix
 
-      body = generateEnumBody(e, indent)
+      body = Doc.intercalate(
+        Doc.char(',') + line,
+        e.values.toList.map(createEnumValue(genComment))
+      )
 
-      enum_ = exported(body.tightBracketBy(prefix, postfix, indent))
+      enum_ = body.tightBracketBy(prefix, postfix, indent)
 
       features <- features.collectFeatures(_.handleEnum(e))
 
-    } yield Doc.intercalate(dblLine, enum_ :: features)
+    } yield Doc.intercalate(dblLine, comment.toList ++ List(enum_) ++ features)
 
 }

@@ -24,4 +24,9 @@ package object impl {
     EitherT.liftF(
       State.get[GeneratorState].map(s => Config.prefixCode(s.config))
     )
+
+  def getGenerateComments: Result[Boolean] =
+    EitherT.liftF(
+      State.get[GeneratorState].map(s => Config.generateComments(s.config))
+    )
 }

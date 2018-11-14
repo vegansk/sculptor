@@ -182,4 +182,6 @@ final case class ADT(name: Ident,
 }
 
 /** Types package */
-final case class Package(name: FQName, types: List[TypeDef])
+final case class Package(name: FQName,
+                         types: List[TypeDef],
+                         comment: Option[String])

@@ -5,8 +5,9 @@ import org.typelevel.paiges._
 import cats.implicits._
 
 import sculptor.ast._
+import sculptor.common._
 
-trait GenHelpers {
+trait GenHelpers extends CommonGenHelpers {
 
   def createTypeRef(r: TypeRef): Doc = {
     def generic(g: TypeRef.Generic) =
@@ -79,10 +80,19 @@ trait GenHelpers {
     )
   }
 
-  def createField(f0: FieldDef,
-                  optionalEncoding: Option[OptionalEncoding]): Doc = {
+  def createField(
+    withComment: Boolean
+  )(f0: FieldDef, optionalEncoding: Option[OptionalEncoding]): Doc = {
     val (optional, f) = processField(optionalEncoding)(f0)
-    createField1(f.name, createTypeRef(f.`type`), optional)
+    createField1(f.name, createTypeRef(f.`type`), optional) + optionalDoc(
+      withComment
+    )(f.comment.map(c => Doc.text(s" // $c"))).getOrElse(Doc.empty)
+  }
+
+  def createEnumValue(withComment: Boolean)(v: EnumValue): Doc = {
+    Doc.text(s"""${v.name.name} = "${v.value}"""") + optionalDoc(withComment)(
+      v.comment.map(c => Doc.text(s" /* $c */"))
+    ).getOrElse(Doc.empty)
   }
 
   def interfacePrefix(`type`: Doc): Doc =

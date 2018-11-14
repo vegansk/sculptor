@@ -11,20 +11,23 @@ object AliasGen extends GenHelpers {
     for {
       indent <- getIndent
 
+      genComments <- getGenerateComments
+
       typ = createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
+
+      comment = doc(genComments)(typeComment(a, typ))
+
       alias = Doc.text("type ") + typ + Doc.text(" = ") + createTypeRef(
         a.baseType
       )
 
       features <- features.collectFeatures(_.handleAlias(a))
 
-      result = features.toNel.fold(alias) { f =>
+      result = comment.toList ++ List(alias) ++ features.toNel.map { f =>
         val prefix = objectPrefix(createTypeExpr(a.name.name, Nil))
-        val companion = Doc
+        Doc
           .intercalate(dblLine, f.toList)
           .tightBracketBy(prefix, objectPostfix, indent)
-
-        Doc.intercalate(dblLine, List(alias, companion))
-      }
-    } yield result
+      }.toList
+    } yield Doc.intercalate(dblLine, result)
 }

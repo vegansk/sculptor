@@ -11,22 +11,24 @@ object ADTGenSpec extends mutable.Specification
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config()
+  val cfg = Config(generateComments = false)
 
   "ADTGen" should {
 
-    val a = adt("Maybe")
+    val maybeAdt = adt("Maybe")
       .generic("A".gen)
       .constructors(
-        cons("Empty").generic("A".gen),
+        cons("Empty").generic("A".gen).comment("The empty value"),
         cons("Just")
           .generic("A".gen)
-          .field("value", "A".gen)
+          .field("value", "A".gen, comment = "The value")
+          .comment("The non empty value")
       )
+      .comment("The type representing optional value")
       .build
 
     "generate ADTs" >> {
-      runGen(ADTGen.generate(a), cfg) must beEqvTo(
+      runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
         """|export type Maybe<A> = Empty<A> | Just<A>
            |
            |export interface Empty<A> {__tag: "Empty<A>"}
@@ -39,7 +41,7 @@ object ADTGenSpec extends mutable.Specification
     }
 
     "handle optional encoding" >> {
-      runGen(ADTGen.generate(a), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
+      runGen(ADTGen.generate(maybeAdt), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
         """|export type Maybe<A> = Empty<A> | Just<A>
            |
            |export interface Empty<A> {__tag: "Empty<A>"}
@@ -47,6 +49,23 @@ object ADTGenSpec extends mutable.Specification
            |export interface Just<A> {
            |  __tag: "Just<A>"
            |  value?: A
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "generate comments" >> {
+      runGen(ADTGen.generate(maybeAdt), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// ADT Maybe<A>: The type representing optional value
+           |
+           |export type Maybe<A> = Empty<A> | Just<A>
+           |
+           |// The empty value
+           |export interface Empty<A> {__tag: "Empty<A>"}
+           |
+           |// The non empty value
+           |export interface Just<A> {
+           |  __tag: "Just<A>"
+           |  value: A // The value
            |}""".stripMargin.asRight
       )
     }
