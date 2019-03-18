@@ -7,8 +7,8 @@ val circe = "io.circe" %% "circe-core" % "0.9.2"
 val circeParser = "io.circe" %% "circe-parser" % "0.9.2"
 val circeJava8 = "io.circe" %% "circe-java8" % "0.9.2"
 val scalaXml = "org.scala-lang.modules" %% "scala-xml" % "1.0.6"
-val kantanXPath = "com.nrinaudo" %% "kantan.xpath" % "0.4.0"
-val kantanXPathJava8 = "com.nrinaudo" %% "kantan.xpath-java8" % "0.4.0"
+val kantanXPath = "com.nrinaudo" %% "kantan.xpath" % "0.5.0"
+val kantanXPathJava8 = "com.nrinaudo" %% "kantan.xpath-java8" % "0.5.0"
 
 lazy val root = project.in(file("."))
   .enablePlugins(SculptorPlugin)
