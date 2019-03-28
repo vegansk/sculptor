@@ -27,6 +27,12 @@ object ADTGenSpec extends mutable.Specification
       .comment("The type representing optional value")
       .build
 
+    val maybeIntAdt = adt("MaybeInt")
+      .constructors(
+        cons("Empty"),
+        cons("JustInt").field("value", "Int".spec)
+      ).build
+
     "generate ADTs" >> {
 
       runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
@@ -81,8 +87,8 @@ object ADTGenSpec extends mutable.Specification
            |  final case class Just[A](value: A) extends Maybe[A]
            |
            |  implicit def MaybeEncoder[A:Encoder]: ObjectEncoder[Maybe[A]] = ObjectEncoder.instance[Maybe[A]] {
-           |    case _:Empty[A] => JsonObject("__customTag" := "Empty")
-           |    case v:Just[A] => JsonObject(
+           |    case _: Empty[A] => JsonObject("__customTag" := "Empty")
+           |    case v: Just[A] => JsonObject(
            |      "__customTag" := "Just",
            |      "value" := v.value
            |    )
@@ -93,6 +99,33 @@ object ADTGenSpec extends mutable.Specification
            |      case "Empty" => Right(Empty[A]())
            |      case "Just" => for {value <- c.downField("value").as[A]} yield Just[A](value)
            |      case tag => Left(DecodingFailure("Invalid ADT tag value Maybe." + tag, c.history))
+           |    }
+           |  }
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "handle case objects in circe instances" >> {
+      runGen(ADTGen.generate(maybeIntAdt), cfg.copy(features = List(Feature.CirceCodecs(adtTag = "__tag")))) must beEqvTo(
+        """|sealed trait MaybeInt extends Product with Serializable
+           |
+           |object MaybeInt {
+           |  case object Empty extends MaybeInt
+           |  final case class JustInt(value: Int) extends MaybeInt
+           |
+           |  implicit val MaybeIntEncoder: ObjectEncoder[MaybeInt] = ObjectEncoder.instance[MaybeInt] {
+           |    case Empty => JsonObject("__tag" := "Empty")
+           |    case v: JustInt => JsonObject(
+           |      "__tag" := "JustInt",
+           |      "value" := v.value
+           |    )
+           |  }
+           |
+           |  implicit val MaybeIntDecoder: Decoder[MaybeInt] = Decoder.instance[MaybeInt] { c =>
+           |    c.downField("__tag").as[String].flatMap {
+           |      case "Empty" => Right(Empty)
+           |      case "JustInt" => for {value <- c.downField("value").as[Int]} yield JustInt(value)
+           |      case tag => Left(DecodingFailure("Invalid ADT tag value MaybeInt." + tag, c.history))
            |    }
            |  }
            |}""".stripMargin.asRight

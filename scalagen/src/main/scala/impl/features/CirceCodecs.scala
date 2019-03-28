@@ -141,15 +141,28 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
       result = List(encoder, decoder)
     } yield result
 
-  private def genADTEncoderBody(a: ADT, indent: Int) = {
-    Doc.intercalate(line, a.constructors.toList.map { c =>
-      val tagValue = c.tag.getOrElse(c.name.name)
-      val objName = if (c.fields.isEmpty) "_" else "v"
-      val consRef = createTypeExpr(c.name.name, c.parameters)
-      Doc.text(s"case $objName:") + consRef + Doc.text(" => ") +
-        genRecordEncoderBody(objName, tagValue.some, c.fields, indent)
-    })
-  }
+  private def isCaseObject(adt: ADT, cons: ADTConstructor): Boolean =
+    cons.fields.isEmpty &&
+      cons.parameters.isEmpty &&
+      adt.parameters.isEmpty
+
+  private def genADTEncoderBody(a: ADT, indent: Int) =
+    Doc.intercalate(
+      line,
+      a.constructors.toList.map { c =>
+        val tagValue = c.tag.getOrElse(c.name.name)
+        val consRef = createTypeExpr(c.name.name, c.parameters)
+        val pattern = if (c.fields.nonEmpty) {
+          Doc.text("v: ") + consRef
+        } else if (!isCaseObject(a, c)) {
+          Doc.text("_: ") + consRef
+        } else {
+          consRef
+        }
+        Doc.text("case ") + pattern + Doc.text(" => ") +
+          genRecordEncoderBody("v", tagValue.some, c.fields, indent)
+      }
+    )
 
   private def genADTDecoderBody(a: ADT, cursorName: String, indent: Int) = {
     val prefix =
@@ -162,7 +175,9 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
           val tagValue = c.tag.getOrElse(c.name.name)
           val consRef = createTypeExpr(c.name.name, c.parameters)
           val prefix0 = Doc.text(s"""case "$tagValue" => """)
-          if (c.fields.isEmpty)
+          if (isCaseObject(a, c)) {
+            prefix0 + Doc.text(s"Right(") + consRef + Doc.text(")")
+          } else if (c.fields.isEmpty)
             prefix0 + Doc.text(s"Right(") + consRef + Doc.text("())")
           else
             prefix0 + genRecordDecoderBody(
