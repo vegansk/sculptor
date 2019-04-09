@@ -7,27 +7,27 @@ object SculptorTsgenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type TsgenOptions = tsgen.deprecated.Config
+    type XsdTsgenOptions = tsgen.deprecated.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenOptions = tsgen.deprecated.Config
+    val XsdTsgenOptions = tsgen.deprecated.Config
 
-    type TsgenType = tsgen.deprecated.Type
+    type XsdTsgenType = tsgen.deprecated.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenType = tsgen.deprecated.Type
+    val XsdTsgenType = tsgen.deprecated.Type
 
-    type TsgenImport = tsgen.deprecated.Import
+    type XsdTsgenImport = tsgen.deprecated.Import
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val TsgenImport = tsgen.deprecated.Import
+    val XsdTsgenImport = tsgen.deprecated.Import
 
-    final case class TsgenConfig(xsdFile: File,
-                                 outFile: File,
-                                 options: TsgenOptions)
+    final case class XsdTsgenConfig(xsdFile: File,
+                                    outFile: File,
+                                    options: XsdTsgenOptions)
 
-    val tsgenConfigurations: SettingKey[Seq[TsgenConfig]] = settingKey(
-      "List of tsgen.deprecated configurations"
+    val xsdTsgenConfigurations: SettingKey[Seq[XsdTsgenConfig]] = settingKey(
+      "List of tsgen configurations"
     )
 
-    val tsgenGenerate: TaskKey[Unit] = taskKey(
+    val xsdTsgenGenerate: TaskKey[Unit] = taskKey(
       "Generate typescript sources from xsd files"
     )
 
@@ -36,18 +36,21 @@ object SculptorTsgenPlugin extends AutoPlugin {
   import autoImport._
 
   def baseSettings: Seq[Setting[_]] =
-    Seq(tsgenConfigurations := Seq(), tsgenGenerate := tsgenGenerateTask.value)
+    Seq(
+      xsdTsgenConfigurations := Seq(),
+      xsdTsgenGenerate := xsdTsgenGenerateTask.value
+    )
 
   override lazy val projectSettings = baseSettings
 
-  private def generate(cfg: TsgenConfig): Unit = {
+  private def generate(cfg: XsdTsgenConfig): Unit = {
     val _ = cfg.outFile.getParentFile.mkdirs
     tsgen.deprecated
       .generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options)
       .unsafeRunSync
   }
 
-  private lazy val tsgenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
-    tsgenConfigurations.value.foreach(generate)
+  private lazy val xsdTsgenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
+    xsdTsgenConfigurations.value.foreach(generate)
   }
 }

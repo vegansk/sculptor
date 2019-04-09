@@ -4,15 +4,15 @@ val npmBuild = taskKey[Unit]("Builds project via npm")
 val npmStartImpl = taskKey[Unit]("Runs project via npm (internal task)")
 val npmStart = taskKey[Unit]("Runs project via npm")
 
-val tsgenOptions = TsgenOptions(
+val xsdTsgenOptions = XsdTsgenOptions(
   imports = List(
-    TsgenImport("t", "io-ts"),
-    TsgenImport("T", "core/types"),
+    XsdTsgenImport("t", "io-ts"),
+    XsdTsgenImport("T", "core/types"),
     ),
   types = List(
-    TsgenType("xs:date", "Date", "T.date"),
-    TsgenType("xs:time", "Date", "T.date"),
-    TsgenType("xs:dateTime", "Date", "T.date")
+    XsdTsgenType("xs:date", "Date", "T.date"),
+    XsdTsgenType("xs:time", "Date", "T.date"),
+    XsdTsgenType("xs:dateTime", "Date", "T.date")
   ),
   header = Option("/** tslint:disable: all */"),
   iotsNs = "t",
@@ -33,18 +33,18 @@ lazy val root = project.in(file("."))
       npm.toTask(" start").value
     },
 
-    tsgenConfigurations := Seq(
-      TsgenConfig(
+    xsdTsgenConfigurations := Seq(
+      XsdTsgenConfig(
         file("xsd") / "polaris-1.0.xsd",
         file("src_managed") / "polaris-1.0.ts",
-        tsgenOptions
+        xsdTsgenOptions
       ),
-      TsgenConfig(
+      XsdTsgenConfig(
         file("xsd") / "fes-2.0.xsd",
         file("src_managed") / "fes-2.0.ts",
-        tsgenOptions
+        xsdTsgenOptions
       )
     ),
 
-    npmStart := npmStartImpl.dependsOn(tsgenGenerate, npmBuild).value
+    npmStart := npmStartImpl.dependsOn(xsdTsgenGenerate, npmBuild).value
   )
