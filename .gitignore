@@ -7,3 +7,4 @@ target
 node_modules/
 build/
 src_managed/
+local.sbt
