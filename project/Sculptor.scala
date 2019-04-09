@@ -159,13 +159,13 @@ object Sculptor {
 
   lazy val common = project
     .in(file("common"))
-    .dependsOn(ast)
     .configure(Config.common)
+    .dependsOn(ast)
 
   lazy val tsgen = project
     .in(file("tsgen"))
-    .dependsOn(xsd, ast, common)
     .configure(Config.tsgen)
+    .dependsOn(xsd, ast, common)
 
   lazy val sbtTsgen = project
     .in(file("sbt-tsgen"))
@@ -174,8 +174,8 @@ object Sculptor {
 
   lazy val scalagen = project
     .in(file("scalagen"))
-    .dependsOn(xsd, ast, common)
     .configure(Config.scalagen)
+    .dependsOn(xsd, ast, common)
 
   lazy val sbtScalagen = project
     .in(file("sbt-scalagen"))

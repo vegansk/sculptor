@@ -7,35 +7,34 @@ object SculptorScalagenPlugin extends AutoPlugin {
 
   object autoImport {
 
-    type ScalagenOptions = deprecated.Config
+    type XsdScalagenOptions = deprecated.Config
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenOptions = deprecated.Config
+    val XsdScalagenOptions = deprecated.Config
 
-    type ScalagenType = deprecated.Type
+    type XsdScalagenType = deprecated.Type
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenType = deprecated.Type
+    val XsdScalagenType = deprecated.Type
 
-    type ScalagenImport = deprecated.Import
+    type XsdScalagenImport = deprecated.Import
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenImport = deprecated.Import
+    val XsdScalagenImport = deprecated.Import
 
-    type ScalagenOptionalTypes = deprecated.OptionalTypes
+    type XsdScalagenOptionalTypes = deprecated.OptionalTypes
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenOptionalTypes = deprecated.OptionalTypes
+    val XsdScalagenOptionalTypes = deprecated.OptionalTypes
 
-    type ScalagenParameters = deprecated.Parameters
+    type XsdScalagenParameters = deprecated.Parameters
     @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
-    val ScalagenParameters = deprecated.Parameters
+    val XsdScalagenParameters = deprecated.Parameters
 
-    final case class ScalagenConfig(xsdFile: File,
-                                    outFile: File,
-                                    options: ScalagenOptions)
+    final case class XsdScalagenConfig(xsdFile: File,
+                                       outFile: File,
+                                       options: XsdScalagenOptions)
 
-    val scalagenConfigurations: SettingKey[Seq[ScalagenConfig]] = settingKey(
-      "List of scalagen configurations"
-    )
+    val xsdScalagenConfigurations: SettingKey[Seq[XsdScalagenConfig]] =
+      settingKey("List of scalagen configurations")
 
-    val scalagenGenerate: TaskKey[Unit] = taskKey(
+    val xsdScalagenGenerate: TaskKey[Unit] = taskKey(
       "Generate scala sources from xsd files"
     )
 
@@ -44,20 +43,21 @@ object SculptorScalagenPlugin extends AutoPlugin {
   import autoImport._
 
   def baseSettings: Seq[Setting[_]] = Seq(
-    scalagenConfigurations := Seq(),
-    scalagenGenerate := scalagenGenerateTask.value
+    xsdScalagenConfigurations := Seq(),
+    xsdScalagenGenerate := xsdScalagenGenerateTask.value
   )
 
   override lazy val projectSettings = baseSettings
 
-  private def generate(cfg: ScalagenConfig): Unit = {
+  private def generate(cfg: XsdScalagenConfig): Unit = {
     val _ = cfg.outFile.getParentFile.mkdirs
     deprecated
       .generateFromFile(cfg.xsdFile, cfg.outFile, cfg.options)
       .unsafeRunSync
   }
 
-  private lazy val scalagenGenerateTask: Def.Initialize[Task[Unit]] = Def.task {
-    scalagenConfigurations.value.foreach(generate)
-  }
+  private lazy val xsdScalagenGenerateTask: Def.Initialize[Task[Unit]] =
+    Def.task {
+      xsdScalagenConfigurations.value.foreach(generate)
+    }
 }
