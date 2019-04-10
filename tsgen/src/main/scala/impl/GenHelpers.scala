@@ -84,15 +84,15 @@ trait GenHelpers extends CommonGenHelpers {
     withComment: Boolean
   )(f0: FieldDef, optionalEncoding: Option[OptionalEncoding]): Doc = {
     val (optional, f) = processField(optionalEncoding)(f0)
-    createField1(f.name, createTypeRef(f.`type`), optional) + optionalDoc(
+    createField1(f.name, createTypeRef(f.`type`), optional) + optionalComment(
       withComment
-    )(f.comment.map(c => Doc.text(s" // $c"))).getOrElse(Doc.empty)
+    )(f.comment).map(spacePrefix).getOrElse(Doc.empty)
   }
 
   def createEnumValue(withComment: Boolean)(v: EnumValue): Doc = {
-    Doc.text(s"""${v.name.name} = "${v.value}"""") + optionalDoc(withComment)(
-      v.comment.map(c => Doc.text(s" /* $c */"))
-    ).getOrElse(Doc.empty)
+    Doc.text(s"""${v.name.name} = "${v.value}"""") + optionalComment(
+      withComment
+    )(v.comment).map(spacePrefix).getOrElse(Doc.empty)
   }
 
   def interfacePrefix(`type`: Doc): Doc =

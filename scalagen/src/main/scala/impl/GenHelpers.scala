@@ -53,10 +53,8 @@ trait GenHelpers extends CommonGenHelpers {
     Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
 
   def createField(withComment: Boolean)(f: FieldDef): Doc =
-    createField0(f.name, f.`type`) + Option(withComment)
-      .filter(identity)
-      .flatMap(_ => f.comment)
-      .map(c => Doc.text(s" /* $c */"))
+    createField0(f.name, f.`type`) + optionalComment(withComment)(f.comment)
+      .map(spacePrefix)
       .getOrElse(Doc.empty)
 
   def sealedTrait(typ: Doc): Doc =

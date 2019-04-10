@@ -9,13 +9,16 @@ object Simple {
   val Maybe = adt("Maybe").generic("A".gen)
     .constructors(
       cons("Nothing").generic("A".gen),
-      cons("Just").generic("A".gen).field("get", "A".gen)
+      cons("Just").generic("A".gen).field("get", "A".gen, "The value")
     )
 
   val Record = record("Record")
     .generic("A".gen)
-    .field("id", "A".gen)
-    .field("name", "Option".spec("string".spec))
+    .field("id", "A".gen, "The id")
+    .field("name", "Option".spec("string".spec), "The name")
+
+  val RecordWithSingleField = record("RecordWithSingleField")
+    .field("id", "number".gen, "Single field record")
 
   val Enum = enum("Enum").values(
     "A".en, "B".en, "C".en
@@ -24,8 +27,8 @@ object Simple {
   val Either = adt("Either")
     .generic("E".gen, "A".gen)
     .constructors(
-      cons("Left").generic("E".gen, "A".gen).field("value", "E".gen),
-      cons("Right").generic("E".gen, "A".gen).field("value", "A".gen)
+      cons("Left").generic("E".gen, "A".gen).field("value", "E".gen, "Left value"),
+      cons("Right").generic("E".gen, "A".gen).field("value", "A".gen, "Right value")
     )
 
   val Result = newtype("Result")
@@ -38,6 +41,7 @@ object Simple {
       Id,
       Maybe,
       Record,
+      RecordWithSingleField,
       Enum,
       Either,
       Result

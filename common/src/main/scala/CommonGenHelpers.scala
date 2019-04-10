@@ -27,15 +27,17 @@ trait CommonGenHelpers {
     Option(genComment)
       .filter(identity)
       .flatMap(_ => comment)
-      .map(c => Doc.text(s"// $c"))
+      .map(c => Doc.text(s"/* $c */"))
 
   def comment(genComment: Boolean)(comment: => String): Option[Doc] =
-    Option(genComment).filter(identity).map(_ => Doc.text(s"// $comment"))
+    Option(genComment).filter(identity).map(_ => Doc.text(s"/* $comment */"))
 
   def doc(needDoc: Boolean)(doc: => Doc): Option[Doc] =
     Option(needDoc).filter(identity).map(_ => doc)
 
   def optionalDoc(needDoc: Boolean)(doc: => Option[Doc]): Option[Doc] =
     Option(needDoc).filter(identity).flatMap(_ => doc)
+
+  val spacePrefix: Doc => Doc = Doc.char(' ') + _
 
 }

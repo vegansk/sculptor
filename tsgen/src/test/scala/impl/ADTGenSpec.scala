@@ -59,13 +59,13 @@ object ADTGenSpec extends mutable.Specification
            |
            |export type Maybe<A> = Empty<A> | Just<A>
            |
-           |// The empty value
+           |/* The empty value */
            |export interface Empty<A> {__tag: "Empty<A>"}
            |
-           |// The non empty value
+           |/* The non empty value */
            |export interface Just<A> {
            |  __tag: "Just<A>"
-           |  value: A // The value
+           |  value: A /* The value */
            |}""".stripMargin.asRight
       )
     }
