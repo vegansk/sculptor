@@ -11,7 +11,7 @@ object ADTGenSpec extends mutable.Specification
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config(generateComments = false)
+  val cfg = Config(generateComments = false, generateAdtConstructorsHelpers = false)
 
   "ADTGen" should {
 
@@ -35,14 +35,30 @@ object ADTGenSpec extends mutable.Specification
 
     "generate ADTs" >> {
 
-      runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
-        """|sealed trait Maybe[A] extends Product with Serializable
-           |
-           |object Maybe {
-           |  final case class Empty[A]() extends Maybe[A]
-           |  final case class Just[A](value: A) extends Maybe[A]
-           |}""".stripMargin.asRight
-      )
+      "without constructors helpers" >> {
+        runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
+          """|sealed trait Maybe[A] extends Product with Serializable
+             |
+             |object Maybe {
+             |  final case class Empty[A]() extends Maybe[A]
+             |  final case class Just[A](value: A) extends Maybe[A]
+             |}""".stripMargin.asRight
+        )
+      }
+
+      "with constructors helpers" >> {
+        runGen(ADTGen.generate(maybeAdt), cfg.copy(generateAdtConstructorsHelpers = true)) must beEqvTo(
+          """|sealed trait Maybe[A] extends Product with Serializable
+             |
+             |object Maybe {
+             |  final case class Empty[A]() extends Maybe[A]
+             |  final case class Just[A](value: A) extends Maybe[A]
+             |
+             |  def empty[A]: Maybe[A] = Empty[A]()
+             |  def just[A](value: A): Maybe[A] = Just[A](value)
+             |}""".stripMargin.asRight
+        )
+      }
     }
 
     "generate simple enums" >> {
@@ -54,15 +70,33 @@ object ADTGenSpec extends mutable.Specification
         )
         .build
 
-      runGen(ADTGen.generate(a), cfg) must beEqvTo(
-        """|sealed trait Colors extends Product with Serializable
-           |
-           |object Colors {
-           |  case object Red extends Colors
-           |  case object Green extends Colors
-           |  case object Blue extends Colors
-           |}""".stripMargin.asRight
-      )
+      "without constructors helpers" >> {
+        runGen(ADTGen.generate(a), cfg) must beEqvTo(
+          """|sealed trait Colors extends Product with Serializable
+             |
+             |object Colors {
+             |  case object Red extends Colors
+             |  case object Green extends Colors
+             |  case object Blue extends Colors
+             |}""".stripMargin.asRight
+        )
+      }
+
+      "with constructors helpers" >> {
+        runGen(ADTGen.generate(a), cfg.copy(generateAdtConstructorsHelpers = true)) must beEqvTo(
+          """|sealed trait Colors extends Product with Serializable
+             |
+             |object Colors {
+             |  case object Red extends Colors
+             |  case object Green extends Colors
+             |  case object Blue extends Colors
+             |
+             |  val red: Colors = Red
+             |  val green: Colors = Green
+             |  val blue: Colors = Blue
+             |}""".stripMargin.asRight
+        )
+      }
     }
 
     "generate Eq instance" >> {

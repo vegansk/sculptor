@@ -126,4 +126,13 @@ trait GenHelpers extends CommonGenHelpers {
 
   def createBrandField(typ: Doc): Doc =
     Doc.text("""__brand: """") + typ + Doc.char('"')
+
+  def beginNamespace(ns: String): Doc = exported(Doc.text(s"namespace $ns {"))
+
+  val endNamespace = Doc.char('}')
+
+  def withNamespace(ns: String, indent: Int)(what: List[Doc]): Doc =
+    Doc
+      .intercalate(dblLine, what)
+      .tightBracketBy(beginNamespace(ns), endNamespace, indent)
 }

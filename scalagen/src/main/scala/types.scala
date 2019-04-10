@@ -15,7 +15,8 @@ final case class Config(tabSize: Int = 2,
                         features: List[Feature] = List.empty,
                         lineWidth: Int = 120,
                         prefixCode: String = "",
-                        generateComments: Boolean = true)
+                        generateComments: Boolean = true,
+                        generateAdtConstructorsHelpers: Boolean = true)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -26,4 +27,6 @@ object Config {
     Option(c.prefixCode).filterNot(_.isEmpty).map(Doc.text)
   def generateComments(c: Config): Boolean =
     c.generateComments
+  def generateAdtConstructorsHelpers(c: Config): Boolean =
+    c.generateAdtConstructorsHelpers
 }

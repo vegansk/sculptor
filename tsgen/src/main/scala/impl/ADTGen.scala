@@ -7,13 +7,16 @@ import sculptor.ast._
 
 object ADTGen extends GenHelpers {
 
-  private def generateConstructor(c: ADTConstructor, indent: Int): Result[Doc] =
+  private def generateConstructor(a: ADT)(c: ADTConstructor): Result[Doc] =
     for {
+      indent <- getIndent
       genComment <- getGenerateComments
       comment = optionalComment(genComment)(c.comment)
       adtTag <- getAdtTag
       optEnc <- getOptionalEncoding
+      genAdtNs <- getGenerateAdtNs
       typ = createTypeExpr(c.name.name, c.parameters)
+      tag = if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
       result = Doc.intercalate(
         line,
         comment.toList ++
@@ -21,7 +24,7 @@ object ADTGen extends GenHelpers {
             Doc
               .intercalate(
                 line,
-                Doc.text(s"""$adtTag: """") + typ + Doc.char('"') ::
+                Doc.text(s"""$adtTag: """") + tag + Doc.char('"') ::
                   c.fields.map(createField(genComment)(_, optEnc))
               )
               .tightBracketBy(
@@ -42,6 +45,8 @@ object ADTGen extends GenHelpers {
 
       genComment <- getGenerateComments
 
+      genAdtNs <- getGenerateAdtNs
+
       comment = Option(genComment)
         .filter(identity)
         .map(_ => typeComment(a, typ))
@@ -49,13 +54,22 @@ object ADTGen extends GenHelpers {
       consList = Doc.intercalate(
         Doc.text(" | "),
         a.constructors.toList
-          .map(c => createTypeExpr(c.name.name, c.parameters))
+          .map { c =>
+            val name =
+              if (genAdtNs) s"${a.name.name}.${c.name.name}" else c.name.name
+            createTypeExpr(name, c.parameters)
+          }
       )
 
       adtType = exported(Doc.text("type ") + typ + Doc.text(" = ") + consList)
 
-      constructors <- a.constructors.toList
-        .traverse(generateConstructor(_, indent))
+      constructors0 <- a.constructors.toList
+        .traverse(generateConstructor(a))
+
+      constructors = genAdtNs match {
+        case false => constructors0
+        case _ => List(withNamespace(a.name.name, indent)(constructors0))
+      }
 
       features <- features.collectFeatures(_.handleADT(a))
 

@@ -187,19 +187,23 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       )
 
   private def genADTTaggedUnionImpl(indent: Int,
-                                    tagName: String)(a: ADT): Doc = {
+                                    tagName: String,
+                                    genAdtNs: Boolean)(a: ADT): Doc = {
     val prefix = Doc.text(s"""${iots}taggedUnion("${tagName}", [""")
     Doc
-      .intercalate(
-        Doc.char(',') + Doc.lineOrSpace,
-        a.constructors.toList.map(c => genIotsTypeRef(c.ref))
-      )
+      .intercalate(Doc.char(',') + Doc.lineOrSpace, a.constructors.toList.map {
+        c =>
+          val typ = genIotsTypeRef(c.ref)
+          if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+      })
       .tightBracketBy(prefix, Doc.text(s"""], "${a.name.name}")"""), indent)
   }
 
-  private def genADTTypeConst(indent: Int, tagName: String)(a: ADT): Doc = {
+  private def genADTTypeConst(indent: Int, tagName: String, genAdtNs: Boolean)(
+    a: ADT
+  ): Doc = {
     genTypeConstPrefix(a.name, None, a.parameters, a.ref) +
-      genADTTaggedUnionImpl(indent, tagName)(a)
+      genADTTaggedUnionImpl(indent, tagName, genAdtNs)(a)
   }
 
   override def handleADT(a: ADT) =
@@ -207,20 +211,29 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       opt <- getOptionalEncoding
       indent <- getIndent
       tagName <- getAdtTag
-      cons = a.constructors.toList.map { c =>
+      genAdtNs <- getGenerateAdtNs
+      constructors0 = a.constructors.toList.map { c =>
         val ref = c.ref
-        val tag = Doc.text(s"""$tagName: t.literal("""") + createTypeRef(ref) + Doc
-          .text("""")""")
+        val typ = createTypeRef(ref)
+        val tag =
+          if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+        val tagExpr = Doc.text(s"""$tagName: t.literal("""") + tag + Doc.text(
+          """")"""
+        )
         genRecordTypeConst(opt, indent)(
           c.name,
           tagName.some,
           a.parameters,
-          List(tag),
+          List(tagExpr),
           c.fields,
           ref
         )
       }
-    } yield cons ++ List(genADTTypeConst(indent, tagName)(a))
+      constructors = genAdtNs match {
+        case false => constructors0
+        case _ => List(withNamespace(a.name.name, indent)(constructors0))
+      }
+    } yield constructors ++ List(genADTTypeConst(indent, tagName, genAdtNs)(a))
 
   override def handleEnum(e: Enum) =
     for {

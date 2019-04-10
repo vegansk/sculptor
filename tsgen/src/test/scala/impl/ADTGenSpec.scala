@@ -11,7 +11,7 @@ object ADTGenSpec extends mutable.Specification
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config(generateComments = false)
+  val cfg = Config(generateComments = false, generateAdtNs = false)
 
   "ADTGen" should {
 
@@ -66,6 +66,21 @@ object ADTGenSpec extends mutable.Specification
            |export interface Just<A> {
            |  __tag: "Just<A>"
            |  value: A /* The value */
+           |}""".stripMargin.asRight
+      )
+    }
+
+    "generate namespace for ATD constructors" >> {
+      runGen(ADTGen.generate(maybeAdt), cfg.copy(generateAdtNs = true)) must beEqvTo(
+        """|export type Maybe<A> = Maybe.Empty<A> | Maybe.Just<A>
+           |
+           |export namespace Maybe {
+           |  export interface Empty<A> {__tag: "Maybe.Empty<A>"}
+           |
+           |  export interface Just<A> {
+           |    __tag: "Maybe.Just<A>"
+           |    value: A
+           |  }
            |}""".stripMargin.asRight
       )
     }
