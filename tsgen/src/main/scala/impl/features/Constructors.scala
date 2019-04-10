@@ -78,9 +78,7 @@ object Constructors extends Feature with GenHelpers {
                                 genAdtNs: Boolean,
                                 indent: Int)(c: ADTConstructor): Doc = {
     val typ = createTypeRef(a.ref)
-    val consTyp = createTypeExpr(c.name.name, c.parameters)
-    val tag =
-      if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + consTyp else consTyp
+    val tag = Doc.text(c.name.name)
     val adtTag = Doc.text(s"""$tagName: """") + tag + Doc.char('"')
     genObjectConstructor(opt)(
       c.name,

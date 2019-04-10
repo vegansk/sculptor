@@ -127,11 +127,11 @@ object IoTsTypesSpec extends mutable.Specification
       "without namespaces" >> {
         runFeature(IoTsTypes(feature).handleADT(a), cfg) must beEqvTo(
           """|export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |  {__tag: t.literal("Empty<A>")}, {}, "Empty"
+             |  {__tag: t.literal("Empty")}, {}, "Empty"
              |)
              |
              |export const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |  {__tag: t.literal("Just<A>"), value: AType}, {}, "Just"
+             |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |)
              |
              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.taggedUnion("__tag", [
@@ -144,11 +144,11 @@ object IoTsTypesSpec extends mutable.Specification
         runFeature(IoTsTypes(feature).handleADT(a), cfg.copy(generateAdtNs = true)) must beEqvTo(
           """|export namespace Maybe {
              |  export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |    {__tag: t.literal("Maybe.Empty<A>")}, {}, "Empty"
+             |    {__tag: t.literal("Empty")}, {}, "Empty"
              |  )
              |
              |  export const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |    {__tag: t.literal("Maybe.Just<A>"), value: AType}, {}, "Just"
+             |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |  )
              |}
              |

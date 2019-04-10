@@ -214,9 +214,7 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       genAdtNs <- getGenerateAdtNs
       constructors0 = a.constructors.toList.map { c =>
         val ref = c.ref
-        val typ = createTypeRef(ref)
-        val tag =
-          if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+        val tag = Doc.text(c.name.name)
         val tagExpr = Doc.text(s"""$tagName: t.literal("""") + tag + Doc.text(
           """")"""
         )

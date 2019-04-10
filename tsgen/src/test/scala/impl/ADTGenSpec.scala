@@ -31,10 +31,10 @@ object ADTGenSpec extends mutable.Specification
       runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
         """|export type Maybe<A> = Empty<A> | Just<A>
            |
-           |export interface Empty<A> {__tag: "Empty<A>"}
+           |export interface Empty<A> {__tag: "Empty"}
            |
            |export interface Just<A> {
-           |  __tag: "Just<A>"
+           |  __tag: "Just"
            |  value: A
            |}""".stripMargin.asRight
       )
@@ -44,10 +44,10 @@ object ADTGenSpec extends mutable.Specification
       runGen(ADTGen.generate(maybeAdt), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
         """|export type Maybe<A> = Empty<A> | Just<A>
            |
-           |export interface Empty<A> {__tag: "Empty<A>"}
+           |export interface Empty<A> {__tag: "Empty"}
            |
            |export interface Just<A> {
-           |  __tag: "Just<A>"
+           |  __tag: "Just"
            |  value?: A
            |}""".stripMargin.asRight
       )
@@ -60,11 +60,11 @@ object ADTGenSpec extends mutable.Specification
            |export type Maybe<A> = Empty<A> | Just<A>
            |
            |/* The empty value */
-           |export interface Empty<A> {__tag: "Empty<A>"}
+           |export interface Empty<A> {__tag: "Empty"}
            |
            |/* The non empty value */
            |export interface Just<A> {
-           |  __tag: "Just<A>"
+           |  __tag: "Just"
            |  value: A /* The value */
            |}""".stripMargin.asRight
       )
@@ -75,10 +75,10 @@ object ADTGenSpec extends mutable.Specification
         """|export type Maybe<A> = Maybe.Empty<A> | Maybe.Just<A>
            |
            |export namespace Maybe {
-           |  export interface Empty<A> {__tag: "Maybe.Empty<A>"}
+           |  export interface Empty<A> {__tag: "Empty"}
            |
            |  export interface Just<A> {
-           |    __tag: "Maybe.Just<A>"
+           |    __tag: "Just"
            |    value: A
            |  }
            |}""".stripMargin.asRight

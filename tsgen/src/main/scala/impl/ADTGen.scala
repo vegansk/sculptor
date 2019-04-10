@@ -16,7 +16,7 @@ object ADTGen extends GenHelpers {
       optEnc <- getOptionalEncoding
       genAdtNs <- getGenerateAdtNs
       typ = createTypeExpr(c.name.name, c.parameters)
-      tag = if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+      tag = Doc.text(c.name.name)
       result = Doc.intercalate(
         line,
         comment.toList ++
