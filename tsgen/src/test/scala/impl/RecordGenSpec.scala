@@ -62,11 +62,12 @@ object RecordGenSpec extends mutable.Specification
         """|// Record Record<A>: The Record
            |
            |export interface Record<A> {
-           |  id: number // The id
-           |  nameO: Option<A> // The name
+           |  id: number /* The id */
+           |  nameO: Option<A> /* The name */
            |}""".stripMargin.asRight
       )
     }
+
   }
 
 }

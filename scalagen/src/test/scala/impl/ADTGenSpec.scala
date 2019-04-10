@@ -139,9 +139,9 @@ object ADTGenSpec extends mutable.Specification
            |sealed trait Maybe[A] extends Product with Serializable
            |
            |object Maybe {
-           |  // The empty value
+           |  /* The empty value */
            |  final case class Empty[A]() extends Maybe[A]
-           |  // The non empty value
+           |  /* The non empty value */
            |  final case class Just[A](value: A /* The value */) extends Maybe[A]
            |}""".stripMargin.asRight
       )
