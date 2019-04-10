@@ -13,7 +13,7 @@ object Main extends App {
   println(Record(1, "test").asJson)
   println(decode[Record]("""{ "id": 1, "name": "test" }"""))
 
-  println((Maybe.Just(1):Maybe[Int]).asJson)
+  println((Maybe.just(1)).asJson)
   println(decode[Maybe[Int]]("""{ "__tag": "Just", "get": 1 }"""))
 
   println((Enum.A:Enum).asJson)

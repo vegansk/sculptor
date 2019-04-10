@@ -77,6 +77,8 @@ trait GenHelpers extends CommonGenHelpers {
 
   val fieldDelim = Doc.char(',') + Doc.line
 
+  val paramDelim = Doc.text(", ")
+
   val line = Doc.lineNoFlat
   val dblLine = Doc.lineNoFlatNoIndent + Doc.lineNoFlat
 

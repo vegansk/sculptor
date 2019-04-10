@@ -25,11 +25,40 @@ object ADTGen extends GenHelpers {
 
     } yield comment.toList ++ List(extend(typeDef, adtType))
 
-  def generateImplBody(r: ADT, adtType: Doc, indent: Int): Result[Doc] =
-    r.constructors.toList
+  def generateImplBody(a: ADT, adtType: Doc, indent: Int): Result[Doc] =
+    a.constructors.toList
       .traverse(generateConstructor(_, adtType, indent))
       .map(_.flatten)
       .map(Doc.intercalate(line, _))
+
+  def generateHelper(c: ADTConstructor, adtType: Doc, indent: Int): Doc = {
+    val name = decapitalize(c.name.name)
+    val fName = createTypeExpr(name, c.parameters)
+    val fImpl = createTypeExpr(c.name.name, c.parameters)
+    (c.parameters, c.fields) match {
+      case (Nil, Nil) =>
+        Doc.text("val ") + fName + Doc.text(": ") + adtType + Doc.text(" = ") + fImpl
+      case (_, Nil) =>
+        Doc.text("def ") + fName + Doc.text(": ") + adtType + Doc.text(" = ") + fImpl + Doc
+          .text("()")
+      case (_, fields) => {
+        val func = Doc
+          .intercalate(fieldDelim, c.fields.map(createField(false)))
+          .tightBracketBy(fName + Doc.char('('), Doc.char(')'), indent)
+        val call = Doc
+          .intercalate(paramDelim, fields.map(f => Doc.text(f.name.name)))
+          .tightBracketBy(fImpl + Doc.char('('), Doc.char(')'), indent)
+        Doc.text("def ") + func + Doc.text(": ") + adtType + Doc.text(" = ") + call
+      }
+    }
+  }
+
+  def generateHelpers(a: ADT, adtType: Doc, indent: Int): Doc =
+    Doc.intercalate(
+      line,
+      a.constructors.toList
+        .map(generateHelper(_, adtType, indent))
+    )
 
   def generate(a: ADT): Result[Doc] =
     for {
@@ -37,6 +66,8 @@ object ADTGen extends GenHelpers {
       indent <- getIndent
 
       genComments <- getGenerateComments
+
+      genHelpers <- getGenerateAdtConstructorsHelpers
 
       typ = createTypeExpr(a.name.name, a.parameters)
 
@@ -52,10 +83,15 @@ object ADTGen extends GenHelpers {
 
       implBody <- generateImplBody(a, typ, indent)
 
+      helpers = genHelpers match {
+        case false => List[Doc]()
+        case _ => List(generateHelpers(a, typ, indent))
+      }
+
       features <- features.collectFeatures(_.handleADT(a))
 
       impl = Doc
-        .intercalate(dblLine, implBody :: features)
+        .intercalate(dblLine, List(implBody) ++ helpers ++ features)
         .tightBracketBy(implPrefix, objectPostfix, indent)
 
     } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, impl))

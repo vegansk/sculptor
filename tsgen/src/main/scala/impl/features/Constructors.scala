@@ -72,12 +72,16 @@ object Constructors extends Feature with GenHelpers {
         )
       )
 
-  private def genADTConstructor(
-    opt: Option[OptionalEncoding]
-  )(a: ADT, c: ADTConstructor, tagName: String, indent: Int): Doc = {
+  private def genADTConstructor(a: ADT,
+                                tagName: String,
+                                opt: Option[OptionalEncoding],
+                                genAdtNs: Boolean,
+                                indent: Int)(c: ADTConstructor): Doc = {
     val typ = createTypeRef(a.ref)
     val consTyp = createTypeExpr(c.name.name, c.parameters)
-    val adtTag = Doc.text(s"""$tagName: """") + consTyp + Doc.char('"')
+    val tag =
+      if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + consTyp else consTyp
+    val adtTag = Doc.text(s"""$tagName: """") + tag + Doc.char('"')
     genObjectConstructor(opt)(
       c.name,
       typ,
@@ -93,7 +97,13 @@ object Constructors extends Feature with GenHelpers {
       indent <- getIndent
       opt <- getOptionalEncoding
       tagName <- getAdtTag
-    } yield
-      a.constructors.toList.map(genADTConstructor(opt)(a, _, tagName, indent))
+      genAdtNs <- getGenerateAdtNs
+      constructors0 = a.constructors.toList
+        .map(genADTConstructor(a, tagName, opt, genAdtNs, indent))
+      constructors = genAdtNs match {
+        case false => constructors0
+        case _ => List(withNamespace(a.name.name, indent)(constructors0))
+      }
+    } yield constructors
 
 }

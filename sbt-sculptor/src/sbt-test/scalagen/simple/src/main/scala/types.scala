@@ -5,6 +5,8 @@ import io.circe._
 import io.circe.syntax._
 
 
+// Newtype MyInt
+
 final case class MyInt(value: Int) extends AnyVal
 
 object MyInt {
@@ -14,6 +16,8 @@ object MyInt {
 
   implicit val MyIntDecoder: Decoder[MyInt] = Decoder[Int].map(MyInt(_))
 }
+
+// Record Record
 
 final case class Record(id: Int, name: String)
 
@@ -35,17 +39,22 @@ object Record {
   }
 }
 
+// ADT Maybe[A]
+
 sealed trait Maybe[A] extends Product with Serializable
 
 object Maybe {
   final case class Nothing[A]() extends Maybe[A]
   final case class Just[A](get: A) extends Maybe[A]
 
+  def nothing[A]: Maybe[A] = Nothing[A]()
+  def just[A](get: A): Maybe[A] = Just[A](get)
+
   implicit def MaybeEq[A]: Eq[Maybe[A]] = Eq.fromUniversalEquals
 
   implicit def MaybeEncoder[A:Encoder]: ObjectEncoder[Maybe[A]] = ObjectEncoder.instance[Maybe[A]] {
-    case _:Nothing[A] => JsonObject("__tag" := "Nothing")
-    case v:Just[A] => JsonObject(
+    case _: Nothing[A] => JsonObject("__tag" := "Nothing")
+    case v: Just[A] => JsonObject(
       "__tag" := "Just",
       "get" := v.get
     )
@@ -59,6 +68,8 @@ object Maybe {
     }
   }
 }
+
+// Enum Enum
 
 sealed trait Enum extends Product with Serializable
 

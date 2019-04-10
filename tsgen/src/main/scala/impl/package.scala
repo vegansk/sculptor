@@ -37,4 +37,9 @@ package object impl {
     EitherT.liftF(
       State.get[GeneratorState].map(s => Config.generateComments(s.config))
     )
+
+  def getGenerateAdtNs: Result[Boolean] =
+    EitherT.liftF(
+      State.get[GeneratorState].map(s => Config.generateAdtNs(s.config))
+    )
 }

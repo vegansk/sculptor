@@ -6,6 +6,11 @@ import sculptor.ast._
 
 trait CommonGenHelpers {
 
+  def decapitalize(s: String): String = {
+    val (x, xs) = s.splitAt(1)
+    x.toLowerCase + xs
+  }
+
   def typeDefKindName(typ: TypeDef): String =
     TypeDef.cata(
       _ => "Newtype",
