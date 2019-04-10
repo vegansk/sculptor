@@ -55,25 +55,25 @@ object ConstructorsSpec extends mutable.Specification
 
       "without namespaces" >> {
         runFeature(Constructors.handleADT(a), cfg) must beEqvTo(
-          """|export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty<A>"}}
-            |
-            |export const Just = <A>(value: A): Maybe<A> => {
-            |  return {
-            |    __tag: "Just<A>",
-            |    value
-            |  }
-            |}""".stripMargin.asRight
+          """|export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty"}}
+             |
+             |export const Just = <A>(value: A): Maybe<A> => {
+             |  return {
+             |    __tag: "Just",
+             |    value
+             |  }
+             |}""".stripMargin.asRight
         )
       }
 
       "with namespaces" >> {
         runFeature(Constructors.handleADT(a), cfg.copy(generateAdtNs = true)) must beEqvTo(
           """|export namespace Maybe {
-             |  export const Empty = <A>(): Maybe<A> => {return {__tag: "Maybe.Empty<A>"}}
+             |  export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty"}}
              |
              |  export const Just = <A>(value: A): Maybe<A> => {
              |    return {
-             |      __tag: "Maybe.Just<A>",
+             |      __tag: "Just",
              |      value
              |    }
              |  }
