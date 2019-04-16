@@ -8,7 +8,8 @@ import cats.implicits._
 import cats.data.{NonEmptyList => NEL}
 import org.typelevel.paiges._
 
-object generatorSpec extends mutable.Specification
+object generatorSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -44,13 +45,24 @@ object generatorSpec extends mutable.Specification
     "handle type names" >> {
 
       typeConst(TypeRef.std(Ident("string"))) must beEqvTo(Doc.text("t.string"))
-      typeConst(TypeRef.external(QName.of(Ident("p"), Ident("string")), QName.of(Ident("p"), Ident("stringType")))) must beEqvTo(Doc.text("p.stringType"))
+      typeConst(
+        TypeRef.external(
+          QName.of(Ident("p"), Ident("string")),
+          QName.of(Ident("p"), Ident("stringType"))
+        )
+      ) must beEqvTo(Doc.text("p.stringType"))
 
     }
 
     "handle field declaration" >> {
 
-      val f = FieldDecl(Ident("theField"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None)
+      val f = FieldDecl(
+        Ident("theField"),
+        TypeRef.std(Ident("string")),
+        FieldConstraint.Required,
+        false,
+        None
+      )
       fieldDecl(f) must beEqvTo(Doc.text("theField: t.string"))
 
     }
@@ -60,9 +72,30 @@ object generatorSpec extends mutable.Specification
       None,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false, None),
-        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None),
-        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false, None)
+        FieldDecl(
+          Ident("id"),
+          TypeRef.std(Ident("number")),
+          FieldConstraint.Optional,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("str"),
+          TypeRef.std(Ident("string")),
+          FieldConstraint.Required,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("date"),
+          TypeRef.external(
+            QName.of(Ident("Date")),
+            QName.of(Ident("T"), Ident("date"))
+          ),
+          FieldConstraint.Required,
+          false,
+          None
+        )
       ),
       None
     )
@@ -114,9 +147,7 @@ object generatorSpec extends mutable.Specification
     "handle enum type declaration" >> {
 
       enumTypeDecl(e) must beEqvTo(
-        Doc.text(
-          """export enum TestEnum {V_01 = "01", V_02 = "02"}"""
-        )
+        Doc.text("""export enum TestEnum {V_01 = "01", V_02 = "02"}""")
       )
 
     }
@@ -141,24 +172,19 @@ object generatorSpec extends mutable.Specification
     "handle imports declaration" >> {
 
       importsDecl(imports) must beEqvTo(
-        Doc.text(
-          """import * as t from "io-ts"
-import * as T from "core/utils/types""""
-        )
+        Doc.text("""import * as t from "io-ts"
+import * as T from "core/utils/types"""")
       )
 
     }
 
-    val module = ModuleDecl(
-      imports.some,
-      TypesDecl(NEL.of(ct, e)).some
-    )
+    val module = ModuleDecl(imports.some, TypesDecl(NEL.of(ct, e)).some)
 
     "handle module declaration" >> {
 
       moduleDecl(module) must beEqvTo(
         Doc.text("/* header */") + Doc.line * 2 +
-        importsDecl(imports) + Doc.line * 2 +
+          importsDecl(imports) + Doc.line * 2 +
           inlineMkStringEnum + Doc.line * 2 +
           complexTypeDecl(ct) + Doc.line * 2 +
           enumDecl(e)

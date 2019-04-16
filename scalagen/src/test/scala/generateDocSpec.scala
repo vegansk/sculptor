@@ -4,7 +4,8 @@ import org.specs2._
 import cats.implicits._
 import org.typelevel.paiges._
 
-object generateDocSpec extends mutable.Specification
+object generateDocSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 

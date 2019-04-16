@@ -10,14 +10,19 @@ object astShapeSpec extends mutable.Specification {
 
     "describe simple newtype" >> {
       // final case class NewInt(value: Int) extends AnyVal
-      val _ = Newtype(Ident("NewInt"), Nil, TypeRef.Specialized(FQName(Ident("Int"))))
+      val _ =
+        Newtype(Ident("NewInt"), Nil, TypeRef.Specialized(FQName(Ident("Int"))))
       true must_=== true
     }
 
     "describe parameterized newtype" >> {
       // final case class NewList[A](value: List[A]) extends AnyVal
       val genA = TypeRef.Generic(Ident("A"))
-      val _ = Newtype(Ident("NewList"), List(GenericDef(genA)), TypeRef.Specialized(FQName(Ident("List")), List(genA)))
+      val _ = Newtype(
+        Ident("NewList"),
+        List(GenericDef(genA)),
+        TypeRef.Specialized(FQName(Ident("List")), List(genA))
+      )
       true must_=== true
     }
   }
@@ -26,14 +31,19 @@ object astShapeSpec extends mutable.Specification {
 
     "describe simple alias" >> {
       // type NewInt = Int
-      val _ = Alias(Ident("NewInt"), Nil, TypeRef.Specialized(FQName(Ident("Int"))))
+      val _ =
+        Alias(Ident("NewInt"), Nil, TypeRef.Specialized(FQName(Ident("Int"))))
       true must_=== true
     }
 
     "describe parameterized alias" >> {
       // type NewList[A] = List[A]
       val genA = TypeRef.Generic(Ident("A"))
-      val _ = Alias(Ident("NewList"), List(GenericDef(genA)), TypeRef.Specialized(FQName(Ident("List")), List(genA)))
+      val _ = Alias(
+        Ident("NewList"),
+        List(GenericDef(genA)),
+        TypeRef.Specialized(FQName(Ident("List")), List(genA))
+      )
       true must_=== true
     }
   }
@@ -41,8 +51,10 @@ object astShapeSpec extends mutable.Specification {
   "sculptor.ast.Record" should {
     "describe simple record" >> {
       // final case class Record(a: Int, b: String)
-      val fieldA = FieldDef(Ident("a"), TypeRef.Specialized(FQName(Ident("Int"))))
-      val fieldB = FieldDef(Ident("b"), TypeRef.Specialized(FQName(Ident("String"))))
+      val fieldA =
+        FieldDef(Ident("a"), TypeRef.Specialized(FQName(Ident("Int"))))
+      val fieldB =
+        FieldDef(Ident("b"), TypeRef.Specialized(FQName(Ident("String"))))
       val _ = Record(Ident("Record"), Nil, NonEmptyList.of(fieldA, fieldB))
       true must_=== true
     }
@@ -52,8 +64,15 @@ object astShapeSpec extends mutable.Specification {
       val genA = TypeRef.Generic(Ident("A"))
       val genB = TypeRef.Generic(Ident("B"))
       val fieldA = FieldDef(Ident("a"), genA)
-      val fieldB = FieldDef(Ident("b"), TypeRef.Specialized(FQName(Ident("List")), List(genB)))
-      val _ = Record(Ident("Record"), List(GenericDef(genA), GenericDef(genB)), NonEmptyList.of(fieldA, fieldB))
+      val fieldB = FieldDef(
+        Ident("b"),
+        TypeRef.Specialized(FQName(Ident("List")), List(genB))
+      )
+      val _ = Record(
+        Ident("Record"),
+        List(GenericDef(genA), GenericDef(genB)),
+        NonEmptyList.of(fieldA, fieldB)
+      )
       true must_=== true
     }
   }
@@ -99,9 +118,17 @@ object astShapeSpec extends mutable.Specification {
        }
        */
       val genA = TypeRef.Generic(Ident("A"))
-      val just = ADTConstructor(Ident("Just"), List(GenericDef(genA)), List(FieldDef(Ident("value"), genA)))
+      val just = ADTConstructor(
+        Ident("Just"),
+        List(GenericDef(genA)),
+        List(FieldDef(Ident("value"), genA))
+      )
       val empty = ADTConstructor(Ident("Empty"), Nil, Nil)
-      val _ = ADT(Ident("Maybe"), List(GenericDef(genA)), NonEmptyList.of(just, empty))
+      val _ = ADT(
+        Ident("Maybe"),
+        List(GenericDef(genA)),
+        NonEmptyList.of(just, empty)
+      )
       true must_=== true
     }
 
@@ -119,9 +146,21 @@ object astShapeSpec extends mutable.Specification {
        */
       val genE = TypeRef.Generic(Ident("E"))
       val genA = TypeRef.Generic(Ident("A"))
-      val left = ADTConstructor(Ident("Left"), List(GenericDef(genE), GenericDef(genA)), List(FieldDef(Ident("value"), genE)))
-      val right = ADTConstructor(Ident("Right"), List(GenericDef(genE), GenericDef(genA)), List(FieldDef(Ident("value"), genA)))
-      val _ = ADT(Ident("Either"), List(GenericDef(genE), GenericDef(genA)), NonEmptyList.of(left, right))
+      val left = ADTConstructor(
+        Ident("Left"),
+        List(GenericDef(genE), GenericDef(genA)),
+        List(FieldDef(Ident("value"), genE))
+      )
+      val right = ADTConstructor(
+        Ident("Right"),
+        List(GenericDef(genE), GenericDef(genA)),
+        List(FieldDef(Ident("value"), genA))
+      )
+      val _ = ADT(
+        Ident("Either"),
+        List(GenericDef(genE), GenericDef(genA)),
+        NonEmptyList.of(left, right)
+      )
       true must_=== true
     }
   }

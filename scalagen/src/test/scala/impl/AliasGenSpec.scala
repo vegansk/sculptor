@@ -4,7 +4,8 @@ package impl
 import org.specs2._
 import cats.implicits._
 
-object AliasGenSpec extends mutable.Specification
+object AliasGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -15,7 +16,10 @@ object AliasGenSpec extends mutable.Specification
 
   "AliasGen" should {
 
-    val myInt = alias("MyInt").baseType(TypeRef.spec("Int")).comment("The Int type alias").build
+    val myInt = alias("MyInt")
+      .baseType(TypeRef.spec("Int"))
+      .comment("The Int type alias")
+      .build
 
     "handle simple aliases" >> {
 
@@ -27,7 +31,12 @@ object AliasGenSpec extends mutable.Specification
 
     "handle generic aliases" >> {
 
-      val a = alias("Result").generic(TypeRef.gen("A")).baseType(TypeRef.spec("Either", TypeRef.spec("String"), TypeRef.gen("A"))).build
+      val a = alias("Result")
+        .generic(TypeRef.gen("A"))
+        .baseType(
+          TypeRef.spec("Either", TypeRef.spec("String"), TypeRef.gen("A"))
+        )
+        .build
 
       runGen(AliasGen.generate(a), cfg) must beEqvTo(
         "type Result[A] = Either[String, A]".asRight
@@ -36,7 +45,12 @@ object AliasGenSpec extends mutable.Specification
 
     "handle upper bounds" >> {
 
-      val a = alias("PetsList").generic(GenericDef.of("P", TypeRef.spec("Pet"), TypeRef.spec("FourLegged"))).baseType(TypeRef.spec("List", TypeRef.gen("P"))).build
+      val a = alias("PetsList")
+        .generic(
+          GenericDef.of("P", TypeRef.spec("Pet"), TypeRef.spec("FourLegged"))
+        )
+        .baseType(TypeRef.spec("List", TypeRef.gen("P")))
+        .build
 
       runGen(AliasGen.generate(a), cfg) must beEqvTo(
         "type PetsList[P <: Pet with FourLegged] = List[P]".asRight

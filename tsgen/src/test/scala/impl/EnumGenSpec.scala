@@ -4,7 +4,8 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object EnumGenSpec extends mutable.Specification
+object EnumGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -25,13 +26,11 @@ object EnumGenSpec extends mutable.Specification
       .build
 
     "generate ADTs" >> {
-      runGen(EnumGen.generate(e), cfg) must beEqvTo(
-        """|export enum Colors {
+      runGen(EnumGen.generate(e), cfg) must beEqvTo("""|export enum Colors {
            |  Red = "red",
            |  Green = "green",
            |  Blue = "blue"
-           |}""".stripMargin.asRight
-      )
+           |}""".stripMargin.asRight)
     }
 
     "generate comments" >> {

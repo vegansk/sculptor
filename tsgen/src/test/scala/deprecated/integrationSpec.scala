@@ -16,10 +16,7 @@ object integrationSpec extends mutable.Specification {
   import ast._
 
   val xsdConfig = XsdConfig(
-    List(
-      ImportDecl(Ident("t"), "io-ts"),
-      ImportDecl(Ident("T"), "core/types")
-    ),
+    List(ImportDecl(Ident("t"), "io-ts"), ImportDecl(Ident("T"), "core/types")),
     "xsd".some,
     List(
       ExternatType(
@@ -40,10 +37,7 @@ object integrationSpec extends mutable.Specification {
     )
   )
 
-  val genConfig = GenConfig(
-    "t",
-    nativeTypes = false
-  )
+  val genConfig = GenConfig("t", nativeTypes = false)
 
   def transformSchema(xsd: x.Schema[Id]): ModuleDecl = {
     transform(xsd).value(xsdConfig) match {
@@ -59,9 +53,7 @@ object integrationSpec extends mutable.Specification {
   "iots module" should {
     "produce iots sources from fes-1.0.xsd" >> {
       val xsd = parseXsd(
-        XML.load(
-          getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd")
-        )
+        XML.load(getClass.getClassLoader.getResourceAsStream("xsd/fes-1.0.xsd"))
       )
 
       val _ = generateSources(transformSchema(xsd)).render(80).take(5000)

@@ -5,7 +5,8 @@ package features
 import org.specs2._
 import cats.implicits._
 
-object IoTsTypesSpec extends mutable.Specification
+object IoTsTypesSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -13,7 +14,11 @@ object IoTsTypesSpec extends mutable.Specification
   import dsl._
 
   val feature = Feature.IoTsTypes(iotsNs = "t")
-  val cfg = Config(features = List(feature), optionalEncoding = OptionalEncoding("Option"), generateAdtNs = false)
+  val cfg = Config(
+    features = List(feature),
+    optionalEncoding = OptionalEncoding("Option"),
+    generateAdtNs = false
+  )
 
   "IoTsTypes" should {
 
@@ -50,7 +55,7 @@ object IoTsTypesSpec extends mutable.Specification
 
     "handle generic newtypes" >> {
       val n = newtype("Result")
-      .generic("A".gen)
+        .generic("A".gen)
         .baseType("Either".spec("string".spec, "A".gen))
         .build
 
@@ -141,7 +146,10 @@ object IoTsTypesSpec extends mutable.Specification
       }
 
       "with namespaces" >> {
-        runFeature(IoTsTypes(feature).handleADT(a), cfg.copy(generateAdtNs = true)) must beEqvTo(
+        runFeature(
+          IoTsTypes(feature).handleADT(a),
+          cfg.copy(generateAdtNs = true)
+        ) must beEqvTo(
           """|export namespace Maybe {
              |  export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
              |    {__tag: t.literal("Empty")}, {}, "Empty"
@@ -169,5 +177,27 @@ object IoTsTypesSpec extends mutable.Specification
       )
     }
 
+    "allow to use custom iots types" >> {
+
+      val a = adt("Test")
+        .constructors(cons("A"), cons("B"))
+        .build
+
+      val feature0 = feature.copy(
+        customIotsType = "MyType",
+        customIotsTaggedType = "MyTaggedType"
+      )
+
+      runFeature(
+        IoTsTypes(feature0).handleADT(a),
+        cfg.copy(features = List(feature0))
+      ) must beEqvTo(
+        """|export const AType: MyTaggedType<"__tag", A> = typeImpl({__tag: t.literal("A")}, {}, "A")
+           |
+           |export const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
+           |
+           |export const TestType: MyType<Test> = t.taggedUnion("__tag", [AType, BType], "Test")""".stripMargin.asRight
+      )
+    }
   }
 }

@@ -18,7 +18,12 @@ object dslSpec extends mutable.Specification {
       .comment("NewInt type")
 
     "build simple newtypes" >> {
-      simpleNewType.build must_=== Newtype(Ident("NewInt"), Nil, spec("Int"), comment = "NewInt type".some)
+      simpleNewType.build must_=== Newtype(
+        Ident("NewInt"),
+        Nil,
+        spec("Int"),
+        comment = "NewInt type".some
+      )
     }
 
     val genericNewType = newtype("ListOfEitherS")
@@ -28,7 +33,10 @@ object dslSpec extends mutable.Specification {
     "build generic newtypes" >> {
       // final case class ListOfEitherS[A <: BaseType](value: List[Either[String, A]]) extends AnyVal
       genericNewType.build must_=== Newtype(
-        Ident("ListOfEitherS"), List(GenericDef.of("A", spec("BaseType"))), spec("List", spec("Either", spec("String"), gen("A"))))
+        Ident("ListOfEitherS"),
+        List(GenericDef.of("A", spec("BaseType"))),
+        spec("List", spec("Either", spec("String"), gen("A")))
+      )
     }
 
     val simpleAlias = alias("NewInt")
@@ -37,7 +45,12 @@ object dslSpec extends mutable.Specification {
 
     "build simple aliases" >> {
       // type NewInt = Int
-      simpleAlias.build must_=== Alias(Ident("NewInt"), Nil, spec("Int"), comment = "NewInt type".some)
+      simpleAlias.build must_=== Alias(
+        Ident("NewInt"),
+        Nil,
+        spec("Int"),
+        comment = "NewInt type".some
+      )
     }
 
     val genericAlias = alias("ListOfEitherS")
@@ -47,7 +60,10 @@ object dslSpec extends mutable.Specification {
     "build generic aliases" >> {
       // type ListOfEitherS[A <: BaseType] = List[Either[String, A]]
       genericAlias.build must_=== Alias(
-        Ident("ListOfEitherS"), List(GenericDef.of("A", spec("BaseType"))), spec("List", spec("Either", spec("String"), gen("A"))))
+        Ident("ListOfEitherS"),
+        List(GenericDef.of("A", spec("BaseType"))),
+        spec("List", spec("Either", spec("String"), gen("A")))
+      )
     }
 
     "build field definitions" >> {
@@ -99,7 +115,11 @@ object dslSpec extends mutable.Specification {
         List(GenericDef.of("A")),
         NonEmptyList.of(
           ADTConstructor(Ident("Nothing"), Nil, Nil),
-          ADTConstructor(Ident("Just"), List(GenericDef.of("A")), List(field("value").ofType(gen("A")).build))
+          ADTConstructor(
+            Ident("Just"),
+            List(GenericDef.of("A")),
+            List(field("value").ofType(gen("A")).build)
+          )
         )
       )
     }
@@ -107,16 +127,25 @@ object dslSpec extends mutable.Specification {
     "build packages" >> {
       val p = pkg("org.github.vegansk.test")
         .types(
-          simpleNewType, genericNewType, simpleAlias, genericAlias,
-          rec, en, maybeAdt
+          simpleNewType,
+          genericNewType,
+          simpleAlias,
+          genericAlias,
+          rec,
+          en,
+          maybeAdt
         )
 
       p.build must_=== Package(
         FQName.of("org.github.vegansk.test"),
         List(
-          simpleNewType.build, genericNewType.build,
-          simpleAlias.build, genericAlias.build,
-          rec.build, en.build, maybeAdt.build
+          simpleNewType.build,
+          genericNewType.build,
+          simpleAlias.build,
+          genericAlias.build,
+          rec.build,
+          en.build,
+          maybeAdt.build
         ),
         None
       )

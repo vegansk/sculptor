@@ -11,9 +11,7 @@ object parserSpec extends mutable.Specification {
   "xsd parser" should {
 
     "parse empty schema" >> {
-      checkParser(
-        Schema.empty[Option]
-      ) {
+      checkParser(Schema.empty[Option]) {
         parser[Option].parse {
           <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
           </xs:schema>
@@ -25,7 +23,14 @@ object parserSpec extends mutable.Specification {
 
       checkParser(
         Schema[Option](
-          Some(Some(Annotation[Option](Some(List("test")), Some(Some(List("appTest")))))),
+          Some(
+            Some(
+              Annotation[Option](
+                Some(List("test")),
+                Some(Some(List("appTest")))
+              )
+            )
+          ),
           None
         )
       ) {

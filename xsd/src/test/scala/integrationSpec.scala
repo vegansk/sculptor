@@ -3,7 +3,6 @@ package sculptor.xsd
 import org.specs2._
 import cats.implicits._
 
-
 object integrationSpec extends mutable.Specification {
 
   import utils._
@@ -21,13 +20,11 @@ object integrationSpec extends mutable.Specification {
         }
       }
 
-      result._2 must beRight(
-        (xsdO: Schema[Option]) => {
-          val xsd = Schema.build(xsdO)
+      result._2 must beRight((xsdO: Schema[Option]) => {
+        val xsd = Schema.build(xsdO)
 
-          xsd.toEither must beRight
-        }
-      )
+        xsd.toEither must beRight
+      })
     }
 
     "produce ast from ca_iso20022_v2 schema" >> {
@@ -35,18 +32,17 @@ object integrationSpec extends mutable.Specification {
       val result = run[Schema[Option]] {
         parser[Option].parse {
           XML.load(
-            getClass.getClassLoader.getResourceAsStream("xsd/ca_iso20022_v2.xsd")
+            getClass.getClassLoader
+              .getResourceAsStream("xsd/ca_iso20022_v2.xsd")
           )
         }
       }
 
-      result._2 must beRight(
-        (xsdO: Schema[Option]) => {
-          val xsd = Schema.build(xsdO)
+      result._2 must beRight((xsdO: Schema[Option]) => {
+        val xsd = Schema.build(xsdO)
 
-          xsd.toEither must beRight
-        }
-      )
+        xsd.toEither must beRight
+      })
     }
 
   }

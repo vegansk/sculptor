@@ -1,7 +1,7 @@
 package sculptor.xsd
 
 import org.specs2._
-import cats.{ Id }
+import cats.{Id}
 import cats.data._
 import cats.implicits._
 
@@ -25,10 +25,8 @@ object astSpec extends mutable.Specification {
       )
     }
 
-    val goodEnumeration = Enumeration[Option](
-      Some("VALUE"),
-      Option(Option(goodAnnotation))
-    )
+    val goodEnumeration =
+      Enumeration[Option](Some("VALUE"), Option(Option(goodAnnotation)))
 
     "build Enumeration" >> {
 
@@ -57,7 +55,9 @@ object astSpec extends mutable.Specification {
     "build SimpleTypeRestriction" >> {
 
       val badSimpleTypeRestriction = SimpleTypeRestriction.empty[Option]
-      SimpleTypeRestriction.build(badSimpleTypeRestriction).isInvalid must_=== true
+      SimpleTypeRestriction
+        .build(badSimpleTypeRestriction)
+        .isInvalid must_=== true
 
       SimpleTypeRestriction.build(goodSimpleTypeRestriction) must_=== valid(
         SimpleTypeRestriction[Id](

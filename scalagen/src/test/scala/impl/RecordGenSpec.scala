@@ -4,7 +4,8 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object RecordGenSpec extends mutable.Specification
+object RecordGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -26,8 +27,8 @@ object RecordGenSpec extends mutable.Specification
     }
 
     val rec = record("Record")
-    .comment("The Record")
-    .generic("A".gen)
+      .comment("The Record")
+      .generic("A".gen)
       .field("id", "Int".spec, "The id")
       .field("nameO", "Option".spec("A".gen), "The name")
       .build
@@ -40,7 +41,10 @@ object RecordGenSpec extends mutable.Specification
     }
 
     "generate Eq typeclass" >> {
-      runGen(RecordGen.generate(rec), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+      runGen(
+        RecordGen.generate(rec),
+        cfg.copy(features = List(Feature.CatsEqTypeclass))
+      ) must beEqvTo(
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
            |object Record {implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals}""".stripMargin.asRight
@@ -48,7 +52,10 @@ object RecordGenSpec extends mutable.Specification
     }
 
     "generate circe codecs" >> {
-      runGen(RecordGen.generate(rec), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+      runGen(
+        RecordGen.generate(rec),
+        cfg.copy(features = List(Feature.CirceCodecs()))
+      ) must beEqvTo(
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
            |object Record {

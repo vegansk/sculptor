@@ -11,19 +11,15 @@ object foldSpec extends mutable.Specification {
   "xsd fold" should {
 
     "detect schema namespace" >> {
-      run(
-        fold.findSchemaNs {
-          <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
-        }
-      )._2 must_=== Right(Some("xs"))
+      run(fold.findSchemaNs {
+        <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" />
+      })._2 must_=== Right(Some("xs"))
     }
 
     "implement strict mode" >> {
 
       val data = <xs:simpleType name="simpleTypeRestriction" />
-      runState(
-        fold.FoldState(appendPathToError = false, strictMode = true)
-      )(
+      runState(fold.FoldState(appendPathToError = false, strictMode = true))(
         fold.schema()(xsd(data))(())
       )._2 must_=== Left("Found unprocessed node `simpleType`")
 
@@ -39,47 +35,38 @@ object foldSpec extends mutable.Specification {
       elementFormDefault="qualified"
         />
 
-      run(
-        fold.findAttributeFormDefault(unset)
-      )._2 must_=== Right(None)
+      run(fold.findAttributeFormDefault(unset))._2 must_=== Right(None)
 
-      run(
-        fold.findElementFormDefault(unset)
-      )._2 must_=== Right(None)
+      run(fold.findElementFormDefault(unset))._2 must_=== Right(None)
 
-      run(
-        fold.findAttributeFormDefault(set)
-      )._2 must_=== Right(Some(fold.Unqualified))
+      run(fold.findAttributeFormDefault(set))._2 must_=== Right(
+        Some(fold.Unqualified)
+      )
 
-      run(
-        fold.findElementFormDefault(set)
-      )._2 must_=== Right(Some(fold.Qualified))
+      run(fold.findElementFormDefault(set))._2 must_=== Right(
+        Some(fold.Qualified)
+      )
     }
 
     "handle attributes" >> {
-      runState(
-        fold.FoldState(attributeFormDefault = fold.Unqualified)
-      )(
+      runState(fold.FoldState(attributeFormDefault = fold.Unqualified))(
         fold.xsdAttributes {
           <xs:simpleType name="simpleTypeRestriction" otherNs:test="test"/>
         }
-      )._2.map(
-        _.map {
-          case a@Attribute(name, _, _) => (name, a.value.text)
-        }
-      ) must_=== Right(List(("name", "simpleTypeRestriction")))
+      )._2.map(_.map {
+        case a @ Attribute(name, _, _) => (name, a.value.text)
+      }) must_=== Right(List(("name", "simpleTypeRestriction")))
 
       runState(
-        fold.FoldState(schemaNs = Some("xs"), attributeFormDefault = fold.Qualified)
-      )(
-        fold.xsdAttributes {
-          <xs:simpleType xs:name="simpleTypeRestriction" test="test"/>
-        }
-      )._2.map(
-        _.map {
-          case a@Attribute(name, _, _) => (name, a.value.text)
-        }
-      ) must_=== Right(List(("name", "simpleTypeRestriction")))
+        fold.FoldState(
+          schemaNs = Some("xs"),
+          attributeFormDefault = fold.Qualified
+        )
+      )(fold.xsdAttributes {
+        <xs:simpleType xs:name="simpleTypeRestriction" test="test"/>
+      })._2.map(_.map {
+        case a @ Attribute(name, _, _) => (name, a.value.text)
+      }) must_=== Right(List(("name", "simpleTypeRestriction")))
     }
 
     "handle children" >> {
@@ -93,9 +80,9 @@ object foldSpec extends mutable.Specification {
           elementFormDefault = fold.Qualified,
           strictMode = true
         )
-      )(
-        fold.xsdChild(xsd(data))
-      )._2.map(_.map(_.label)) must_=== Right(List("simpleType"))
+      )(fold.xsdChild(xsd(data)))._2.map(_.map(_.label)) must_=== Right(
+        List("simpleType")
+      )
     }
 
     "fold simple type" >> {
@@ -106,23 +93,23 @@ object foldSpec extends mutable.Specification {
         </xs:simpleType>
 
       checkFold(false, true) {
-        fold.schema(
-          simpleType = fold.simpleTypeOp[Boolean] {
-            _ => _ => fold.ok(true)
-          }
-        )
-      } (xsd(simpleType))
+        fold.schema(simpleType = fold.simpleTypeOp[Boolean] { _ => _ =>
+          fold.ok(true)
+        })
+      }(xsd(simpleType))
 
       checkFold(None, Some("simpleTypeRestriction")) {
         fold.schema(
-          simpleType = fold.simpleType(
-            restriction = fold.simpleTypeRestrictionOp(fold.nop[Option[String]]),
-            name = fold.nameOp {
-              n => _ => fold.ok(Some(n))
-            }
-          )
+          simpleType =
+            fold.simpleType(
+              restriction =
+                fold.simpleTypeRestrictionOp(fold.nop[Option[String]]),
+              name = fold.nameOp { n => _ =>
+                fold.ok(Some(n))
+              }
+            )
         )
-      } (xsd(simpleType))
+      }(xsd(simpleType))
 
     }
 
@@ -143,43 +130,53 @@ object foldSpec extends mutable.Specification {
 
       import testAst._
 
-      def simpleType[A[_[_]], F[_]: MonoidK: Applicative](f: SimpleType[F] => A[F] => A[F]): fold.SimpleTypeOp[A[F]] = {
+      def simpleType[A[_[_]], F[_]: MonoidK: Applicative](
+        f: SimpleType[F] => A[F] => A[F]
+      ): fold.SimpleTypeOp[A[F]] = {
         fold.simpleTypeOp[A[F]](
-          node => ast => for {
-            st <- fold.simpleType[SimpleType[F]](
-              name = simpleTypeName[F],
-              restriction = simpleTypeRestriction[F]
-            )(node)(SimpleType[F]())
-          } yield f(st)(ast)
+          node =>
+            ast =>
+              for {
+                st <- fold.simpleType[SimpleType[F]](
+                  name = simpleTypeName[F],
+                  restriction = simpleTypeRestriction[F]
+                )(node)(SimpleType[F]())
+              } yield f(st)(ast)
         )
       }
 
-
       def simpleTypeName[F[_]: Applicative] = fold.nameOp[SimpleType[F]](
-        name => ast => fold.ok(ast.copy[F](name = Applicative[F].pure(Some(name))))
+        name =>
+          ast => fold.ok(ast.copy[F](name = Applicative[F].pure(Some(name))))
       )
 
       def restrictionBase[F[_]: Applicative] = fold.baseOp[Restriction[F]](
         name => ast => fold.ok(ast.copy[F](base = Applicative[F].pure(name)))
       )
 
-      def restrictionSimpleType[F[_]: MonoidK: Applicative] = simpleType[Restriction, F] {
-        st => r => r.copy[F](simpleType = Applicative[F].pure(Some(st)))
-      }
+      def restrictionSimpleType[F[_]: MonoidK: Applicative] =
+        simpleType[Restriction, F] { st => r =>
+          r.copy[F](simpleType = Applicative[F].pure(Some(st)))
+        }
 
-      def simpleTypeRestriction[F[_]: MonoidK: Applicative] = fold.simpleTypeRestrictionOp[SimpleType[F]](
-        node => ast => for {
-            str <- fold.simpleTypeRestriction(
-              base = restrictionBase[F],
-              simpleType = restrictionSimpleType[F]
-            )(node)(Restriction[F]())
-          } yield ast.copy[F](restriction = Applicative[F].pure(Some(str)))
-      )
+      def simpleTypeRestriction[F[_]: MonoidK: Applicative] =
+        fold.simpleTypeRestrictionOp[SimpleType[F]](
+          node =>
+            ast =>
+              for {
+                str <- fold.simpleTypeRestriction(
+                  base = restrictionBase[F],
+                  simpleType = restrictionSimpleType[F]
+                )(node)(Restriction[F]())
+              } yield ast.copy[F](restriction = Applicative[F].pure(Some(str)))
+        )
 
       def moduleSimpleType[F[_]: Alternative] = simpleType[Module, F] {
-        st => m => m.copy[F](
-          types = Alternative[F].combineK(m.types, Alternative[F].pure(List(st)))
-        )
+        st => m =>
+          m.copy[F](
+            types =
+              Alternative[F].combineK(m.types, Alternative[F].pure(List(st)))
+          )
       }
 
       checkFold[Module[Option]](
@@ -215,11 +212,7 @@ object foldSpec extends mutable.Specification {
             )
           )
         )
-      )(
-        fold.schema(
-          simpleType = moduleSimpleType[Option]
-        )
-      )(xsd(data))
+      )(fold.schema(simpleType = moduleSimpleType[Option]))(xsd(data))
 
     }
   }

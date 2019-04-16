@@ -10,26 +10,23 @@ object integrationSpec extends mutable.Specification {
   import sculptor.scalagen.testing.utils._
   import sculptor.scalagen.deprecated.xsd.{Config => XsdConfig, _}
   import generator.{
-    Config => GenConfig, Parameters => GenParameters, ExternalType => GenType, _
+    Config => GenConfig,
+    Parameters => GenParameters,
+    ExternalType => GenType,
+    _
   }
   import sculptor.xsd.{ast => x}
   import ast._
 
   def xsdConfig(ns: String) = XsdConfig(
-    List(
-      ImportDecl("java.time.LocalDate"),
-      ImportDecl("scala.xml._")
-    ),
+    List(ImportDecl("java.time.LocalDate"), ImportDecl("scala.xml._")),
     ns.some,
     List(
       ExternalType(
         x.QName.fromString(s"$ns:date"),
         QName.of(Ident("LocalDate"))
       ),
-      ExternalType(
-        x.QName.fromString(s"$ns:anyType"),
-        QName.of(Ident("Node"))
-      ),
+      ExternalType(x.QName.fromString(s"$ns:anyType"), QName.of(Ident("Node"))),
       ExternalType(
         x.QName.fromString(s"$ns:dateTime"),
         QName.of(Ident("LocalDateTime"))
@@ -38,10 +35,7 @@ object integrationSpec extends mutable.Specification {
         x.QName.fromString(s"$ns:time"),
         QName.of(Ident("LocalTime"))
       ),
-      ExternalType(
-        x.QName("official_info_t", None),
-        QName.of(Ident("fake"))
-      )
+      ExternalType(x.QName("official_info_t", None), QName.of(Ident("fake")))
     )
   )
 
@@ -75,9 +69,7 @@ object integrationSpec extends mutable.Specification {
   "scala module" should {
     "produce scala sources from fes-2.0.xsd" >> {
       val xsd = parseXsd(
-        XML.load(
-          getClass.getClassLoader.getResourceAsStream("xsd/fes-2.0.xsd")
-        )
+        XML.load(getClass.getClassLoader.getResourceAsStream("xsd/fes-2.0.xsd"))
       )
 
       // println(generateSources(transformSchema(xsd)).render(80).take(600000))
