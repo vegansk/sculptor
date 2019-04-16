@@ -9,7 +9,9 @@ object Feature {
   final case class IoTsTypes(iotsNs: String = "",
                              typePrefix: String = "",
                              typeEnding: String = "Type",
-                             typeMapping: IotsMapping = StdIotsMappings)
+                             typeMapping: IotsMapping = StdIotsMappings,
+                             customIotsType: String = "",
+                             customIotsTaggedType: String = "")
       extends Feature
   case object Constructors extends Feature
 

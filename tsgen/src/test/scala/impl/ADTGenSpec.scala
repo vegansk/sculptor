@@ -4,7 +4,8 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object ADTGenSpec extends mutable.Specification
+object ADTGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -41,16 +42,17 @@ object ADTGenSpec extends mutable.Specification
     }
 
     "handle optional encoding" >> {
-      runGen(ADTGen.generate(maybeAdt), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
-        """|export type Maybe<A> = Empty<A> | Just<A>
+      runGen(
+        ADTGen.generate(maybeAdt),
+        cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))
+      ) must beEqvTo("""|export type Maybe<A> = Empty<A> | Just<A>
            |
            |export interface Empty<A> {__tag: "Empty"}
            |
            |export interface Just<A> {
            |  __tag: "Just"
            |  value?: A
-           |}""".stripMargin.asRight
-      )
+           |}""".stripMargin.asRight)
     }
 
     "generate comments" >> {

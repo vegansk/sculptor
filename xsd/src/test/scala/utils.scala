@@ -11,13 +11,16 @@ object utils extends MustMatchers {
     </xs:schema>
   }
 
-  def runState[A](s: fold.FoldState)(r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
+  def runState[A](
+    s: fold.FoldState
+  )(r: fold.Result[A]): (fold.FoldState, Either[String, A]) =
     r.value.run(s).value
 
-  def run[A](r: fold.Result[A]): (fold.FoldState, Either[String,A]) =
+  def run[A](r: fold.Result[A]): (fold.FoldState, Either[String, A]) =
     runState(fold.FoldState(appendPathToError = true, strictMode = true))(r)
 
-  def checkFold[A](initial: A, expected: A)(op: fold.SchemaOp[A])(data: Node) = {
+  def checkFold[A](initial: A,
+                   expected: A)(op: fold.SchemaOp[A])(data: Node) = {
     val res = run {
       op(data)(initial)
     }

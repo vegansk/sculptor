@@ -4,7 +4,8 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object RecordGenSpec extends mutable.Specification
+object RecordGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -15,7 +16,8 @@ object RecordGenSpec extends mutable.Specification
 
   "RecordGen" should {
 
-    val r = record("Record").generic("A".gen)
+    val r = record("Record")
+      .generic("A".gen)
       .comment("The Record")
       .field("id", "number".spec, "The id")
       .field("nameO", "Option".spec("A".gen), "The name")
@@ -31,30 +33,33 @@ object RecordGenSpec extends mutable.Specification
     }
 
     "handle optional encoding" >> {
-      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding("Option"))) must beEqvTo(
-        """|export interface Record<A> {
+      runGen(
+        RecordGen.generate(r),
+        cfg.copy(optionalEncoding = OptionalEncoding("Option"))
+      ) must beEqvTo("""|export interface Record<A> {
            |  id: number
            |  nameO?: A
-           |}""".stripMargin.asRight
-      )
+           |}""".stripMargin.asRight)
     }
 
     "handle all fields optional encoding" >> {
-      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))) must beEqvTo(
-        """|export interface Record<A> {
+      runGen(
+        RecordGen.generate(r),
+        cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))
+      ) must beEqvTo("""|export interface Record<A> {
            |  id?: number
            |  nameO?: Option<A>
-           |}""".stripMargin.asRight
-      )
+           |}""".stripMargin.asRight)
     }
 
     "handle all fields optional encoding with optional class" >> {
-      runGen(RecordGen.generate(r), cfg.copy(optionalEncoding = OptionalEncoding("Option", true))) must beEqvTo(
-        """|export interface Record<A> {
+      runGen(
+        RecordGen.generate(r),
+        cfg.copy(optionalEncoding = OptionalEncoding("Option", true))
+      ) must beEqvTo("""|export interface Record<A> {
            |  id?: number
            |  nameO?: A
-           |}""".stripMargin.asRight
-      )
+           |}""".stripMargin.asRight)
     }
 
     "generate comments" >> {

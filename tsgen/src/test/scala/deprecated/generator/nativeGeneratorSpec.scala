@@ -8,7 +8,8 @@ import cats.implicits._
 import cats.data.{NonEmptyList => NEL}
 import org.typelevel.paiges._
 
-object nativeGeneratorSpec extends mutable.Specification
+object nativeGeneratorSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -17,12 +18,7 @@ object nativeGeneratorSpec extends mutable.Specification
     import ast._
     import testing.paiges._
 
-    val gen = generator.create(
-      generator.Config(
-        "t",
-        "/* header */".some
-      )
-    )
+    val gen = generator.create(generator.Config("t", "/* header */".some))
     import gen._
 
     val ct = ComplexTypeDecl(
@@ -30,9 +26,30 @@ object nativeGeneratorSpec extends mutable.Specification
       TypeRef.definedFrom("Base", "BaseType").some,
       true,
       NEL.of(
-        FieldDecl(Ident("id"), TypeRef.std(Ident("number")), FieldConstraint.Optional, false, None),
-        FieldDecl(Ident("str"), TypeRef.std(Ident("string")), FieldConstraint.Required, false, None),
-        FieldDecl(Ident("date"), TypeRef.external(QName.of(Ident("Date")), QName.of(Ident("T"), Ident("date"))), FieldConstraint.Required, false, None)
+        FieldDecl(
+          Ident("id"),
+          TypeRef.std(Ident("number")),
+          FieldConstraint.Optional,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("str"),
+          TypeRef.std(Ident("string")),
+          FieldConstraint.Required,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("date"),
+          TypeRef.external(
+            QName.of(Ident("Date")),
+            QName.of(Ident("T"), Ident("date"))
+          ),
+          FieldConstraint.Required,
+          false,
+          None
+        )
       ),
       None
     )

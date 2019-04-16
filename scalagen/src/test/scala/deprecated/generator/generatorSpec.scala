@@ -6,7 +6,8 @@ import cats.implicits._
 import cats.data.{NonEmptyList => NEL}
 import org.typelevel.paiges._
 
-object generatorSpec extends mutable.Specification
+object generatorSpec
+    extends mutable.Specification
     with ScalaCheck
     with sculptor.scalagen.testing.Helpers {
 
@@ -32,7 +33,11 @@ object generatorSpec extends mutable.Specification
 
     "handle newtype" >> {
 
-      val t = NewtypeDecl(TypeRef.definedFrom("NewString"), TypeRef.std(Ident("String")), None)
+      val t = NewtypeDecl(
+        TypeRef.definedFrom("NewString"),
+        TypeRef.std(Ident("String")),
+        None
+      )
       newtypeDecl(t) must beEqvTo(
         Doc.text("""|final case class NewString(
                     |  value: String
@@ -57,12 +62,10 @@ object generatorSpec extends mutable.Specification
         None
       )
 
-      enumTypeDecl(e) must beEqvTo(
-        Doc.text("""|sealed trait Test {
+      enumTypeDecl(e) must beEqvTo(Doc.text("""|sealed trait Test {
                     |  val code: String
                     |  val description: String
-                    |}""".stripMargin)
-      )
+                    |}""".stripMargin))
       enumObjectDecl(e) must beEqvTo(
         Doc.text("""|object Test {
                     |  object A extends Test {
@@ -85,8 +88,7 @@ object generatorSpec extends mutable.Specification
                     |  implicit val TestEncoder: Encoder[Test] = Encoder[String].contramap(_.code)
                     |
                     |  implicit val TestDecoder: Decoder[Test] = Decoder[String].emap(fromString(_).toRight("Invalid enum value"))
-                    |}""".stripMargin
-        )
+                    |}""".stripMargin)
       )
     }
 
@@ -94,17 +96,40 @@ object generatorSpec extends mutable.Specification
       TypeRef.definedFrom("Test"),
       None,
       NEL.of(
-        FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, false, None),
-        FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, false, None),
-        FieldDecl(Ident("date"), "date", TypeRef.external(QName.of(Ident("Instant"))), FieldConstraint.Required, false, false, None)
+        FieldDecl(
+          Ident("id"),
+          "id",
+          TypeRef.std(Ident("Int")),
+          FieldConstraint.Optional,
+          false,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("str"),
+          "str",
+          TypeRef.std(Ident("String")),
+          FieldConstraint.Required,
+          false,
+          false,
+          None
+        ),
+        FieldDecl(
+          Ident("date"),
+          "date",
+          TypeRef.external(QName.of(Ident("Instant"))),
+          FieldConstraint.Required,
+          false,
+          false,
+          None
+        )
       ),
       None
     )
 
     "handle complex types" >> {
       complexTypeDecl(ct) must beEqvTo(
-        Doc.text(
-          """|final case class Test(
+        Doc.text("""|final case class Test(
              |  id: Option[Int],
              |  str: String,
              |  date: Instant
@@ -127,8 +152,7 @@ object generatorSpec extends mutable.Specification
              |      date <- c.downField("date").as[Instant]
              |    } yield Test(id, str, date)
              |  }
-             |}""".stripMargin
-        )
+             |}""".stripMargin)
       )
     }
 

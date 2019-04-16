@@ -5,7 +5,8 @@ package features
 import org.specs2._
 import cats.implicits._
 
-object ConstructorsSpec extends mutable.Specification
+object ConstructorsSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -27,10 +28,11 @@ object ConstructorsSpec extends mutable.Specification
     }
 
     "handle records" >> {
-      val r = record("Record").generic("T".gen)
-      .field("id", "T".gen)
-      .field("name", "string".spec)
-      .build
+      val r = record("Record")
+        .generic("T".gen)
+        .field("id", "T".gen)
+        .field("name", "string".spec)
+        .build
 
       runFeature(Constructors.handleRecord(r), cfg) must beEqvTo(
         """|export const Record = <T>(id: T, name: string): Record<T> => {
@@ -86,7 +88,10 @@ object ConstructorsSpec extends mutable.Specification
       val r = record("Record")
         .field("field", "Option".spec("string".spec))
         .build
-      runFeature(Constructors.handleRecord(r), cfg.copy(optionalEncoding = OptionalEncoding("Option"))) must beEqvTo(
+      runFeature(
+        Constructors.handleRecord(r),
+        cfg.copy(optionalEncoding = OptionalEncoding("Option"))
+      ) must beEqvTo(
         """export const Record = (field?: string): Record => {return {field}}""".asRight
       )
     }

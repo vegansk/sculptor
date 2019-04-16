@@ -4,14 +4,16 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object ADTGenSpec extends mutable.Specification
+object ADTGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
   import sculptor.ast._
   import dsl._
 
-  val cfg = Config(generateComments = false, generateAdtConstructorsHelpers = false)
+  val cfg =
+    Config(generateComments = false, generateAdtConstructorsHelpers = false)
 
   "ADTGen" should {
 
@@ -28,10 +30,8 @@ object ADTGenSpec extends mutable.Specification
       .build
 
     val maybeIntAdt = adt("MaybeInt")
-      .constructors(
-        cons("Empty"),
-        cons("JustInt").field("value", "Int".spec)
-      ).build
+      .constructors(cons("Empty"), cons("JustInt").field("value", "Int".spec))
+      .build
 
     "generate ADTs" >> {
 
@@ -47,7 +47,10 @@ object ADTGenSpec extends mutable.Specification
       }
 
       "with constructors helpers" >> {
-        runGen(ADTGen.generate(maybeAdt), cfg.copy(generateAdtConstructorsHelpers = true)) must beEqvTo(
+        runGen(
+          ADTGen.generate(maybeAdt),
+          cfg.copy(generateAdtConstructorsHelpers = true)
+        ) must beEqvTo(
           """|sealed trait Maybe[A] extends Product with Serializable
              |
              |object Maybe {
@@ -63,11 +66,7 @@ object ADTGenSpec extends mutable.Specification
 
     "generate simple enums" >> {
       val a = adt("Colors")
-        .constructors(
-          cons("Red"),
-          cons("Green"),
-          cons("Blue")
-        )
+        .constructors(cons("Red"), cons("Green"), cons("Blue"))
         .build
 
       "without constructors helpers" >> {
@@ -83,8 +82,10 @@ object ADTGenSpec extends mutable.Specification
       }
 
       "with constructors helpers" >> {
-        runGen(ADTGen.generate(a), cfg.copy(generateAdtConstructorsHelpers = true)) must beEqvTo(
-          """|sealed trait Colors extends Product with Serializable
+        runGen(
+          ADTGen.generate(a),
+          cfg.copy(generateAdtConstructorsHelpers = true)
+        ) must beEqvTo("""|sealed trait Colors extends Product with Serializable
              |
              |object Colors {
              |  case object Red extends Colors
@@ -94,13 +95,15 @@ object ADTGenSpec extends mutable.Specification
              |  val red: Colors = Red
              |  val green: Colors = Green
              |  val blue: Colors = Blue
-             |}""".stripMargin.asRight
-        )
+             |}""".stripMargin.asRight)
       }
     }
 
     "generate Eq instance" >> {
-      runGen(ADTGen.generate(maybeAdt), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+      runGen(
+        ADTGen.generate(maybeAdt),
+        cfg.copy(features = List(Feature.CatsEqTypeclass))
+      ) must beEqvTo(
         """|sealed trait Maybe[A] extends Product with Serializable
            |
            |object Maybe {
@@ -113,7 +116,10 @@ object ADTGenSpec extends mutable.Specification
     }
 
     "generate Circe instances" >> {
-      runGen(ADTGen.generate(maybeAdt), cfg.copy(features = List(Feature.CirceCodecs(adtTag = "__customTag")))) must beEqvTo(
+      runGen(
+        ADTGen.generate(maybeAdt),
+        cfg.copy(features = List(Feature.CirceCodecs(adtTag = "__customTag")))
+      ) must beEqvTo(
         """|sealed trait Maybe[A] extends Product with Serializable
            |
            |object Maybe {
@@ -140,7 +146,10 @@ object ADTGenSpec extends mutable.Specification
     }
 
     "handle case objects in circe instances" >> {
-      runGen(ADTGen.generate(maybeIntAdt), cfg.copy(features = List(Feature.CirceCodecs(adtTag = "__tag")))) must beEqvTo(
+      runGen(
+        ADTGen.generate(maybeIntAdt),
+        cfg.copy(features = List(Feature.CirceCodecs(adtTag = "__tag")))
+      ) must beEqvTo(
         """|sealed trait MaybeInt extends Product with Serializable
            |
            |object MaybeInt {

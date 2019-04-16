@@ -5,7 +5,8 @@ import org.specs2._
 import cats._
 import cats.implicits._
 
-object transformSpec extends mutable.Specification
+object transformSpec
+    extends mutable.Specification
     with ScalaCheck
     with sculptor.scalagen.testing.Helpers {
 
@@ -17,25 +18,15 @@ object transformSpec extends mutable.Specification
     import testAst._
 
     val config = Config(
-      List(
-        ImportDecl("java.time.Instant")
-      ),
+      List(ImportDecl("java.time.Instant")),
       "xs".some,
-      List(
-        ExternalType(
-          x.QName("t1", None),
-          QName.of(Ident("fake"))
-        )
-      )
+      List(ExternalType(x.QName("t1", None), QName.of(Ident("fake"))))
     )
 
-    def schema(t: x.Type[Id]*): x.Schema[Id] = x.Schema[Id](
-      None,
-      t.toList
-    )
+    def schema(t: x.Type[Id]*): x.Schema[Id] = x.Schema[Id](None, t.toList)
 
     def transformSchema(t: x.Type[Id]*): ModuleDecl = {
-      val s = schema(t:_*)
+      val s = schema(t: _*)
       transform(s).value(config) match {
         case Right(v) => v
         case Left(err) => sys.error(s"Transformation error: $err")
@@ -43,12 +34,7 @@ object transformSpec extends mutable.Specification
     }
 
     "generate imports" >> {
-      val cfg = config.copy(
-        imports = List(
-          ImportDecl("a"),
-          ImportDecl("b")
-        )
-      )
+      val cfg = config.copy(imports = List(ImportDecl("a"), ImportDecl("b")))
 
       val m = transform(schema()).value(cfg).right.get
 
@@ -106,7 +92,7 @@ object transformSpec extends mutable.Specification
     }
 
     "detect cyclic dependencies" >> {
-      val _ = transformSchema(cyclicDependencies.src:_*)
+      val _ = transformSchema(cyclicDependencies.src: _*)
       // This will never be reached on error
       true must_=== true
     }

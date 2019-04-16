@@ -56,11 +56,22 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       Doc.text(") => ")
   }
 
+  private lazy val iotsType = cfg.customIotsType match {
+    case "" => s"${iots}Type"
+    case v => v
+  }
+
+  private lazy val iotsTaggedType = cfg.customIotsTaggedType match {
+    case "" => s"${iots}Tagged"
+    case v => v
+  }
+
   private def genTypeConstType(ref0: TypeRef,
                                tag: Option[String],
                                params: List[GenericDef]): Doc = {
-    val typePrefix = tag.fold("Type<")(t => s"""Tagged<"$t", """)
-    val ref = Doc.text(s"${iots}${typePrefix}") + createTypeRef(ref0) + Doc
+    val typePrefix =
+      tag.fold(s"${iotsType}<")(t => s"""${iotsTaggedType}<"$t", """)
+    val ref = Doc.text(typePrefix) + createTypeRef(ref0) + Doc
       .char('>')
     params.toNel.fold(ref)(l => genIotsGenericPrefix(l) + ref)
   }

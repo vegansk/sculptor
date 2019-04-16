@@ -4,7 +4,8 @@ package impl
 import org.specs2._
 import cats.implicits._
 
-object PackageGenSpec extends mutable.Specification
+object PackageGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -18,9 +19,7 @@ object PackageGenSpec extends mutable.Specification
     val p = pkg("test").comment("Package comment").build
 
     "produce package" >> {
-      runGen(PackageGen.generate(p), cfg) must beEqvTo(
-        "package test".asRight
-      )
+      runGen(PackageGen.generate(p), cfg) must beEqvTo("package test".asRight)
     }
 
     "add prefix code" >> {

@@ -4,7 +4,8 @@ package impl
 import cats.implicits._
 import org.specs2._
 
-object EnumGenSpec extends mutable.Specification
+object EnumGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -49,14 +50,15 @@ object EnumGenSpec extends mutable.Specification
     }
 
     val testEnum = enum("Colors")
-      .values(
-        enumValue("Red").value("red").comment("Red color")
-      )
+      .values(enumValue("Red").value("red").comment("Red color"))
       .comment("The Colors enum")
       .build
 
     "generate Eq typeclass" >> {
-      runGen(EnumGen.generate(testEnum), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+      runGen(
+        EnumGen.generate(testEnum),
+        cfg.copy(features = List(Feature.CatsEqTypeclass))
+      ) must beEqvTo(
         """|sealed trait Colors extends Product with Serializable
            |
            |object Colors {
@@ -72,7 +74,10 @@ object EnumGenSpec extends mutable.Specification
     }
 
     "generate circe codecs" >> {
-      runGen(EnumGen.generate(testEnum), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+      runGen(
+        EnumGen.generate(testEnum),
+        cfg.copy(features = List(Feature.CirceCodecs()))
+      ) must beEqvTo(
         """|sealed trait Colors extends Product with Serializable
            |
            |object Colors {

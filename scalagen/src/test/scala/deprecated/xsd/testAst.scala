@@ -10,8 +10,7 @@ object testAst {
   import sculptor.scalagen.testing.utils._
 
   object simpleTypeToEnum {
-    lazy val src = parseXsdTypes(
-      <xs:simpleType name="test_et">
+    lazy val src = parseXsdTypes(<xs:simpleType name="test_et">
         <xs:restriction base="xs:string">
           <xs:enumeration value="01"/>
           <xs:enumeration value="02"/>
@@ -20,18 +19,17 @@ object testAst {
 
     lazy val dst =
       EnumDecl(
-      TypeRef.definedFrom("TestEt"),
-      NEL.of(
-        EnumMemberDecl(Ident("V_01"), "01", None),
-        EnumMemberDecl(Ident("V_02"), "02", None)
-      ),
-      None
-    )
+        TypeRef.definedFrom("TestEt"),
+        NEL.of(
+          EnumMemberDecl(Ident("V_01"), "01", None),
+          EnumMemberDecl(Ident("V_02"), "02", None)
+        ),
+        None
+      )
   }
 
   object complexTypeToTypeDecl {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="id_t">
+    lazy val src = parseXsdTypes(<xs:complexType name="id_t">
         <xs:sequence>
           <xs:element name="id" type="xs:string"/>
           <xs:element name="org" type="xs:string" minOccurs="0"/>
@@ -47,19 +45,27 @@ object testAst {
             Ident("id"),
             "id",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("org"),
             "org",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None)),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object complexTypeAnonymousSeq {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="type_t">
+    lazy val src = parseXsdTypes(<xs:complexType name="type_t">
         <xs:sequence>
           <xs:sequence minOccurs="0">
             <xs:element name="value1" type="xs:string" minOccurs="0"/>
@@ -86,43 +92,62 @@ object testAst {
             Ident("value1"),
             "value1",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("value2"),
             "value2",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("value3"),
             "value3",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("value4"),
             "value4",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("value5"),
             "value5",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None)),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
     lazy val dst = List(outerType)
   }
 
   object elementToTypeDecl {
-    lazy val src = parseXsdTypes(
-      <xs:element name="TEST_ELEM">
+    lazy val src = parseXsdTypes(<xs:element name="TEST_ELEM">
         <xs:complexType>
           <xs:sequence>
             <xs:element name="x" type="xs:int"/>
             <xs:element name="y" type="xs:string"/>
           </xs:sequence>
         </xs:complexType>
-      </xs:element>
-    ).head
+      </xs:element>).head
 
     lazy val dst =
       ComplexTypeDecl(
@@ -133,19 +158,27 @@ object testAst {
             Ident("x"),
             "x",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("y"),
             "y",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None)),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object complexTypeWithChoiceToTypeDecl {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="test">
+    lazy val src = parseXsdTypes(<xs:complexType name="test">
         <xs:choice>
           <xs:element name="num" type="xs:int"/>
           <xs:element name="str" type="xs:string" minOccurs="0"/>
@@ -161,19 +194,27 @@ object testAst {
             Ident("num"),
             "num",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Optional, false, false, None),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("str"),
             "str",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None)),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object complexTypeInheritance {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="child_t">
+    lazy val src = parseXsdTypes(<xs:complexType name="child_t">
         <xs:complexContent>
           <xs:extension base="base_t">
             <xs:sequence>
@@ -181,8 +222,7 @@ object testAst {
             </xs:sequence>
           </xs:extension>
         </xs:complexContent>
-      </xs:complexType>
-    ).head
+      </xs:complexType>).head
 
     lazy val dst =
       ComplexTypeDecl(
@@ -193,17 +233,20 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None)),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object simpleTypeRestriction {
-    lazy val src = parseXsdTypes(
-      <xs:simpleType name="decimal_t">
+    lazy val src = parseXsdTypes(<xs:simpleType name="decimal_t">
         <xs:restriction base="xs:decimal"/>
-      </xs:simpleType>
-    ).head
+      </xs:simpleType>).head
 
     lazy val dst =
       NewtypeDecl(
@@ -214,8 +257,7 @@ object testAst {
   }
 
   object anonComplexType {
-    lazy val src = parseXsdTypes(
-      <xs:element name="TEST">
+    lazy val src = parseXsdTypes(<xs:element name="TEST">
         <xs:complexType>
           <xs:sequence>
             <xs:element name="value">
@@ -227,8 +269,7 @@ object testAst {
             </xs:element>
           </xs:sequence>
         </xs:complexType>
-      </xs:element>
-    ).head
+      </xs:element>).head
 
     val anonType =
       ComplexTypeDecl(
@@ -239,7 +280,12 @@ object testAst {
             Ident("id"),
             "id",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, false, false, None)),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
 
@@ -252,7 +298,12 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.defined(Ident("TestValue")),
-            FieldConstraint.Required, false, false, None)),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          )
+        ),
         None
       )
 
@@ -260,14 +311,12 @@ object testAst {
   }
 
   object complexTypeAttributes {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="test">
+    lazy val src = parseXsdTypes(<xs:complexType name="test">
         <xs:sequence>
           <xs:element name="value" type="xs:string"/>
         </xs:sequence>
         <xs:attribute name="id" type="xs:int"/>
-      </xs:complexType>
-    ).head
+      </xs:complexType>).head
 
     lazy val dst =
       ComplexTypeDecl(
@@ -278,26 +327,33 @@ object testAst {
             Ident("value"),
             "value",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("id"),
             "id",
             TypeRef.std(Ident("Int")),
-            FieldConstraint.Required, true, false, None)),
+            FieldConstraint.Required,
+            true,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object complexTypeSimpleContent {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="test">
+    lazy val src = parseXsdTypes(<xs:complexType name="test">
         <xs:simpleContent>
           <xs:extension base="base">
             <xs:attribute name="id" type="xs:int" use="required" />
           </xs:extension>
         </xs:simpleContent>
-      </xs:complexType>
-    ).head
+      </xs:complexType>).head
 
     lazy val dst =
       SimpleTypeExtensionDecl(
@@ -308,19 +364,27 @@ object testAst {
             Ident("baseContent"),
             "",
             TypeRef.definedFrom("base"),
-            FieldConstraint.Required, false, false, None),
+            FieldConstraint.Required,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("id"),
             "id",
             TypeRef.std(Ident("int")),
-            FieldConstraint.Required, true, false, None)),
+            FieldConstraint.Required,
+            true,
+            false,
+            None
+          )
+        ),
         None
       )
   }
 
   object complexTypeFieldsConstraints {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="test">
+    lazy val src = parseXsdTypes(<xs:complexType name="test">
         <xs:sequence>
           <xs:element name="optional" type="xs:string" minOccurs="0" maxOccurs="1"/>
           <xs:element name="nullable" type="xs:string" nillable="true"/>
@@ -328,8 +392,7 @@ object testAst {
           <xs:element name="optional_nullable" type="xs:string" minOccurs="0" nillable="true"/>
           <xs:element name="optional_array" type="xs:string" minOccurs="0" maxOccurs="2" nillable="true"/>
         </xs:sequence>
-      </xs:complexType>
-    ).head
+      </xs:complexType>).head
 
     lazy val dst =
       ComplexTypeDecl(
@@ -340,61 +403,74 @@ object testAst {
             Ident("optional"),
             "optional",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, false, None),
+            FieldConstraint.Optional,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("nullable"),
             "nullable",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Nullable, false, false, None),
+            FieldConstraint.Nullable,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("array"),
             "array",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Required, false, true, None),
+            FieldConstraint.Required,
+            false,
+            true,
+            None
+          ),
           FieldDecl(
             Ident("optionalNullable"),
             "optional_nullable",
             TypeRef.std(Ident("String")),
-            FieldConstraint.OptionalNullable, false, false, None),
+            FieldConstraint.OptionalNullable,
+            false,
+            false,
+            None
+          ),
           FieldDecl(
             Ident("optionalArray"),
             "optional_array",
             TypeRef.std(Ident("String")),
-            FieldConstraint.Optional, false, true, None)),
+            FieldConstraint.Optional,
+            false,
+            true,
+            None
+          )
+        ),
         None
       )
   }
 
   object cyclicDependencies {
-    lazy val src = parseXsdTypes(
-      Seq(
-        <xs:complexType name="t1">
+    lazy val src = parseXsdTypes(Seq(<xs:complexType name="t1">
           <xs:sequence>
             <xs:element name="t2" type="t2"/>
           </xs:sequence>
-        </xs:complexType>,
-        <xs:complexType name="t2">
+        </xs:complexType>, <xs:complexType name="t2">
           <xs:sequence>
             <xs:element name="t3" type="t3"/>
           </xs:sequence>
-        </xs:complexType>,
-        <xs:complexType name="t3">
+        </xs:complexType>, <xs:complexType name="t3">
           <xs:sequence>
             <xs:element name="t1" type="t1"/>
           </xs:sequence>
-        </xs:complexType>
-      )
-    )
+        </xs:complexType>))
   }
 
   object complexTypeAlias {
-    lazy val src = parseXsdTypes(
-      <xs:complexType name="alias_t">
+    lazy val src = parseXsdTypes(<xs:complexType name="alias_t">
         <xs:complexContent>
           <xs:extension base="type_t"/>
         </xs:complexContent>
-      </xs:complexType>
-    ).head
+      </xs:complexType>).head
 
     lazy val dst =
       NewtypeDecl(

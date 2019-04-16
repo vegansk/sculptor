@@ -4,7 +4,8 @@ package impl
 import org.specs2._
 import cats.implicits._
 
-object NewtypeGenSpec extends mutable.Specification
+object NewtypeGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 

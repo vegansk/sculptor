@@ -4,7 +4,8 @@ package impl
 import org.specs2._
 import cats.implicits._
 
-object NewtypeGenSpec extends mutable.Specification
+object NewtypeGenSpec
+    extends mutable.Specification
     with ScalaCheck
     with testing.Helpers {
 
@@ -53,7 +54,10 @@ object NewtypeGenSpec extends mutable.Specification
     }
 
     "generate Eq typeclass" >> {
-      runGen(NewtypeGen.generate(myInt), cfg.copy(features = List(Feature.CatsEqTypeclass))) must beEqvTo(
+      runGen(
+        NewtypeGen.generate(myInt),
+        cfg.copy(features = List(Feature.CatsEqTypeclass))
+      ) must beEqvTo(
         """|final case class MyInt(value: Int) extends AnyVal
            |
            |object MyInt {implicit val MyIntEq: Eq[MyInt] = Eq.fromUniversalEquals}""".stripMargin.asRight
@@ -61,7 +65,10 @@ object NewtypeGenSpec extends mutable.Specification
     }
 
     "generate circe codecs" >> {
-      runGen(NewtypeGen.generate(myInt), cfg.copy(features = List(Feature.CirceCodecs()))) must beEqvTo(
+      runGen(
+        NewtypeGen.generate(myInt),
+        cfg.copy(features = List(Feature.CirceCodecs()))
+      ) must beEqvTo(
         """|final case class MyInt(value: Int) extends AnyVal
            |
            |object MyInt {
