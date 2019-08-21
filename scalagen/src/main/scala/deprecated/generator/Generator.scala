@@ -94,9 +94,12 @@ class Generator(config: Config) {
   def array(`type`: Doc): Doc =
     text("List[") + `type` + char(']')
 
+  def normalizeComment(c: String): String =
+    c.split("\n")(0).replaceAll("\\*/", "\\*\\\\/")
+
   def comment(c: Option[Comment]): List[Doc] =
     c.filter(_ => config.parameters.generateComments)
-      .map(_.split("\n")(0))
+      .map(normalizeComment)
       .fold[List[Doc]](Nil)(t => List(text("/** ") + text(t) + text(" */")))
 
   def nativeArray(`type`: Doc): Doc =
@@ -182,10 +185,10 @@ class Generator(config: Config) {
   def mkXmlSerializerUtils: Option[Doc] = {
     val code =
       """|private object utils {
-         |  def unused[T](v: T): Unit = {
-         |    val _ = v
-         |  }
-         |}""".stripMargin
+          |  def unused[T](v: T): Unit = {
+          |    val _ = v
+          |  }
+          |}""".stripMargin
 
     config.parameters.generateXmlSerializers && !config.externalTypes.isEmpty match {
       case true => text(code).some
@@ -300,7 +303,7 @@ class Generator(config: Config) {
       List(
         ident(f.name) + char(':'),
         typeExpr(f, requiredField = requiredField)
-      ) ++ comment(f.comment)
+      )
     )
 
   def complexTypeClassDecl(ct: ComplexTypeDecl): Doc = {
@@ -599,9 +602,30 @@ class Generator(config: Config) {
     }
   }
 
+  def complexTypeComment(ct: ComplexTypeDecl): List[Doc] =
+    config.parameters.generateComments match {
+      case false => Nil
+      case _ => {
+        val comments = (
+          ct.comment.map(normalizeComment) :: ct.fields.toList.map { f =>
+            f.comment.map(
+              c => show"@param ${f.name.value} ${normalizeComment(c)}"
+            )
+          }
+        ).flattenOption.toNel
+        comments match {
+          case None => Nil
+          case Some(NEL(x, xs)) =>
+            text(show"/** $x") :: xs.map(c => text(show"  * $c")) ++ List(
+              text("  */")
+            )
+        }
+      }
+    }
+
   def complexTypeDecl(ct: ComplexTypeDecl): Doc =
     stack(
-      comment(ct.comment) ++
+      complexTypeComment(ct) ++
         complexTypeClassDecl(ct).pure[List] ++
         complexTypeObjectDecl(ct).toList
     )
