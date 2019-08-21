@@ -16,19 +16,19 @@ object generatorSpec
     import ast._
     import sculptor.scalagen.testing.paiges._
 
-    val gen = generator.create(
-      generator.Config(
-        "com.github.vegansk".some,
-        "/* header */".some,
-        Nil,
-        generator.Parameters(
-          generateComments = false,
-          generateCatsEq = true,
-          generateCirceCodecs = true,
-          generateXmlSerializers = false
-        )
+    val genConfig = generator.Config(
+      "com.github.vegansk".some,
+      "/* header */".some,
+      Nil,
+      generator.Parameters(
+        generateComments = false,
+        generateCatsEq = true,
+        generateCirceCodecs = true,
+        generateXmlSerializers = false
       )
     )
+
+    val gen = generator.create(genConfig)
     import gen._
 
     "handle newtype" >> {
@@ -153,6 +153,43 @@ object generatorSpec
              |    } yield Test(id, str, date)
              |  }
              |}""".stripMargin)
+      )
+    }
+
+    "generate scaladoc for complex types" >> {
+      val ct0 = ComplexTypeDecl(
+        TypeRef.definedFrom("Test"),
+        None,
+        NEL.of(
+          FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, false, "The id field".some),
+          FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, false, "The str field".some)
+        ),
+        "Complex type for test".some
+      )
+
+      val gen0 = generator.create(
+        genConfig.copy(
+          parameters = generator.Parameters(
+            generateComments = true,
+            generateCatsEq = false,
+            generateCirceCodecs = false,
+            generateXmlSerializers = false,
+            generateKantanXPathDecoders = false,
+            generateOptionalTypes = generator.OptionalTypes.No
+          )
+        )
+      )
+
+      gen0.complexTypeDecl(ct0) must beEqvTo(
+        Doc.text("""|/** Complex type for test
+                    |  * @param id The id field
+                    |  * @param str The str field
+                    |  */
+                    |final case class Test(
+                    |  id: Option[Int],
+                    |  str: String
+                    |)
+                    |""".stripMargin)
       )
     }
 
