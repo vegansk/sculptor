@@ -280,7 +280,10 @@ class Generator(config: Config) {
                    isOptional: Boolean,
                    prefix: Option[String]): Doc =
     (typeName(f.`type`): Id[Doc])
-      .map(t => prefix.fold(t)(p => text(p + ".") + t))
+      .map(
+        t =>
+          prefix.filter(_ => f.`type`.isDefined).fold(t)(p => text(p + ".") + t)
+      )
       .map(t => if (isArray) array(t) else t)
       .map(t => if (isOptional) optional(t) else t)
 
@@ -545,12 +548,28 @@ class Generator(config: Config) {
     }
   }
 
+  def createCurriedTypeConstructor(name: String,
+                                   ct: ComplexTypeDecl,
+                                   strongTypePrefix: String): Doc = {
+    text(show"val $name = ") +
+      intercalate(text(" => "), ct.fields.toList.map {
+        case f =>
+          char('(') + ident(f.name) + text(": ") + typeExpr(f, true) + char(')')
+      }) +
+      bracketBy(
+        intercalate(text(", "), ct.fields.toList.map(f => ident(f.name)))
+      )(
+        text(show" => $strongTypePrefix.${typeNameString(ct.`type`)}("),
+        char(')')
+      )
+  }
+
   def complexTypeOptionalTypeToStrongTypeConverter(
     ct: ComplexTypeDecl
   ): Option[Doc] =
     config.parameters.generateOptionalTypes match {
-      case OptionalTypes.Generate(Some(sp), _) => {
-        val prefix = mkOptionalTypeConverterPrefix(ct.`type`, sp)
+      case OptionalTypes.Generate(Some(strongTypePrefix), _) => {
+        val prefix = mkOptionalTypeConverterPrefix(ct.`type`, strongTypePrefix)
         val postfix = char('}')
 
         val fields = ct.fields
@@ -559,23 +578,24 @@ class Generator(config: Config) {
               complexTypeOptionalTypeToStrongTypeFieldConverter(
                 ct.`type`,
                 f,
-                sp
+                strongTypePrefix
             )
           )
         val cvt =
           if (ct.fields.size === 1) {
             fields.head +
-              text(".map(" + sp + ".") +
+              text(".map(" + strongTypePrefix + ".") +
               typeName(ct.`type`) +
               text(".apply _)")
           } else {
-            bracketBy(intercalate(comma + line, fields.toList))(
-              char('('),
-              char(')')
-            ) +
-              text(".mapN(" + sp + ".") +
-              typeName(ct.`type`) +
-              text(".apply _)")
+            val cons =
+              createCurriedTypeConstructor("cons", ct, strongTypePrefix)
+
+            cons + line +
+              intercalate(
+                text(" <*>") + line,
+                text("cons.validNel[String]") :: fields.toList
+              )
           }
 
         bracketBy(cvt)(prefix, postfix).some
@@ -713,6 +733,8 @@ class Generator(config: Config) {
     }
   }
 
+  // Issue #114: Assume here that we can't have more than 21 attributes in
+  // complexType with simpleContent
   def simpleTypeExtensionOptionalTypeToStrongTypeConverter(
     t: SimpleTypeExtensionDecl
   ): Option[Doc] =
