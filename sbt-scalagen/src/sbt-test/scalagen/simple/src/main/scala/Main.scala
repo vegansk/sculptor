@@ -14,6 +14,7 @@ object Main extends App {
 
     val xmlCodecs = XmlSerializers(
       localDateToXml = name => date => <v>{date.toString}</v>.copy(label = name),
+      localDateTimeToXml = name => date => <v>{date.toString}</v>.copy(label = name),
       uUIDToXml = name => uuid => <v>{uuid.toString}</v>.copy(label = name)
     )
 
@@ -47,22 +48,14 @@ object Main extends App {
     )
 
     val content = DocumentContentT(
-      unstructured = Some(
-        UnstructuredDocumentContentT(
-          None,
-          Some("Hello, world!")
-        )
-      ),
-      structured = None,
-      scanImage = None
+      None, None, None, None, None, None, None, None, None, None, None,
+      None, None, None, None, None, None, None, None, None, None, None,
+      None
     )
 
     val document = Document(
-      messageHeader,
-      documentHeader,
-      None, None, None, None, None,
-      content,
-      None, None
+      messageHeader, documentHeader, None, None, None, None, None, None,
+      None, content, None, None, None, None, None
     )
 
     val result = for {

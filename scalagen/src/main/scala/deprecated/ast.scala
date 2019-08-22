@@ -19,10 +19,14 @@ object ast {
         .getOrElse(QName.of(Ident(s)))
   }
 
-  sealed trait TypeRef
+  sealed trait TypeRef {
+    val isDefined: Boolean = false
+  }
   object TypeRef {
     final case class std(name: Ident) extends TypeRef
-    final case class defined(name: Ident) extends TypeRef
+    final case class defined(name: Ident) extends TypeRef {
+      override val isDefined = true
+    }
     final case class external(name: QName) extends TypeRef
 
     def definedFrom(name: String): defined = defined(Ident(name))
