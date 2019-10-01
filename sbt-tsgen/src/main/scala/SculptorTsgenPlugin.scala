@@ -5,6 +5,8 @@ import sculptor.tsgen
 
 object SculptorTsgenPlugin extends AutoPlugin {
 
+  override val requires = Plugins.empty
+
   object autoImport {
 
     type XsdTsgenOptions = tsgen.deprecated.Config
