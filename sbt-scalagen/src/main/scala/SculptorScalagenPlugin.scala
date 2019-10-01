@@ -5,6 +5,8 @@ import sculptor.scalagen._
 
 object SculptorScalagenPlugin extends AutoPlugin {
 
+  override val requires = Plugins.empty
+
   object autoImport {
 
     type XsdScalagenOptions = deprecated.Config

@@ -7,6 +7,8 @@ import sculptor.ast
 
 object SculptorPlugin extends AutoPlugin {
 
+  override val requires = Plugins.empty
+
   object autoImport {
 
     object Scala {
