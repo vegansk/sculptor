@@ -3,7 +3,7 @@ import Keys._
 
 object Dependencies {
   object Versions {
-    val sbt = "1.2.3"
+    val sbt = "1.2.8"
     val scala212 = "2.12.4"
     val scalaXml = "1.0.6"
     val scalaGraph = "1.12.1"
