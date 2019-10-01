@@ -9,4 +9,13 @@ cache:
 
 test:
   script:
-    - bin/sbt scalafmt::test test -sbt-launch-dir cache/.sbt/launchers -sbt-boot cache/.sbt/boot -ivy /root/.ivy2
+    # 1. Run simple checks and unit tests.
+    # 2. Publish libraries to the local repository. (https://github.com/sbt/sbt/issues/3248)
+    # 3. Run `scripted`.
+    # Note that step 2 can lead to local repository bloat - but we don't cache that, so we
+    # don't care.
+    >-
+      bin/sbt -sbt-launch-dir cache/.sbt/launchers -sbt-boot cache/.sbt/boot -ivy /root/.ivy2 \
+              scalafmt::test test \
+              'all ast/publishLocal common/publishLocal scalagen/publishLocal sculptor/publishLocal tsgen/publishLocal xsd/publishLocal' \
+              scripted
