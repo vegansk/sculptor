@@ -115,7 +115,7 @@ object Sculptor {
         libraryDependencies ++= Dependencies.xsd
       )
 
-    val common: PC = _.configure(commonSettings)
+    val common: PC = _.configure(commonSettings, publishSettings)
       .settings(
         name := "sculptor-common",
         libraryDependencies ++= Dependencies.common
