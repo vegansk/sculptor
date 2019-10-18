@@ -15,7 +15,7 @@ object ADTGen extends GenHelpers {
       adtTag <- getAdtTag
       optEnc <- getOptionalEncoding
       genAdtNs <- getGenerateAdtNs
-      typ = createTypeExpr(c.name.name, c.parameters)
+      typ = createTypeExpr0(c.name.name, c.parameters.map(createGenericParam))
       tag = Doc.text(c.name.name)
       result = Doc.intercalate(
         line,
@@ -41,7 +41,7 @@ object ADTGen extends GenHelpers {
 
       indent <- getIndent
 
-      typ = createTypeExpr(a.name.name, a.parameters)
+      typ = createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
 
       genComment <- getGenerateComments
 

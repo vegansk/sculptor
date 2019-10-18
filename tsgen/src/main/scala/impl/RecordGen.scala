@@ -15,7 +15,7 @@ object RecordGen extends GenHelpers {
 
       genComment <- getGenerateComments
 
-      typ = createTypeExpr(r.name.name, r.parameters)
+      typ = createTypeExpr0(r.name.name, r.parameters.map(createGenericParam))
 
       comment = Option(genComment)
         .filter(identity)
