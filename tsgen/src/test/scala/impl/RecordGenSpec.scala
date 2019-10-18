@@ -23,7 +23,7 @@ object RecordGenSpec
       .field("nameO", "Option".spec("A".gen), "The name")
       .build
 
-    "generate records" >> {
+    "generates records" >> {
       runGen(RecordGen.generate(r), cfg) must beEqvTo(
         """|export interface Record<A> {
            |  id: number
@@ -32,7 +32,7 @@ object RecordGenSpec
       )
     }
 
-    "handle optional encoding" >> {
+    "handles optional encoding" >> {
       runGen(
         RecordGen.generate(r),
         cfg.copy(optionalEncoding = OptionalEncoding("Option"))
@@ -42,7 +42,7 @@ object RecordGenSpec
            |}""".stripMargin.asRight)
     }
 
-    "handle all fields optional encoding" >> {
+    "handles all fields optional encoding" >> {
       runGen(
         RecordGen.generate(r),
         cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))
@@ -52,7 +52,7 @@ object RecordGenSpec
            |}""".stripMargin.asRight)
     }
 
-    "handle all fields optional encoding with optional class" >> {
+    "handles all fields optional encoding with optional class" >> {
       runGen(
         RecordGen.generate(r),
         cfg.copy(optionalEncoding = OptionalEncoding("Option", true))
@@ -62,7 +62,7 @@ object RecordGenSpec
            |}""".stripMargin.asRight)
     }
 
-    "generate comments" >> {
+    "generates comments" >> {
       runGen(RecordGen.generate(r), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Record Record<A>: The Record
            |
@@ -70,6 +70,16 @@ object RecordGenSpec
            |  id: number /* The id */
            |  nameO: Option<A> /* The name */
            |}""".stripMargin.asRight
+      )
+    }
+
+    "generates bounds" >> {
+      val r = record("Test")
+        .generic("A".genExt("string".spec))
+        .field("v", "A".gen)
+        .build
+      runGen(RecordGen.generate(r), cfg) must beEqvTo(
+        """export interface Test<A extends string> {v: A}""".asRight
       )
     }
 
