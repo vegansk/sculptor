@@ -218,5 +218,20 @@ object IoTsTypesSpec
       )
 
     }
+
+    "produce correct type mappings (strange issue after merge with master)" >> {
+      val r = record("RecordWithSingleField")
+        .field("id", "number".spec, "Single field record")
+          .build
+
+      runFeature(
+        IoTsTypes(feature).handleRecord(r),
+        cfg
+      ) must beEqvTo(
+        """export const RecordWithSingleFieldType: t.Type<RecordWithSingleField> = typeImpl(
+          |  {id: t.number}, {}, "RecordWithSingleField"
+          |)""".stripMargin.asRight
+      )
+    }
   }
 }
