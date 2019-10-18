@@ -161,8 +161,24 @@ object generatorSpec
         TypeRef.definedFrom("Test"),
         None,
         NEL.of(
-          FieldDecl(Ident("id"), "id", TypeRef.std(Ident("Int")), FieldConstraint.Optional, false, false, "The id field".some),
-          FieldDecl(Ident("str"), "str", TypeRef.std(Ident("String")), FieldConstraint.Required, false, false, "The str field".some)
+          FieldDecl(
+            Ident("id"),
+            "id",
+            TypeRef.std(Ident("Int")),
+            FieldConstraint.Optional,
+            false,
+            false,
+            "The id field".some
+          ),
+          FieldDecl(
+            Ident("str"),
+            "str",
+            TypeRef.std(Ident("String")),
+            FieldConstraint.Required,
+            false,
+            false,
+            "The str field".some
+          )
         ),
         "Complex type for test".some
       )

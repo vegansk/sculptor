@@ -15,30 +15,28 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
 
   private val iots = if (cfg.iotsNs.isEmpty) "" else s"${cfg.iotsNs}."
 
-  private val genTypeConstName: String => Doc = n =>
-    Doc.text(s"${cfg.typePrefix}${n}${cfg.typeEnding}")
+  private val genTypeConstName: String => String = n =>
+    s"${cfg.typePrefix}${n}${cfg.typeEnding}"
 
   private def genIotsTypeRef(ref: TypeRef): Doc =
-    cfg
-      .typeMapping(cfg)
-      .lift(ref)
-      .map(Doc.text)
-      .getOrElse(
-        TypeRef.cata(
-          s => {
-            val c = genTypeConstName(s.asString)
-            c + (s.parameters match {
-              case Nil => Doc.empty
-              case l =>
-                Doc.char('(') + Doc.intercalate(
-                  Doc.text(", "),
-                  l.map(genIotsTypeRef)
-                ) + Doc.char(')')
-            })
-          },
-          g => genTypeConstName(g.asString)
-        )(ref)
-      )
+    TypeRef.cata(
+      s => {
+        val c = Doc.text(
+          cfg.typeMapping
+            .lift((s.asString, Feature.IoTsTypes.iotsNsPrefix(cfg)))
+            .getOrElse(genTypeConstName(s.asString))
+        )
+        c + (s.parameters match {
+          case Nil => Doc.empty
+          case l =>
+            Doc.char('(') + Doc.intercalate(
+              Doc.text(", "),
+              l.map(genIotsTypeRef)
+            ) + Doc.char(')')
+        })
+      },
+      g => Doc.text(genTypeConstName(g.asString))
+    )(ref)
 
   private def genIotsGenericPrefix(params: NonEmptyList[GenericDef]): Doc = {
     val l = params.toList
@@ -81,7 +79,7 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
                                  parameters: List[GenericDef],
                                  ref: TypeRef): Doc =
     exported(Doc.text("const ")) +
-      genTypeConstName(name.name) +
+      Doc.text(genTypeConstName(name.name)) +
       Doc.text(": ") + genTypeConstType(ref, tag, parameters) +
       Doc.text(" = ") +
       parameters.toNel.fold(Doc.empty)(genIotsGenericPrefix)

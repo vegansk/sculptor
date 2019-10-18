@@ -199,5 +199,24 @@ object IoTsTypesSpec
            |export const TestType: MyType<Test> = t.taggedUnion("__tag", [AType, BType], "Test")""".stripMargin.asRight
       )
     }
+
+    "allow to compose types mappings" >> {
+
+      val a = alias("Test").baseType("Map".spec("A".gen, "B".gen)).build
+
+      val mapping: IotsMapping = {
+        case ("Map", ns) => s"${ns}dictionary"
+      }
+
+      val feature0 = feature.copy(typeMapping = mapping)
+
+      runFeature(
+        IoTsTypes(feature0).handleAlias(a),
+        cfg.copy(features = List(feature0))
+      ) must beEqvTo(
+        """export const TestType: t.Type<Test> = <any>t.dictionary(AType, BType)""".asRight
+      )
+
+    }
   }
 }

@@ -1,6 +1,7 @@
 package sculptor.tsgen
 
 import org.typelevel.paiges._
+import cats.implicits._
 
 sealed trait Feature
 
@@ -14,6 +15,13 @@ object Feature {
                              customIotsTaggedType: String = "")
       extends Feature
   case object Constructors extends Feature
+
+  object IoTsTypes {
+
+    def iotsNsPrefix(cfg: IoTsTypes): String =
+      Option(cfg.iotsNs).filterNot(_.isEmpty).map(ns => s"${ns}.").orEmpty
+
+  }
 
 }
 
