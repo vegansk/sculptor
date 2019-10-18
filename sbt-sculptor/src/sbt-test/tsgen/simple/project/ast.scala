@@ -18,7 +18,7 @@ object Simple {
     .field("name", "Option".spec("string".spec), "The name")
 
   val RecordWithSingleField = record("RecordWithSingleField")
-    .field("id", "number".gen, "Single field record")
+    .field("id", "number".spec, "Single field record")
 
   val Enum = enum("Enum").values(
     "A".en, "B".en, "C".en
