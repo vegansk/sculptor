@@ -69,6 +69,8 @@ sealed trait TypeDef {
   def name: Ident
   def comment: Option[String]
   def ref: TypeRef
+  @SuppressWarnings(Array("org.wartremover.warts.Overloading"))
+  def ref(parameters: TypeRef*): TypeRef
   def isNewtype: Boolean = false
   def isAlias: Boolean = false
   def isRecord: Boolean = false
@@ -105,7 +107,10 @@ final case class Newtype(name: Ident,
                          validator: Option[Validator] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+    ref(parameters.map(_.`type`): _*)
+
+  def ref(parameters: TypeRef*): TypeRef =
+    TypeRef.Specialized(FQName(name), parameters.toList)
 
   override def isNewtype = true
 }
@@ -117,7 +122,10 @@ final case class Alias(name: Ident,
                        comment: Option[String] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+    ref(parameters.map(_.`type`): _*)
+
+  def ref(parameters: TypeRef*): TypeRef =
+    TypeRef.Specialized(FQName(name), parameters.toList)
 
   override def isAlias = true
 }
@@ -136,7 +144,10 @@ final case class Record(name: Ident,
                         validator: Option[Validator] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+    ref(parameters.map(_.`type`): _*)
+
+  def ref(parameters: TypeRef*): TypeRef =
+    TypeRef.Specialized(FQName(name), parameters.toList)
 
   override def isRecord = true
 }
@@ -154,6 +165,8 @@ final case class Enum(name: Ident,
                       comment: Option[String] = None)
     extends TypeDef {
   lazy val ref: TypeRef = TypeRef.Specialized(FQName(name))
+
+  def ref(parameters: TypeRef*): TypeRef = ref
 
   override def isEnum = true
 }
@@ -176,7 +189,10 @@ final case class ADT(name: Ident,
                      validator: Option[Validator] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.map(_.`type`))
+    ref(parameters.map(_.`type`): _*)
+
+  def ref(parameters: TypeRef*): TypeRef =
+    TypeRef.Specialized(FQName(name), parameters.toList)
 
   override def isADT = true
 }
