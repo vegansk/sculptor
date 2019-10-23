@@ -151,6 +151,12 @@ object dslSpec extends mutable.Specification {
       )
     }
 
+    "allow to create generic refs" >> {
+      val nt = newtype("Test").baseType(maybeAdt.build.ref("String".spec)).build
+
+      nt must_=== Newtype(Ident("Test"), Nil, "Maybe".spec("String".spec))
+    }
+
   }
 
 }
