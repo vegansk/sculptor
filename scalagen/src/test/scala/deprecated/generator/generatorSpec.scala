@@ -137,7 +137,7 @@ object generatorSpec
              |object Test {
              |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
              |
-             |  implicit val TestObjectEncoder: ObjectEncoder[Test] = ObjectEncoder.instance[Test] { v =>
+             |  implicit val TestEncoder: Encoder.AsObject[Test] = Encoder.AsObject.instance[Test] { v =>
              |    JsonObject(
              |      "id" := v.id,
              |      "str" := v.str,
