@@ -59,7 +59,7 @@ object RecordGenSpec
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
            |object Record {
-           |  implicit def RecordEncoder[A:Encoder]: ObjectEncoder[Record[A]] = ObjectEncoder.instance[Record[A]] { v =>
+           |  implicit def RecordEncoder[A:Encoder]: Encoder.AsObject[Record[A]] = Encoder.AsObject.instance[Record[A]] { v =>
            |    JsonObject(
            |      "id" := v.id,
            |      "nameO" := v.nameO

@@ -32,7 +32,7 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
     }
     (
       enc0 + Doc.text(
-        s""": ${if (objEncoder) "ObjectEncoder" else "Encoder"}[$encType"""
+        s""": ${if (objEncoder) "Encoder.AsObject" else "Encoder"}[$encType"""
       ) + params + Doc.char(']'),
       dec0 + Doc.text(s": Decoder[$encType") + params + Doc.char(']')
     )
@@ -123,7 +123,7 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
       name = r.name.name
       typ = createTypeRef(r.ref)
       (enc, dec) = genNames(name, r.parameters, true)
-      encPrefix = enc + Doc.text(s" = ObjectEncoder.instance[") + typ + Doc
+      encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] { v =>")
       encoder = genRecordEncoderBody("v", None, r.fields.toList, indent)
         .tightBracketBy(encPrefix, objectPostfix, indent)
@@ -203,7 +203,7 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
       name = a.name.name
       typ = createTypeRef(a.ref)
       (enc, dec) = genNames(name, a.parameters, true)
-      encPrefix = enc + Doc.text(s" = ObjectEncoder.instance[") + typ + Doc
+      encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] {")
       encoder = genADTEncoderBody(a, indent).tightBracketBy(
         encPrefix,

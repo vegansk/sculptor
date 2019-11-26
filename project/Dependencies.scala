@@ -4,17 +4,17 @@ import Keys._
 object Dependencies {
   object Versions {
     val sbt = "1.2.8"
-    val scala212 = "2.12.4"
-    val scalaXml = "1.0.6"
-    val scalaGraph = "1.12.1"
-    val specs2 = "3.9.2"
-    val cats = "1.4.0"
-    val catsEffect = "1.0.0"
-    val shapeless = "2.3.2"
-    val pprint = "0.5.3"
-    val kindProjector = "0.9.4"
+    val scala212 = "2.12.10"
+    val scalaXml = "1.2.0"
+    val scalaGraph = "1.13.0"
+    val specs2 = "4.7.1"
+    val cats = "2.0.0"
+    val catsEffect = "2.0.0"
+    val shapeless = "2.3.3"
+    val pprint = "0.5.5"
+    val kindProjector = "0.10.3"
     val paiges = "0.2.2-SNAPSHOT"
-    val scalacheck = "1.13.5"
+    val scalacheck = "1.14.2"
   }
 
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % Versions.scalaXml
@@ -26,7 +26,7 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % Versions.catsEffect
   val shapeless = "com.chuusai" %% "shapeless" % Versions.shapeless
   val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint
-  val kindProjector = "org.spire-math" %% "kind-projector" % Versions.kindProjector
+  val kindProjector = "org.typelevel" %% "kind-projector" % Versions.kindProjector
   val paigesCore = "com.github.eldis" %% "paiges-core" % Versions.paiges
   val paigesCats = "com.github.eldis" %% "paiges-cats" % Versions.paiges
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck

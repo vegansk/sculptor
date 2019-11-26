@@ -130,11 +130,11 @@ class Generator(config: Config) {
   def typeName(t: TypeRef, maskReservedWords: Boolean = true): Doc =
     text(typeNameString(t, maskReservedWords))
 
-  def mkInstanceVal(t: TypeRef, typeClass: String): Doc =
+  def mkInstanceVal(t: TypeRef, typeSuffix: String, typeClass: String): Doc =
     spread(
       List(
         text("implicit val"),
-        typeName(t, false) + text(typeClass) + char(':'),
+        typeName(t, false) + text(typeSuffix) + char(':'),
         text(typeClass) + char('[') + typeName(t) + char(']'),
         eqSign
       )
@@ -146,7 +146,7 @@ class Generator(config: Config) {
   def catsEqInstance(t: TypeRef): Option[Doc] =
     config.parameters.generateCatsEq match {
       case true =>
-        Option(mkInstanceVal(t, "Eq") + text("Eq.fromUniversalEquals"))
+        Option(mkInstanceVal(t, "Eq", "Eq") + text("Eq.fromUniversalEquals"))
       case _ => None
     }
 
@@ -325,8 +325,8 @@ class Generator(config: Config) {
 
   def complexTypeCirceEncoderImpl(t: TypeRef.defined,
                                   fields0: List[FieldDecl]): Doc = {
-    val prefix = mkInstanceVal(t, "ObjectEncoder") + text(
-      s"ObjectEncoder.instance[${typeNameString(t)}] { v =>"
+    val prefix = mkInstanceVal(t, "Encoder", "Encoder.AsObject") + text(
+      s"Encoder.AsObject.instance[${typeNameString(t)}] { v =>"
     )
     val postfix = char('}')
 
@@ -348,7 +348,7 @@ class Generator(config: Config) {
 
   def complexTypeCirceDecoderImpl(t: TypeRef.defined,
                                   fields: List[FieldDecl]): Doc = {
-    val prefix = mkInstanceVal(t, "Decoder") + text(
+    val prefix = mkInstanceVal(t, "Decoder", "Decoder") + text(
       s"Decoder.instance[${typeNameString(t)}] { c =>"
     )
     val postfix = char('}')
@@ -487,10 +487,9 @@ class Generator(config: Config) {
             ')'
           )
         )
-        val result = mkInstanceVal(ct.`type`, "NodeDecoder") + bracketBy(`for`)(
-          text("NodeDecoder.fromFound { node =>"),
-          char('}')
-        )
+        val result = mkInstanceVal(ct.`type`, "NodeDecoder", "NodeDecoder") + bracketBy(
+          `for`
+        )(text("NodeDecoder.fromFound { node =>"), char('}'))
         result.some
       }
       case _ => None
@@ -717,7 +716,7 @@ class Generator(config: Config) {
   ): Option[Doc] = {
     config.parameters.generateKantanXPathDecoders match {
       case true => {
-        val result = mkInstanceVal(t.`type`, "NodeDecoder") + bracketBy(
+        val result = mkInstanceVal(t.`type`, "NodeDecoder", "NodeDecoder") + bracketBy(
           intercalate(
             comma + lineBreak,
             text("""xp"."""") ::
@@ -840,12 +839,12 @@ class Generator(config: Config) {
     config.parameters.generateCirceCodecs match {
       case true =>
         List(
-          mkInstanceVal(e.`type`, "Encoder") + mkInstanceByCall(
+          mkInstanceVal(e.`type`, "Encoder", "Encoder") + mkInstanceByCall(
             TypeRef.definedFrom("String"),
             "Encoder",
             "contramap(_.code)"
           ),
-          mkInstanceVal(e.`type`, "Decoder") + mkInstanceByCall(
+          mkInstanceVal(e.`type`, "Decoder", "Decoder") + mkInstanceByCall(
             TypeRef.definedFrom("String"),
             "Decoder",
             "emap(fromString(_).toRight(\"Invalid enum value\"))"
@@ -864,7 +863,7 @@ class Generator(config: Config) {
   def enumKantanXPathDecoder(e: EnumDecl): Option[Doc] =
     config.parameters.generateKantanXPathDecoders match {
       case true => {
-        val result = mkInstanceVal(e.`type`, "NodeDecoder") +
+        val result = mkInstanceVal(e.`type`, "NodeDecoder", "NodeDecoder") +
           bracketBy(
             text("StringDecoder.fromPartial(Function.unlift(") +
               typeName(e.`type`) + text(".fromString).andThen(Right(_)))")
@@ -926,12 +925,12 @@ class Generator(config: Config) {
     config.parameters.generateCirceCodecs match {
       case true =>
         List(
-          mkInstanceVal(t.`type`, "Encoder") + mkInstanceByCall(
+          mkInstanceVal(t.`type`, "Encoder", "Encoder") + mkInstanceByCall(
             t.baseType,
             "Encoder",
             "contramap(_.value)"
           ),
-          mkInstanceVal(t.`type`, "Decoder") + mkInstanceByCall(
+          mkInstanceVal(t.`type`, "Decoder", "Decoder") + mkInstanceByCall(
             t.baseType,
             "Decoder",
             s"map(${typeNameString(t.`type`)}(_))"
@@ -950,7 +949,7 @@ class Generator(config: Config) {
   def newtypeKantanXPathDecoder(t: NewtypeDecl): Option[Doc] =
     config.parameters.generateKantanXPathDecoders match {
       case true => {
-        val result = mkInstanceVal(t.`type`, "NodeDecoder") +
+        val result = mkInstanceVal(t.`type`, "NodeDecoder", "NodeDecoder") +
           mkInstanceByCall(
             t.baseType,
             "NodeDecoder",

@@ -126,7 +126,7 @@ object ADTGenSpec
            |  final case class Empty[A]() extends Maybe[A]
            |  final case class Just[A](value: A) extends Maybe[A]
            |
-           |  implicit def MaybeEncoder[A:Encoder]: ObjectEncoder[Maybe[A]] = ObjectEncoder.instance[Maybe[A]] {
+           |  implicit def MaybeEncoder[A:Encoder]: Encoder.AsObject[Maybe[A]] = Encoder.AsObject.instance[Maybe[A]] {
            |    case _: Empty[A] => JsonObject("__customTag" := "Empty")
            |    case v: Just[A] => JsonObject(
            |      "__customTag" := "Just",
@@ -156,7 +156,7 @@ object ADTGenSpec
            |  case object Empty extends MaybeInt
            |  final case class JustInt(value: Int) extends MaybeInt
            |
-           |  implicit val MaybeIntEncoder: ObjectEncoder[MaybeInt] = ObjectEncoder.instance[MaybeInt] {
+           |  implicit val MaybeIntEncoder: Encoder.AsObject[MaybeInt] = Encoder.AsObject.instance[MaybeInt] {
            |    case Empty => JsonObject("__tag" := "Empty")
            |    case v: JustInt => JsonObject(
            |      "__tag" := "JustInt",
