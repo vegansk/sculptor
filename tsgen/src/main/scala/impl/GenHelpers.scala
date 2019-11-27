@@ -9,14 +9,22 @@ import sculptor.common._
 
 trait GenHelpers extends CommonGenHelpers {
 
-  def createTypeRef(r: TypeRef): Doc = {
+  def createTypeRef(r: TypeRef, optional: Boolean = false): Doc = {
     def generic(g: TypeRef.Generic) =
       createTypeExpr(g.name.name, Nil)
 
     def specialized(s: TypeRef.Specialized) =
-      createTypeExpr0(s.name.mkString("."), s.parameters.map(createTypeRef))
+      createTypeExpr0(
+        s.name.mkString("."),
+        s.parameters.map(createTypeRef(_, false))
+      )
 
-    TypeRef.cata(specialized, generic)(r)
+    TypeRef.cata(specialized, generic)(r) + (
+      if (optional)
+        Doc.text(" | undefined")
+      else
+        Doc.empty
+    )
   }
 
   def createGenericParam(g: GenericDef): Doc =
@@ -24,7 +32,7 @@ trait GenHelpers extends CommonGenHelpers {
       .map(
         l =>
           Doc.text(" extends ") + Doc
-            .intercalate(Doc.text(" & "), l.toList.map(createTypeRef))
+            .intercalate(Doc.text(" & "), l.toList.map(createTypeRef(_, false)))
       )
       .getOrElse(Doc.empty)
 
@@ -54,7 +62,7 @@ trait GenHelpers extends CommonGenHelpers {
 
   def createFuncParam(opt: Option[OptionalEncoding])(f0: FieldDef): Doc = {
     val (optional, f) = processField(opt)(f0)
-    createField1(f.name, createTypeRef(f.`type`), optional)
+    createField1(f.name, createTypeRef(f.`type`, optional), false)
   }
 
   def createField1(name: Ident, `type`: Doc, optional: Boolean): Doc =

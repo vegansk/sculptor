@@ -16,6 +16,7 @@ object Simple {
     .generic("A".gen)
     .field("id", "A".gen, "The id")
     .field("name", "Option".spec("string".spec), "The name")
+    .field("age", "number".spec, "The age")
 
   val RecordWithSingleField = record("RecordWithSingleField")
     .field("id", "number".spec, "Single field record")
