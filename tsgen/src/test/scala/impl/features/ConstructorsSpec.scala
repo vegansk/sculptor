@@ -86,13 +86,19 @@ object ConstructorsSpec
 
     "handle optional encoding" >> {
       val r = record("Record")
-        .field("field", "Option".spec("string".spec))
+        .field("optField", "Option".spec("string".spec))
+        .field("field", "string".spec)
         .build
       runFeature(
         Constructors.handleRecord(r),
         cfg.copy(optionalEncoding = OptionalEncoding("Option"))
       ) must beEqvTo(
-        """export const Record = (field?: string): Record => {return {field}}""".asRight
+        """|export const Record = (optField: string | undefined, field: string): Record => {
+           |  return {
+           |    optField,
+           |    field
+           |  }
+           |}""".stripMargin.asRight
       )
     }
   }
