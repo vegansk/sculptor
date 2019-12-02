@@ -45,7 +45,7 @@ object EnumGenSpec
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -69,7 +69,7 @@ object EnumGenSpec
            |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
            |
            |  implicit val ColorsEq: Eq[Colors] = Eq.fromUniversalEquals
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -90,7 +90,7 @@ object EnumGenSpec
            |  implicit val ColorsEncoder: Encoder[Colors] = Encoder[String].contramap(Colors.asString(_))
            |
            |  implicit val ColorsDecoder: Decoder[Colors] = Decoder[String].emap(v => Colors.fromString.lift(v).toRight("Invalid enum value Colors." + v))
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -107,7 +107,7 @@ object EnumGenSpec
            |  val asString: Colors => String = {case Red => "red"}
            |
            |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
   }

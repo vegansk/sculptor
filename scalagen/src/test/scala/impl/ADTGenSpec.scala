@@ -42,7 +42,7 @@ object ADTGenSpec
              |object Maybe {
              |  final case class Empty[A]() extends Maybe[A]
              |  final case class Just[A](value: A) extends Maybe[A]
-             |}""".stripMargin.asRight
+             |}""".fix.asRight
         )
       }
 
@@ -59,7 +59,7 @@ object ADTGenSpec
              |
              |  def empty[A]: Maybe[A] = Empty[A]()
              |  def just[A](value: A): Maybe[A] = Just[A](value)
-             |}""".stripMargin.asRight
+             |}""".fix.asRight
         )
       }
     }
@@ -77,7 +77,7 @@ object ADTGenSpec
              |  case object Red extends Colors
              |  case object Green extends Colors
              |  case object Blue extends Colors
-             |}""".stripMargin.asRight
+             |}""".fix.asRight
         )
       }
 
@@ -95,7 +95,7 @@ object ADTGenSpec
              |  val red: Colors = Red
              |  val green: Colors = Green
              |  val blue: Colors = Blue
-             |}""".stripMargin.asRight)
+             |}""".fix.asRight)
       }
     }
 
@@ -111,7 +111,7 @@ object ADTGenSpec
            |  final case class Just[A](value: A) extends Maybe[A]
            |
            |  implicit def MaybeEq[A]: Eq[Maybe[A]] = Eq.fromUniversalEquals
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -141,7 +141,7 @@ object ADTGenSpec
            |      case tag => Left(DecodingFailure("Invalid ADT tag value Maybe." + tag, c.history))
            |    }
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -171,7 +171,7 @@ object ADTGenSpec
            |      case tag => Left(DecodingFailure("Invalid ADT tag value MaybeInt." + tag, c.history))
            |    }
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -186,7 +186,7 @@ object ADTGenSpec
            |  final case class Empty[A]() extends Maybe[A]
            |  /* The non empty value */
            |  final case class Just[A](value: A /* The value */) extends Maybe[A]
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 

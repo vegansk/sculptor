@@ -23,7 +23,7 @@ object ConstructorsSpec
         .baseType("Either".spec("string".spec, "A".gen))
         .build
       runFeature(Constructors.handleNewtype(n), cfg) must beEqvTo(
-        """|export const Result = <A>(value: Either<string, A>): Result<A> => {return value as Result<A>}""".stripMargin.asRight
+        """|export const Result = <A>(value: Either<string, A>): Result<A> => {return value as Result<A>}""".fix.asRight
       )
     }
 
@@ -40,7 +40,7 @@ object ConstructorsSpec
            |    id,
            |    name
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -64,7 +64,7 @@ object ConstructorsSpec
              |    __tag: "Just",
              |    value
              |  }
-             |}""".stripMargin.asRight
+             |}""".fix.asRight
         )
       }
 
@@ -79,7 +79,7 @@ object ConstructorsSpec
              |      value
              |    }
              |  }
-             |}""".stripMargin.asRight
+             |}""".fix.asRight
         )
       }
     }
@@ -98,7 +98,7 @@ object ConstructorsSpec
            |    optField,
            |    field
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
   }

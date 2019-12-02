@@ -19,7 +19,9 @@ object PackageGenSpec
     val p = pkg("test").comment("Package comment").build
 
     "produce package" >> {
-      runGen(PackageGen.generate(p), cfg) must beEqvTo("package test".asRight)
+      runGen(PackageGen.generate(p), cfg) must beEqvTo(
+        "package test".fix.asRight
+      )
     }
 
     "add prefix code" >> {
@@ -31,7 +33,7 @@ object PackageGenSpec
            |
            |/* Comment */
            |import cats._
-           |""".stripMargin.asRight
+           |""".fix.asRight
       )
     }
 
@@ -41,7 +43,7 @@ object PackageGenSpec
            |Package comment
            |*/
            |
-           |package test""".stripMargin.asRight
+           |package test""".fix.asRight
       )
     }
 

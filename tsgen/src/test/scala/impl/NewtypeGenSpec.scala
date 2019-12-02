@@ -23,7 +23,7 @@ object NewtypeGenSpec
 
     "handle simple aliases" >> {
       runGen(NewtypeGen.generate(myInt), cfg) must beEqvTo(
-        """export type MyInt = number & {__brand: "MyInt"}""".asRight
+        """export type MyInt = number & {__brand: "MyInt"}""".fix.asRight
       )
     }
 
@@ -35,7 +35,7 @@ object NewtypeGenSpec
         .build
 
       runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
-        """export type Result<A> = Either<string, A> & {__brand: "Result<A>"}""".asRight
+        """export type Result<A> = Either<string, A> & {__brand: "Result<A>"}""".fix.asRight
       )
     }
 
@@ -47,7 +47,7 @@ object NewtypeGenSpec
         .build
 
       runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
-        """export type PetsList<P extends Pet & FourLegged> = Array<P> & {__brand: "PetsList<P extends Pet & FourLegged>"}""".asRight
+        """export type PetsList<P extends Pet & FourLegged> = Array<P> & {__brand: "PetsList<P extends Pet & FourLegged>"}""".fix.asRight
       )
     }
 
@@ -55,7 +55,7 @@ object NewtypeGenSpec
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Newtype MyInt: The Int
            |
-           |export type MyInt = number & {__brand: "MyInt"}""".stripMargin.asRight
+           |export type MyInt = number & {__brand: "MyInt"}""".fix.asRight
       )
     }
   }

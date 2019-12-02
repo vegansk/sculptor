@@ -30,7 +30,7 @@ object EnumGenSpec
            |  Red = "red",
            |  Green = "green",
            |  Blue = "blue"
-           |}""".stripMargin.asRight)
+           |}""".fix.asRight)
     }
 
     "generate comments" >> {
@@ -41,7 +41,7 @@ object EnumGenSpec
            |  Red = "red" /* Red color */,
            |  Green = "green" /* Green color */,
            |  Blue = "blue" /* Blue color */
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
   }
