@@ -24,7 +24,7 @@ object NewtypeGenSpec
     "handle simple aliases" >> {
 
       runGen(NewtypeGen.generate(myInt), cfg) must beEqvTo(
-        "final case class MyInt(value: Int) extends AnyVal".asRight
+        "final case class MyInt(value: Int) extends AnyVal".fix.asRight
       )
 
     }
@@ -37,7 +37,7 @@ object NewtypeGenSpec
         .build
 
       runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
-        "final case class Result[A](value: Either[String, A]) extends AnyVal".asRight
+        "final case class Result[A](value: Either[String, A]) extends AnyVal".fix.asRight
       )
     }
 
@@ -49,7 +49,7 @@ object NewtypeGenSpec
         .build
 
       runGen(NewtypeGen.generate(n), cfg) must beEqvTo(
-        "final case class PetsList[P <: Pet with FourLegged](value: List[P]) extends AnyVal".asRight
+        "final case class PetsList[P <: Pet with FourLegged](value: List[P]) extends AnyVal".fix.asRight
       )
     }
 
@@ -60,7 +60,7 @@ object NewtypeGenSpec
       ) must beEqvTo(
         """|final case class MyInt(value: Int) extends AnyVal
            |
-           |object MyInt {implicit val MyIntEq: Eq[MyInt] = Eq.fromUniversalEquals}""".stripMargin.asRight
+           |object MyInt {implicit val MyIntEq: Eq[MyInt] = Eq.fromUniversalEquals}""".fix.asRight
       )
     }
 
@@ -75,7 +75,7 @@ object NewtypeGenSpec
            |  implicit val MyIntEncoder: Encoder[MyInt] = Encoder[Int].contramap(_.value)
            |
            |  implicit val MyIntDecoder: Decoder[MyInt] = Decoder[Int].map(MyInt(_))
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -83,7 +83,7 @@ object NewtypeGenSpec
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Newtype MyInt: The Int type
            |
-           |final case class MyInt(value: Int) extends AnyVal""".stripMargin.asRight
+           |final case class MyInt(value: Int) extends AnyVal""".fix.asRight
       )
     }
   }

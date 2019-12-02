@@ -37,7 +37,7 @@ object ADTGenSpec
            |export interface Just<A> {
            |  __tag: "Just"
            |  value: A
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -52,7 +52,7 @@ object ADTGenSpec
            |export interface Just<A> {
            |  __tag: "Just"
            |  value?: A
-           |}""".stripMargin.asRight)
+           |}""".fix.asRight)
     }
 
     "generate comments" >> {
@@ -68,7 +68,7 @@ object ADTGenSpec
            |export interface Just<A> {
            |  __tag: "Just"
            |  value: A /* The value */
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -83,7 +83,7 @@ object ADTGenSpec
            |    __tag: "Just"
            |    value: A
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
   }

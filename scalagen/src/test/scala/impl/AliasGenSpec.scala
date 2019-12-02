@@ -24,7 +24,7 @@ object AliasGenSpec
     "handle simple aliases" >> {
 
       runGen(AliasGen.generate(myInt), cfg) must beEqvTo(
-        "type MyInt = Int".asRight
+        "type MyInt = Int".fix.asRight
       )
 
     }
@@ -39,7 +39,7 @@ object AliasGenSpec
         .build
 
       runGen(AliasGen.generate(a), cfg) must beEqvTo(
-        "type Result[A] = Either[String, A]".asRight
+        "type Result[A] = Either[String, A]".fix.asRight
       )
     }
 
@@ -53,7 +53,7 @@ object AliasGenSpec
         .build
 
       runGen(AliasGen.generate(a), cfg) must beEqvTo(
-        "type PetsList[P <: Pet with FourLegged] = List[P]".asRight
+        "type PetsList[P <: Pet with FourLegged] = List[P]".fix.asRight
       )
     }
 
@@ -61,7 +61,7 @@ object AliasGenSpec
       runGen(AliasGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Alias MyInt: The Int type alias
            |
-           |type MyInt = Int""".stripMargin.asRight
+           |type MyInt = Int""".fix.asRight
       )
     }
 

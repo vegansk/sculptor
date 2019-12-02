@@ -22,7 +22,7 @@ object RecordGenSpec
         .field("nameO", "Option".spec("String".spec))
         .build
       runGen(RecordGen.generate(r), cfg) must beEqvTo(
-        "final case class Record(id: Int, nameO: Option[String])".asRight
+        "final case class Record(id: Int, nameO: Option[String])".fix.asRight
       )
     }
 
@@ -36,7 +36,7 @@ object RecordGenSpec
     "generate generic records" >> {
 
       runGen(RecordGen.generate(rec), cfg) must beEqvTo(
-        "final case class Record[A](id: Int, nameO: Option[A])".asRight
+        "final case class Record[A](id: Int, nameO: Option[A])".fix.asRight
       )
     }
 
@@ -47,7 +47,7 @@ object RecordGenSpec
       ) must beEqvTo(
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
-           |object Record {implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals}""".stripMargin.asRight
+           |object Record {implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals}""".fix.asRight
       )
     }
 
@@ -72,7 +72,7 @@ object RecordGenSpec
            |      nameO <- c.downField("nameO").as[Option[A]]
            |    } yield Record[A](id, nameO)
            |  }
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -80,7 +80,7 @@ object RecordGenSpec
       runGen(RecordGen.generate(rec), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Record Record[A]: The Record
            |
-           |final case class Record[A](id: Int /* The id */, nameO: Option[A] /* The name */)""".stripMargin.asRight
+           |final case class Record[A](id: Int /* The id */, nameO: Option[A] /* The name */)""".fix.asRight
       )
     }
   }

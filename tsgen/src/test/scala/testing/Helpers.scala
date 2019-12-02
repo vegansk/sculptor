@@ -5,13 +5,16 @@ package testing
 import cats._
 import org.typelevel.paiges._
 import org.specs2.matcher._
+import common.StringOps
 
-trait Helpers { outer =>
+trait Helpers extends StringOps { outer =>
 
   def runFeature(r: sculptor.tsgen.impl.Result[List[Doc]],
                  cfg: Config): sculptor.tsgen.Result[String] =
     run(
-      r.map(l => Doc.intercalate(Doc.lineNoFlat * 2, l).render(cfg.lineWidth)),
+      r.map(
+        l => Doc.intercalate(Doc.lineNoFlat * 2, l).render(cfg.lineWidth).fix
+      ),
       cfg
     )
 

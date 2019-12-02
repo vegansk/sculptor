@@ -173,7 +173,7 @@ object generatorSpec
 
       importsDecl(imports) must beEqvTo(
         Doc.text("""import * as t from "io-ts"
-import * as T from "core/utils/types"""")
+import * as T from "core/utils/types"""".fix)
       )
 
     }

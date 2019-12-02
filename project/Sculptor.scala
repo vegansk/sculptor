@@ -82,7 +82,8 @@ object Sculptor {
           "-Ywarn-unused:imports"
         ))
       },
-      addCompilerPlugin(Dependencies.kindProjector)
+      addCompilerPlugin(Dependencies.kindProjector),
+      updateOptions := updateOptions.value.withLatestSnapshots(false)
     )
 
     val publishSettings: PC = _.settings(
@@ -165,7 +166,7 @@ object Sculptor {
   lazy val tsgen = project
     .in(file("tsgen"))
     .configure(Config.tsgen)
-    .dependsOn(xsd, ast, common)
+    .dependsOn(xsd, ast, common % "compile->compile;test->test")
 
   lazy val sbtTsgen = project
     .in(file("sbt-tsgen"))
@@ -175,7 +176,7 @@ object Sculptor {
   lazy val scalagen = project
     .in(file("scalagen"))
     .configure(Config.scalagen)
-    .dependsOn(xsd, ast, common)
+    .dependsOn(xsd, ast, common % "compile->compile;test->test")
 
   lazy val sbtScalagen = project
     .in(file("sbt-scalagen"))

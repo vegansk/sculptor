@@ -28,7 +28,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleAlias(a), cfg) must beEqvTo(
-        """|export const MyIntType: t.Type<MyInt> = <any>t.number""".stripMargin.asRight
+        """export const MyIntType: t.Type<MyInt> = <any>t.number""".fix.asRight
       )
     }
 
@@ -39,7 +39,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleAlias(a), cfg) must beEqvTo(
-        """|export const ResultType: <A>(AType: t.Type<A>) => t.Type<Result<A>> = <A>(AType: t.Type<A>) => <any>EitherType(t.string, AType)""".stripMargin.asRight
+        """export const ResultType: <A>(AType: t.Type<A>) => t.Type<Result<A>> = <A>(AType: t.Type<A>) => <any>EitherType(t.string, AType)""".fix.asRight
       )
     }
 
@@ -49,7 +49,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleNewtype(n), cfg) must beEqvTo(
-        """|export const MyIntType: t.Type<MyInt> = <any>t.number""".stripMargin.asRight
+        """export const MyIntType: t.Type<MyInt> = <any>t.number""".fix.asRight
       )
     }
 
@@ -60,7 +60,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleNewtype(n), cfg) must beEqvTo(
-        """|export const ResultType: <A>(AType: t.Type<A>) => t.Type<Result<A>> = <A>(AType: t.Type<A>) => <any>EitherType(t.string, AType)""".stripMargin.asRight
+        """export const ResultType: <A>(AType: t.Type<A>) => t.Type<Result<A>> = <A>(AType: t.Type<A>) => <any>EitherType(t.string, AType)""".fix.asRight
       )
     }
 
@@ -89,7 +89,7 @@ object IoTsTypesSpec
            |    (v, c) => values.indexOf(v as string) >= 0 ? t.success<E>(v as E) : t.failure<E>(v, c),
            |    t.identity
            |  )
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -100,7 +100,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleRecord(r), cfg) must beEqvTo(
-        """export const RecordType: t.Type<Record> = typeImpl({id: t.number}, {name: t.string}, "Record")""".asRight
+        """export const RecordType: t.Type<Record> = typeImpl({id: t.number}, {name: t.string}, "Record")""".fix.asRight
       )
     }
 
@@ -114,7 +114,7 @@ object IoTsTypesSpec
       runFeature(IoTsTypes(feature).handleRecord(r), cfg) must beEqvTo(
         """|export const RecordType: <A>(AType: t.Type<A>) => t.Type<Record<A>> = <A>(AType: t.Type<A>) => typeImpl(
            |  {id: AType}, {name: t.string}, "Record"
-           |)""".stripMargin.asRight
+           |)""".fix.asRight
       )
     }
 
@@ -141,7 +141,7 @@ object IoTsTypesSpec
              |
              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.taggedUnion("__tag", [
              |  EmptyType(AType), JustType(AType)
-             |], "Maybe")""".stripMargin.asRight
+             |], "Maybe")""".fix.asRight
         )
       }
 
@@ -162,7 +162,7 @@ object IoTsTypesSpec
              |
              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.taggedUnion("__tag", [
              |  Maybe.EmptyType(AType), Maybe.JustType(AType)
-             |], "Maybe")""".stripMargin.asRight
+             |], "Maybe")""".fix.asRight
         )
       }
     }
@@ -173,7 +173,7 @@ object IoTsTypesSpec
         .build
 
       runFeature(IoTsTypes(feature).handleEnum(e), cfg) must beEqvTo(
-        """export const EnumType: t.Type<Enum> = stringEnumImpl<Enum>(Enum, "Enum")""".asRight
+        """export const EnumType: t.Type<Enum> = stringEnumImpl<Enum>(Enum, "Enum")""".fix.asRight
       )
     }
 
@@ -196,7 +196,7 @@ object IoTsTypesSpec
            |
            |export const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
            |
-           |export const TestType: MyType<Test> = t.taggedUnion("__tag", [AType, BType], "Test")""".stripMargin.asRight
+           |export const TestType: MyType<Test> = t.taggedUnion("__tag", [AType, BType], "Test")""".fix.asRight
       )
     }
 
@@ -214,7 +214,7 @@ object IoTsTypesSpec
         IoTsTypes(feature0).handleAlias(a),
         cfg.copy(features = List(feature0))
       ) must beEqvTo(
-        """export const TestType: t.Type<Test> = <any>t.dictionary(AType, BType)""".asRight
+        """export const TestType: t.Type<Test> = <any>t.dictionary(AType, BType)""".fix.asRight
       )
 
     }
@@ -227,7 +227,7 @@ object IoTsTypesSpec
       runFeature(IoTsTypes(feature).handleRecord(r), cfg) must beEqvTo(
         """export const RecordWithSingleFieldType: t.Type<RecordWithSingleField> = typeImpl(
           |  {id: t.number}, {}, "RecordWithSingleField"
-          |)""".stripMargin.asRight
+          |)""".fix.asRight
       )
     }
   }

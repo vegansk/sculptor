@@ -28,7 +28,7 @@ object RecordGenSpec
         """|export interface Record<A> {
            |  id: number
            |  nameO: Option<A>
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -39,7 +39,7 @@ object RecordGenSpec
       ) must beEqvTo("""|export interface Record<A> {
            |  id: number
            |  nameO?: A
-           |}""".stripMargin.asRight)
+           |}""".fix.asRight)
     }
 
     "handles all fields optional encoding" >> {
@@ -49,7 +49,7 @@ object RecordGenSpec
       ) must beEqvTo("""|export interface Record<A> {
            |  id?: number
            |  nameO?: Option<A>
-           |}""".stripMargin.asRight)
+           |}""".fix.asRight)
     }
 
     "handles all fields optional encoding with optional class" >> {
@@ -59,7 +59,7 @@ object RecordGenSpec
       ) must beEqvTo("""|export interface Record<A> {
            |  id?: number
            |  nameO?: A
-           |}""".stripMargin.asRight)
+           |}""".fix.asRight)
     }
 
     "generates comments" >> {
@@ -69,7 +69,7 @@ object RecordGenSpec
            |export interface Record<A> {
            |  id: number /* The id */
            |  nameO: Option<A> /* The name */
-           |}""".stripMargin.asRight
+           |}""".fix.asRight
       )
     }
 
@@ -79,7 +79,7 @@ object RecordGenSpec
         .field("v", "A".gen)
         .build
       runGen(RecordGen.generate(r), cfg) must beEqvTo(
-        """export interface Test<A extends string> {v: A}""".asRight
+        """export interface Test<A extends string> {v: A}""".fix.asRight
       )
     }
 
