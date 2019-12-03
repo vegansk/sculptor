@@ -10,6 +10,7 @@ package object features {
   private val getFeature: FeatureConfig => Feature = {
     case v: FeatureConfig.IoTsTypes => IoTsTypes(v)
     case FeatureConfig.Constructors => Constructors
+    case FeatureConfig.AdditionalCode => AdditionalCode
   }
 
   def collectFeatures(f: Feature => Result[List[Doc]]): Result[List[Doc]] =

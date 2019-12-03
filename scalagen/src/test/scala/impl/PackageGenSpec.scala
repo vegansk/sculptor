@@ -16,7 +16,10 @@ object PackageGenSpec
 
   "PackageGen" should {
 
-    val p = pkg("test").comment("Package comment").build
+    val p = pkg("test")
+      .comment("Package comment")
+      .additionalCodeS("// Additional comment")
+      .build
 
     "produce package" >> {
       runGen(PackageGen.generate(p), cfg) must beEqvTo(
@@ -45,6 +48,15 @@ object PackageGenSpec
            |
            |package test""".fix.asRight
       )
+    }
+
+    "generate additional code" >> {
+      runGen(
+        PackageGen.generate(p),
+        cfg.copy(features = Feature.AdditionalCode.pure[List])
+      ) must beEqvTo("""|package test
+           |
+           |// Additional comment""".fix.asRight)
     }
 
   }

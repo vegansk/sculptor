@@ -52,6 +52,7 @@ object EnumGenSpec
     val testEnum = enum("Colors")
       .values(enumValue("Red").value("red").comment("Red color"))
       .comment("The Colors enum")
+      .additionalCodeS("// Additional comment")
       .build
 
     "generate Eq typeclass" >> {
@@ -107,6 +108,25 @@ object EnumGenSpec
            |  val asString: Colors => String = {case Red => "red"}
            |
            |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |}""".fix.asRight
+      )
+    }
+
+    "generate additional code" >> {
+      runGen(
+        EnumGen.generate(testEnum),
+        cfg.copy(features = List(Feature.AdditionalCode))
+      ) must beEqvTo(
+        """|sealed trait Colors extends Product with Serializable
+           |
+           |object Colors {
+           |  case object Red extends Colors
+           |
+           |  val asString: Colors => String = {case Red => "red"}
+           |
+           |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |
+           |  // Additional comment
            |}""".fix.asRight
       )
     }

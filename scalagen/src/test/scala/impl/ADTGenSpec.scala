@@ -27,6 +27,10 @@ object ADTGenSpec
           .comment("The non empty value")
       )
       .comment("The type representing optional value")
+      .additionalCodeS(
+        "// Additional code comment",
+        """def fold[A, B](empty: => B, f: A => B)(fa: Maybe[A]): B = ???""".fix
+      )
       .build
 
     val maybeIntAdt = adt("MaybeInt")
@@ -186,6 +190,24 @@ object ADTGenSpec
            |  final case class Empty[A]() extends Maybe[A]
            |  /* The non empty value */
            |  final case class Just[A](value: A /* The value */) extends Maybe[A]
+           |}""".fix.asRight
+      )
+    }
+
+    "generate additional code" >> {
+      runGen(
+        ADTGen.generate(maybeAdt),
+        cfg.copy(features = Feature.AdditionalCode.pure[List])
+      ) must beEqvTo(
+        """|sealed trait Maybe[A] extends Product with Serializable
+           |
+           |object Maybe {
+           |  final case class Empty[A]() extends Maybe[A]
+           |  final case class Just[A](value: A) extends Maybe[A]
+           |
+           |  // Additional code comment
+           |
+           |  def fold[A, B](empty: => B, f: A => B)(fa: Maybe[A]): B = ???
            |}""".fix.asRight
       )
     }

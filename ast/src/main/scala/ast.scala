@@ -3,6 +3,7 @@ package ast
 
 import cats.data._
 import cats.implicits._
+import org.typelevel.paiges.Doc
 
 /** Identifier representation */
 final case class Ident(name: String) extends AnyVal
@@ -76,6 +77,7 @@ sealed trait TypeDef {
   def isRecord: Boolean = false
   def isEnum: Boolean = false
   def isADT: Boolean = false
+  def additionalCode: Option[NonEmptyList[Doc]]
 }
 
 object TypeDef {
@@ -104,7 +106,8 @@ final case class Newtype(name: Ident,
                          parameters: List[GenericDef],
                          baseType: TypeRef,
                          comment: Option[String] = None,
-                         validator: Option[Validator] = None)
+                         validator: Option[Validator] = None,
+                         additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -119,7 +122,8 @@ final case class Newtype(name: Ident,
 final case class Alias(name: Ident,
                        parameters: List[GenericDef],
                        baseType: TypeRef,
-                       comment: Option[String] = None)
+                       comment: Option[String] = None,
+                       additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -141,7 +145,8 @@ final case class Record(name: Ident,
                         parameters: List[GenericDef],
                         fields: NonEmptyList[FieldDef],
                         comment: Option[String] = None,
-                        validator: Option[Validator] = None)
+                        validator: Option[Validator] = None,
+                        additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -162,7 +167,8 @@ final case class EnumValue(name: Ident,
 /** Enumeration */
 final case class Enum(name: Ident,
                       values: NonEmptyList[EnumValue],
-                      comment: Option[String] = None)
+                      comment: Option[String] = None,
+                      additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
   lazy val ref: TypeRef = TypeRef.Specialized(FQName(name))
 
@@ -186,7 +192,8 @@ final case class ADT(name: Ident,
                      parameters: List[GenericDef],
                      constructors: NonEmptyList[ADTConstructor],
                      comment: Option[String] = None,
-                     validator: Option[Validator] = None)
+                     validator: Option[Validator] = None,
+                     additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -200,4 +207,5 @@ final case class ADT(name: Ident,
 /** Types package */
 final case class Package(name: FQName,
                          types: List[TypeDef],
-                         comment: Option[String])
+                         comment: Option[String],
+                         additionalCode: Option[NonEmptyList[Doc]] = None)

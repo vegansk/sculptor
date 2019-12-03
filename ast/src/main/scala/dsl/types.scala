@@ -2,6 +2,8 @@ package sculptor
 package ast
 package dsl
 
+import org.typelevel.paiges.Doc
+
 trait Builder[+T] {
   def build: T
 }
@@ -18,6 +20,8 @@ trait NewtypeBuilder[State <: NewtypeBuilderState] {
   def noGeneric: NewtypeBuilder[State]
   def comment(value: String): NewtypeBuilder[State]
   def validator(v: Validator): NewtypeBuilder[State]
+  def additionalCode(code: Doc, rest: Doc*): NewtypeBuilder[State]
+  def additionalCodeS(code: String, rest: String*): NewtypeBuilder[State]
 
   def build(implicit ev: State =:= NewtypeBuilderState.Complete): Newtype
 }
@@ -40,6 +44,8 @@ trait AliasBuilder[State <: AliasBuilderState] {
   def generic(parameter: GenericDef, rest: GenericDef*): AliasBuilder[State]
   def noGeneric: AliasBuilder[State]
   def comment(value: String): AliasBuilder[State]
+  def additionalCode(code: Doc, rest: Doc*): AliasBuilder[State]
+  def additionalCodeS(code: String, rest: String*): AliasBuilder[State]
 
   def build(implicit ev: State =:= AliasBuilderState.Complete): Alias
 }
@@ -95,6 +101,8 @@ trait RecordBuilder[State <: RecordBuilderState] {
                 rest: FieldDef*): RecordBuilder[RecordBuilderState.Complete]
   def comment(value: String): RecordBuilder[State]
   def validator(v: Validator): RecordBuilder[State]
+  def additionalCode(code: Doc, rest: Doc*): RecordBuilder[State]
+  def additionalCodeS(code: String, rest: String*): RecordBuilder[State]
 
   def build(implicit ev: State =:= RecordBuilderState.Complete): Record
 }
@@ -125,6 +133,8 @@ trait EnumBuilder[State <: EnumBuilderState] {
   def valueDefs(value: EnumValue,
                 rest: EnumValue*): EnumBuilder[EnumBuilderState.Complete]
   def comment(value: String): EnumBuilder[State]
+  def additionalCode(code: Doc, rest: Doc*): EnumBuilder[State]
+  def additionalCodeS(code: String, rest: String*): EnumBuilder[State]
 
   def build(implicit ev: State =:= EnumBuilderState.Complete): Enum
 }
@@ -172,6 +182,8 @@ trait ADTBuilder[State <: ADTBuilderState] {
   ): ADTBuilder[ADTBuilderState.Complete]
   def comment(value: String): ADTBuilder[State]
   def validator(v: Validator): ADTBuilder[State]
+  def additionalCode(code: Doc, rest: Doc*): ADTBuilder[State]
+  def additionalCodeS(code: String, rest: String*): ADTBuilder[State]
 
   def build(implicit ev: State =:= ADTBuilderState.Complete): ADT
 }
@@ -190,6 +202,8 @@ trait PackageBuilder {
   def typ(t: Builder[_ <: TypeDef]): PackageBuilder
   def typeDef(t: TypeDef): PackageBuilder
   def comment(c: String): PackageBuilder
+  def additionalCode(code: Doc, rest: Doc*): PackageBuilder
+  def additionalCodeS(code: String, rest: String*): PackageBuilder
 
   def build: Package
 }

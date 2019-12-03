@@ -16,7 +16,9 @@ object Main extends App {
   println((Maybe.just(1)).asJson)
   println(decode[Maybe[Int]]("""{ "__tag": "Just", "get": 1 }"""))
 
+  println(Maybe.fold[Int, String]("nothing", _.toString)(Maybe.just(1)))
+
   println((Enum.A:Enum).asJson)
-  println(decode[Enum](""""A""""))
+  println(decode[Enum]("\"A\""))
 
 }

@@ -15,6 +15,7 @@ object Feature {
                              customIotsTaggedType: String = "")
       extends Feature
   case object Constructors extends Feature
+  case object AdditionalCode extends Feature
 
   object IoTsTypes {
 
