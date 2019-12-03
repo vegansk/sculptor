@@ -18,4 +18,6 @@ trait Feature {
 
   def handleEnum(e: Enum): Result[List[Doc]] = ok(List.empty)
 
+  def handlePackage(p: Package): Result[List[Doc]] = ok(List.empty)
+
 }

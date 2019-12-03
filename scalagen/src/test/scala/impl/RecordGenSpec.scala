@@ -31,6 +31,7 @@ object RecordGenSpec
       .generic("A".gen)
       .field("id", "Int".spec, "The id")
       .field("nameO", "Option".spec("A".gen), "The name")
+      .additionalCodeS("/* Additional comment */")
       .build
 
     "generate generic records" >> {
@@ -82,6 +83,16 @@ object RecordGenSpec
            |
            |final case class Record[A](id: Int /* The id */, nameO: Option[A] /* The name */)""".fix.asRight
       )
+    }
+
+    "generate additional code" >> {
+
+      runGen(
+        RecordGen.generate(rec),
+        cfg.copy(features = Feature.AdditionalCode.pure[List])
+      ) must beEqvTo("""|final case class Record[A](id: Int, nameO: Option[A])
+           |
+           |object Record {/* Additional comment */}""".fix.asRight)
     }
   }
 

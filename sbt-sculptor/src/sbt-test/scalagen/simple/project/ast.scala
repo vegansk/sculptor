@@ -12,6 +12,13 @@ object Simple {
       cons("Nothing").generic("A".gen),
       cons("Just").generic("A".gen).field("get", "A".gen)
     )
+    .additionalCodeS(
+      """|def fold[A, B](empty: => B, f: A => B)(fa: Maybe[A]): B = {
+         |  fa match {
+         |    case Nothing() => empty
+         |    case Just(a) => f(a)
+         |  }
+         |}""".stripMargin)
 
   val r = record("Record")
     .field("id", "Int".spec)

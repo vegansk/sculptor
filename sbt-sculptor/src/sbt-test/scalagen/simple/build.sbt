@@ -28,7 +28,8 @@ lazy val root = project.in(file("."))
         Scala.Config(
           features = List(
             Scala.Feature.CatsEqTypeclass,
-            Scala.Feature.CirceCodecs()
+            Scala.Feature.CirceCodecs(),
+            Scala.Feature.AdditionalCode
           ),
           prefixCode = """|import cats._
                           |import io.circe._

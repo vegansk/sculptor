@@ -6,6 +6,7 @@ package impl
 import cats._
 import cats.data.NonEmptyList
 import cats.implicits._
+import org.typelevel.paiges.Doc
 
 final case class NewtypeBuilderImpl[State <: NewtypeBuilderState] private (
   value: Newtype
@@ -21,8 +22,15 @@ final case class NewtypeBuilderImpl[State <: NewtypeBuilderState] private (
     this.copy(value = value.copy(comment = v.some))
   def validator(v: Validator) =
     this.copy(value = value.copy(validator = v.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      value = value.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
-  def build(implicit ev: State =:= NewtypeBuilderState.Complete) = this.value
+  def build(implicit ev: State =:= NewtypeBuilderState.Complete): Newtype =
+    this.value
 }
 
 object NewtypeBuilderImpl {
@@ -44,6 +52,12 @@ final case class AliasBuilderImpl[State <: AliasBuilderState] private (
     this.copy(value = value.copy(parameters = Nil))
   def comment(v: String) =
     this.copy(value = value.copy(comment = v.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      value = value.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
   def build(implicit ev: State =:= AliasBuilderState.Complete) = this.value
 }
@@ -108,6 +122,12 @@ final case class RecordBuilderImpl[State <: RecordBuilderState] private (
     this.copy(value = value.copy(comment = v.some))
   def validator(v: Validator) =
     this.copy(value = value.copy(validator = v.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      value = value.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
   def build(implicit ev: State =:= RecordBuilderState.Complete) =
     this.value
@@ -147,6 +167,12 @@ final case class EnumBuilderImpl[State <: EnumBuilderState] private (enum: Enum)
     this.copy(enum = enum.copy(values = NonEmptyList.of(v, rest: _*)))
   def comment(v: String) =
     this.copy(enum = enum.copy(comment = v.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      enum = enum.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
   def build(implicit ev: State =:= EnumBuilderState.Complete) =
     this.enum
@@ -208,6 +234,12 @@ final case class ADTBuilderImpl[State <: ADTBuilderState] private (value: ADT)
     this.copy(value = value.copy(comment = v.some))
   def validator(v: Validator) =
     this.copy(value = value.copy(validator = v.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      value = value.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
   def build(implicit ev: State =:= ADTBuilderState.Complete) =
     this.value
@@ -236,6 +268,12 @@ final case class PackageBuilderImpl private (value: Package)
     this.copy(value = value.copy(types = this.value.types ++ List(t)))
   def comment(c: String) =
     this.copy(value = value.copy(comment = c.some))
+  def additionalCode(code: Doc, rest: Doc*) =
+    this.copy(
+      value = value.copy(additionalCode = NonEmptyList.of(code, rest: _*).some)
+    )
+  def additionalCodeS(code: String, rest: String*) =
+    additionalCode(Doc.text(code), rest.map(Doc.text): _*)
 
   def build = this.value
 }

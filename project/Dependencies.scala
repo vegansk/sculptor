@@ -32,7 +32,8 @@ object Dependencies {
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck
 
   val ast = Seq(
-    cats
+    cats,
+    paigesCore
   ) ++ Seq(
     specs2
   ).map(_ % "test")
