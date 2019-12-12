@@ -90,7 +90,7 @@ object Sculptor {
       publishMavenStyle := true,
       credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
       publishTo := {
-        val nexus = "http://nexus.eldissoft.lan/nexus/content/repositories/"
+        val nexus = "http://nexus.corp.eldis.ru/repository/"
         if (isSnapshot.value)
           Some("snapshots" at nexus + "snapshots")
         else
