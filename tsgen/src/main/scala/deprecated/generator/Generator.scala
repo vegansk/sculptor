@@ -202,16 +202,13 @@ class Generator(config: Config) {
       "\")"
     )
 
-    def fields(prefix: Doc,
-               constraint: FieldConstraint => Boolean): Option[Doc] =
-      ct.fields.filter(f => constraint(f.constraint)).toNel.fold(none[Doc]) {
-        fields =>
-          val p = prefix + text("({")
-          val s = text("})")
-          intercalate(comma + line, fields.toList.map(fieldDecl _))
-            .tightBracketBy(p, s)
-            .some
-      }
+    def fields(prefix: Doc, constraint: FieldConstraint => Boolean): Doc = {
+      val fields = ct.fields.filter(f => constraint(f.constraint))
+      val p = prefix + text("({")
+      val s = text("})")
+      intercalate(comma + line, fields.map(fieldDecl _))
+        .tightBracketBy(p, s)
+    }
 
     def optionalField(constraint: FieldConstraint): Boolean =
       config.generatePartialConstants || !requiredConstraints.contains(
@@ -227,8 +224,8 @@ class Generator(config: Config) {
           comma + line,
           List(
             ct.baseType.map(typeConst _),
-            fields(interface, requiredField),
-            fields(partial, optionalField)
+            fields(interface, requiredField).some,
+            fields(partial, optionalField).some
           ).foldMap(_.toList)
         ).tightBracketBy(prefix, suffix).pure[List]
     )

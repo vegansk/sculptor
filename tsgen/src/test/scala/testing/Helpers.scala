@@ -22,6 +22,8 @@ trait Helpers extends StringOps { outer =>
              cfg: Config): sculptor.tsgen.Result[String] =
     run(r.map(_.render(cfg.lineWidth)), cfg)
 
+  def render(doc: Doc): String = doc.render(80).fix
+
   def beEqvTo[T: Eq: Show](expected: T): Matcher[T] = new Matcher[T] {
     def apply[S <: T](actual: Expectable[S]): MatchResult[S] = {
       val actualT = actual.value.asInstanceOf[T]

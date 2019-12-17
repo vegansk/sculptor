@@ -11,9 +11,10 @@
   "author": "Anatoly Galiulin <galiulin.anatoly@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^2.7.2"
+    "typescript": "^3.7.3"
   },
   "dependencies": {
-    "io-ts": "^1.0.5"
+    "io-ts": "^2.0.1",
+    "fp-ts": "^2.3.0"
   }
 }

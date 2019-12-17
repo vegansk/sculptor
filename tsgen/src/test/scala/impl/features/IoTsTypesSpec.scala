@@ -230,5 +230,15 @@ object IoTsTypesSpec
           |)""".fix.asRight
       )
     }
+
+    "produce correct records with only optional fields" >> {
+      val r = record("Test")
+        .field("id", "Option".spec("number".spec))
+        .build
+
+      runFeature(IoTsTypes(feature).handleRecord(r), cfg) must beEqvTo(
+        """export const TestType: t.Type<Test> = typeImpl({}, {id: t.number}, "Test")""".fix.asRight
+      )
+    }
   }
 }
