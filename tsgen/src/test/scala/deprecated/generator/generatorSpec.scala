@@ -218,6 +218,62 @@ import * as T from "core/utils/types"""".fix)
       )
     }
 
+    "produce correct record types" >> {
+
+      "with only optional fields" >> {
+        val ct = ComplexTypeDecl(
+          TypeRef.definedFrom("Test", "TestType"),
+          None,
+          true,
+          NEL.of(
+            FieldDecl(
+              Ident("id"),
+              TypeRef.std(Ident("number")),
+              FieldConstraint.Optional,
+              false,
+              None
+            )
+          ),
+          None
+        )
+
+        render(complexTypeConstDecl(ct)) must beEqvTo(
+          """export const TestType: t.Type<Test> = t.intersection([
+            |  t.interface({}),
+            |  t.partial({id: t.number})
+            |], "Test")""".fix
+        )
+
+      }
+
+      "with only required fields" >> {
+        val ct = ComplexTypeDecl(
+          TypeRef.definedFrom("Test", "TestType"),
+          None,
+          true,
+          NEL.of(
+            FieldDecl(
+              Ident("id"),
+              TypeRef.std(Ident("number")),
+              FieldConstraint.Required,
+              false,
+              None
+            )
+          ),
+          None
+        )
+
+        render(complexTypeConstDecl(ct)) must beEqvTo(
+          """export const TestType: t.Type<Test> = t.intersection([
+            |  t.interface({id: t.number}),
+            |  t.partial({})
+            |], "Test")""".fix
+        )
+
+      }
+
+    }
+
   }
 
 }
