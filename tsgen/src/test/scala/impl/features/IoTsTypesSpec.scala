@@ -139,7 +139,7 @@ object IoTsTypesSpec
              |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |)
              |
-             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.taggedUnion("__tag", [
+             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
              |  EmptyType(AType), JustType(AType)
              |], "Maybe")""".fix.asRight
         )
@@ -160,9 +160,21 @@ object IoTsTypesSpec
              |  )
              |}
              |
-             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.taggedUnion("__tag", [
+             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
              |  Maybe.EmptyType(AType), Maybe.JustType(AType)
              |], "Maybe")""".fix.asRight
+        )
+      }
+
+      "with one element" >> {
+        runFeature(
+          IoTsTypes(feature)
+            .handleADT(adt("Test").constructors(cons("Cons")).build),
+          cfg
+        ) must beEqvTo(
+          """|export const ConsType: t.Tagged<"__tag", Cons> = typeImpl({__tag: t.literal("Cons")}, {}, "Cons")
+             |
+             |export const TestType: t.Type<Test> = ConsType""".fix.asRight
         )
       }
     }
@@ -196,7 +208,7 @@ object IoTsTypesSpec
            |
            |export const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
            |
-           |export const TestType: MyType<Test> = t.taggedUnion("__tag", [AType, BType], "Test")""".fix.asRight
+           |export const TestType: MyType<Test> = t.union([AType, BType], "Test")""".fix.asRight
       )
     }
 

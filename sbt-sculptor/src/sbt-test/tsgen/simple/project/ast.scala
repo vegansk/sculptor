@@ -36,6 +36,11 @@ object Simple {
     .generic("A".gen)
     .baseType("Either".spec("string".spec, "A".gen))
 
+  val AdtWithOneElement = adt("AdtWithOneElement")
+    .constructors(
+      cons("Element")
+    )
+
   val packageAst = pkg("test.types")
     .types(
       MyInt,
@@ -45,7 +50,8 @@ object Simple {
       RecordWithSingleField,
       Enum,
       Either,
-      Result
+      Result,
+      AdtWithOneElement
     )
     .build
 

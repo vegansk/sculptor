@@ -198,14 +198,21 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
   private def genADTTaggedUnionImpl(indent: Int,
                                     tagName: String,
                                     genAdtNs: Boolean)(a: ADT): Doc = {
-    val prefix = Doc.text(s"""${iots}taggedUnion("${tagName}", [""")
-    Doc
-      .intercalate(Doc.char(',') + Doc.lineOrSpace, a.constructors.toList.map {
-        c =>
-          val typ = genIotsTypeRef(c.ref)
-          if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
-      })
-      .tightBracketBy(prefix, Doc.text(s"""], "${a.name.name}")"""), indent)
+    if (a.constructors.size === 1) {
+      val typ = genIotsTypeRef(a.constructors.head.ref)
+      if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+    } else {
+      val prefix = Doc.text(s"${iots}union([")
+      Doc
+        .intercalate(
+          Doc.char(',') + Doc.lineOrSpace,
+          a.constructors.toList.map { c =>
+            val typ = genIotsTypeRef(c.ref)
+            if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+          }
+        )
+        .tightBracketBy(prefix, Doc.text(s"""], "${a.name.name}")"""), indent)
+    }
   }
 
   private def genADTTypeConst(indent: Int, tagName: String, genAdtNs: Boolean)(
