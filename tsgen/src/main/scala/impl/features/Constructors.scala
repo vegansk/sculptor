@@ -8,16 +8,23 @@ import sculptor.ast._
 
 object Constructors extends Feature with GenHelpers {
 
-  private def genConstructor(opt: Option[OptionalEncoding])(
+  private def genConstructor(opt: Option[OptionalEncoding],
+                             generateField: Boolean)(
     name: Ident,
     typ: Doc,
     genParams: List[GenericDef],
     params: List[FieldDef],
     indent: Int
   )(body: => Doc): Doc = {
-    val prefix = functionPrefix(opt)(name.name, genParams, params, typ) + Doc
+    val prefix = functionPrefix(opt, generateField)(
+      name.name,
+      genParams,
+      params,
+      typ
+    ) + Doc
       .text(" {")
-    exported(body.tightBracketBy(prefix, functionPostfix, indent))
+    val exported0 = if (generateField) identity[Doc](_) else exported(_)
+    exported0(body.tightBracketBy(prefix, functionPostfix, indent))
   }
 
   override def handleNewtype(n: Newtype) =
@@ -27,7 +34,7 @@ object Constructors extends Feature with GenHelpers {
       typ = createTypeRef(n.ref)
     } yield
       List(
-        genConstructor(opt)(
+        genConstructor(opt, generateField = false)(
           n.name,
           typ,
           n.parameters,
@@ -38,7 +45,8 @@ object Constructors extends Feature with GenHelpers {
         }
       )
 
-  private def genObjectConstructor(opt: Option[OptionalEncoding])(
+  private def genObjectConstructor(opt: Option[OptionalEncoding],
+                                   generateField: Boolean)(
     name: Ident,
     typ: Doc,
     genParams: List[GenericDef],
@@ -46,7 +54,7 @@ object Constructors extends Feature with GenHelpers {
     params: List[FieldDef],
     indent: Int
   ): Doc =
-    genConstructor(opt)(name, typ, genParams, params, indent) {
+    genConstructor(opt, generateField)(name, typ, genParams, params, indent) {
       Doc
         .intercalate(
           Doc.char(',') + line,
@@ -62,7 +70,7 @@ object Constructors extends Feature with GenHelpers {
       typ = createTypeRef(r.ref)
     } yield
       List(
-        genObjectConstructor(opt)(
+        genObjectConstructor(opt, generateField = false)(
           r.name,
           typ,
           r.parameters,
@@ -80,7 +88,7 @@ object Constructors extends Feature with GenHelpers {
     val typ = createTypeRef(a.ref)
     val tag = Doc.text(c.name.name)
     val adtTag = Doc.text(s"""$tagName: """") + tag + Doc.char('"')
-    genObjectConstructor(opt)(
+    genObjectConstructor(opt, generateField = genAdtNs)(
       c.name,
       typ,
       c.parameters,
@@ -89,6 +97,15 @@ object Constructors extends Feature with GenHelpers {
       indent
     )
   }
+
+  private def withConst(a: ADT, indent: Int)(what: List[Doc]): Doc =
+    Doc
+      .intercalate(Doc.char(',') + dblLine, what)
+      .tightBracketBy(
+        Doc.text(s"export const ${a.name.name} = {"),
+        Doc.char('}'),
+        indent
+      )
 
   override def handleADT(a: ADT) =
     for {
@@ -100,7 +117,7 @@ object Constructors extends Feature with GenHelpers {
         .map(genADTConstructor(a, tagName, opt, genAdtNs, indent))
       constructors = genAdtNs match {
         case false => constructors0
-        case _ => List(withNamespace(a.name.name, indent)(constructors0))
+        case _ => List(withConst(a, indent)(constructors0))
       }
     } yield constructors
 

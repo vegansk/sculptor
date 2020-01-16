@@ -121,12 +121,19 @@ trait GenHelpers extends CommonGenHelpers {
   def exported(what: Doc): Doc =
     Doc.text("export ") + what
 
-  def functionPrefix(opt: Option[OptionalEncoding])(name: String,
-                                                    genParams: List[GenericDef],
-                                                    params: List[FieldDef],
-                                                    resultType: Doc): Doc = {
-    val prefix = Doc.text(s"const ${name} = ") + createParameters(genParams) + Doc
-      .char('(')
+  def functionPrefix(opt: Option[OptionalEncoding], generateField: Boolean)(
+    name: String,
+    genParams: List[GenericDef],
+    params: List[FieldDef],
+    resultType: Doc
+  ): Doc = {
+    val prefix =
+      if (generateField)
+        Doc.text(s"${name}: ") + createParameters(genParams) + Doc
+          .char('(')
+      else
+        Doc.text(s"const ${name} = ") + createParameters(genParams) + Doc
+          .char('(')
     val postfix = Doc.text("): ") + resultType + Doc.text(" =>")
 
     prefix + Doc.intercalate(Doc.text(", "), params.map(createFuncParam(opt))) + postfix
@@ -135,7 +142,8 @@ trait GenHelpers extends CommonGenHelpers {
   def createBrandField(typ: Doc): Doc =
     Doc.text("""__brand: """") + typ + Doc.char('"')
 
-  def beginNamespace(ns: String): Doc = exported(Doc.text(s"namespace $ns {"))
+  def beginNamespace(ns: String): Doc =
+    exported(Doc.text(s"declare namespace $ns {"))
 
   val endNamespace = Doc.char('}')
 

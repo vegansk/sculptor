@@ -131,11 +131,11 @@ object IoTsTypesSpec
 
       "without namespaces" >> {
         runFeature(IoTsTypes(feature).handleADT(a), cfg) must beEqvTo(
-          """|export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
+          """|const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
              |  {__tag: t.literal("Empty")}, {}, "Empty"
              |)
              |
-             |export const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
+             |const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
              |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |)
              |
@@ -150,18 +150,18 @@ object IoTsTypesSpec
           IoTsTypes(feature).handleADT(a),
           cfg.copy(generateAdtNs = true)
         ) must beEqvTo(
-          """|export namespace Maybe {
-             |  export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
+          """|const MaybeCodecs = {
+             |  EmptyType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Empty<A>> => typeImpl(
              |    {__tag: t.literal("Empty")}, {}, "Empty"
-             |  )
+             |  ),
              |
-             |  export const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
+             |  JustType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Just<A>> => typeImpl(
              |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |  )
              |}
              |
              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
-             |  Maybe.EmptyType(AType), Maybe.JustType(AType)
+             |  MaybeCodecs.EmptyType(AType), MaybeCodecs.JustType(AType)
              |], "Maybe")""".fix.asRight
         )
       }
@@ -172,9 +172,21 @@ object IoTsTypesSpec
             .handleADT(adt("Test").constructors(cons("Cons")).build),
           cfg
         ) must beEqvTo(
-          """|export const ConsType: t.Tagged<"__tag", Cons> = typeImpl({__tag: t.literal("Cons")}, {}, "Cons")
+          """|const ConsType: t.Tagged<"__tag", Cons> = typeImpl({__tag: t.literal("Cons")}, {}, "Cons")
              |
              |export const TestType: t.Type<Test> = ConsType""".fix.asRight
+        )
+      }
+
+      "with namespaces, without generics" >> {
+        runFeature(
+          IoTsTypes(feature)
+            .handleADT(adt("Test").constructors(cons("Cons")).build),
+          cfg.copy(generateAdtNs = true)
+        ) must beEqvTo(
+          """|const TestCodecs = {ConsType: typeImpl({__tag: t.literal("Cons")}, {}, "Cons") as t.Tagged<"__tag", Test.Cons>}
+             |
+             |export const TestType: t.Type<Test> = TestCodecs.ConsType""".fix.asRight
         )
       }
     }
@@ -204,9 +216,9 @@ object IoTsTypesSpec
         IoTsTypes(feature0).handleADT(a),
         cfg.copy(features = List(feature0))
       ) must beEqvTo(
-        """|export const AType: MyTaggedType<"__tag", A> = typeImpl({__tag: t.literal("A")}, {}, "A")
+        """|const AType: MyTaggedType<"__tag", A> = typeImpl({__tag: t.literal("A")}, {}, "A")
            |
-           |export const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
+           |const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
            |
            |export const TestType: MyType<Test> = t.union([AType, BType], "Test")""".fix.asRight
       )
