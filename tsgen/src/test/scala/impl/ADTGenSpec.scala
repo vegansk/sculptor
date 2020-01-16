@@ -76,7 +76,7 @@ object ADTGenSpec
       runGen(ADTGen.generate(maybeAdt), cfg.copy(generateAdtNs = true)) must beEqvTo(
         """|export type Maybe<A> = Maybe.Empty<A> | Maybe.Just<A>
            |
-           |export namespace Maybe {
+           |export declare namespace Maybe {
            |  export interface Empty<A> {__tag: "Empty"}
            |
            |  export interface Just<A> {

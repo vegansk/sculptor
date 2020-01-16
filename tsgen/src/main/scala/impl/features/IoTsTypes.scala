@@ -50,8 +50,7 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
             genIotsTypeRef(f.`type`) + Doc
               .text(s": ${iots}Type<${f.`type`.name.name}>")
         )
-      ) +
-      Doc.text(") => ")
+      ) + Doc.char(')')
   }
 
   private lazy val iotsType = cfg.customIotsType match {
@@ -66,29 +65,70 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
 
   private def genTypeConstType(ref0: TypeRef,
                                tag: Option[String],
-                               params: List[GenericDef]): Doc = {
+                               params: List[GenericDef],
+                               generateField: Boolean): Doc = {
     val typePrefix =
       tag.fold(s"${iotsType}<")(t => s"""${iotsTaggedType}<"$t", """)
     val ref = Doc.text(typePrefix) + createTypeRef(ref0) + Doc
       .char('>')
-    params.toNel.fold(ref)(l => genIotsGenericPrefix(l) + ref)
+    if (generateField) ref
+    else
+      params.toNel.fold(ref)(
+        l => genIotsGenericPrefix(l) + Doc.text(" => ") + ref
+      )
   }
 
   private def genTypeConstPrefix(name: Ident,
                                  tag: Option[String],
                                  parameters: List[GenericDef],
-                                 ref: TypeRef): Doc =
-    exported(Doc.text("const ")) +
-      Doc.text(genTypeConstName(name.name)) +
-      Doc.text(": ") + genTypeConstType(ref, tag, parameters) +
-      Doc.text(" = ") +
-      parameters.toNel.fold(Doc.empty)(genIotsGenericPrefix)
+                                 ref: TypeRef,
+                                 generateExport: Boolean,
+                                 generateField: Boolean): Doc = {
+    if (generateField) {
+      Doc.text(genTypeConstName(name.name)) + Doc.text(": ") +
+        parameters.toNel.fold(Doc.empty)(
+          genIotsGenericPrefix(_) +
+            Doc.text(": ") + genTypeConstType(ref, tag, parameters, true) + Doc
+            .text(" => ")
+        )
+    } else {
+      val exported0: Doc => Doc =
+        if (generateExport) exported(_) else identity[Doc](_)
+      exported0(Doc.text("const ")) +
+        Doc.text(genTypeConstName(name.name)) +
+        Doc.text(": ") + genTypeConstType(ref, tag, parameters, false) +
+        Doc.text(" = ") +
+        parameters.toNel.fold(Doc.empty)(
+          genIotsGenericPrefix(_) + Doc.text(" => ")
+        )
+    }
+  }
+
+  private def genTypeConstPostfix(tag: Option[String],
+                                  parameters: List[GenericDef],
+                                  ref: TypeRef,
+                                  generateField: Boolean): Doc = {
+    if (!generateField || parameters.length > 0) {
+      // It's const definition or function field
+      Doc.empty
+    } else {
+      // It's constant field
+      Doc.text(" as ") + genTypeConstType(ref, tag, parameters, true)
+    }
+  }
 
   private def genAliasOrNewtype(name: Ident,
                                 parameters: List[GenericDef],
                                 ref: TypeRef,
                                 baseType: TypeRef): Doc =
-    genTypeConstPrefix(name, None, parameters, ref) +
+    genTypeConstPrefix(
+      name,
+      None,
+      parameters,
+      ref,
+      generateExport = true,
+      generateField = false
+    ) +
       Doc.text("<any>") +
       genIotsTypeRef(baseType)
 
@@ -159,7 +199,11 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       .tightBracketBy(prefix, Doc.char(')'), indent)
   }
 
-  private def genRecordTypeConst(opt: Option[OptionalEncoding], indent: Int)(
+  // If generateField === true, generates field for codecs object
+  private def genRecordTypeConst(opt: Option[OptionalEncoding],
+                                 indent: Int,
+                                 generateExport: Boolean,
+                                 generateField: Boolean)(
     name: Ident,
     tag: Option[String],
     parameters: List[GenericDef],
@@ -171,11 +215,18 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       genFields(indent, fieldsPrefix),
       genFields(indent)
     )(fields)
-    genTypeConstPrefix(name, tag, parameters, ref) + genRecordTypeConstImpl(
+    genTypeConstPrefix(
       name,
-      reqf,
-      optf,
-      indent
+      tag,
+      parameters,
+      ref,
+      generateExport,
+      generateField
+    ) + genRecordTypeConstImpl(name, reqf, optf, indent) + genTypeConstPostfix(
+      tag,
+      parameters,
+      ref,
+      generateField
     )
   }
 
@@ -185,14 +236,12 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       indent <- getIndent
     } yield
       List(
-        genRecordTypeConst(opt, indent)(
-          r.name,
-          None,
-          r.parameters,
-          Nil,
-          r.fields.toList,
-          r.ref
-        )
+        genRecordTypeConst(
+          opt,
+          indent,
+          generateExport = true,
+          generateField = false
+        )(r.name, None, r.parameters, Nil, r.fields.toList, r.ref)
       )
 
   private def genADTTaggedUnionImpl(indent: Int,
@@ -200,7 +249,8 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
                                     genAdtNs: Boolean)(a: ADT): Doc = {
     if (a.constructors.size === 1) {
       val typ = genIotsTypeRef(a.constructors.head.ref)
-      if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+      if (genAdtNs) Doc.text(s"${a.name.name}${cfg.codecsObjectEnding}.") + typ
+      else typ
     } else {
       val prefix = Doc.text(s"${iots}union([")
       Doc
@@ -208,7 +258,9 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
           Doc.char(',') + Doc.lineOrSpace,
           a.constructors.toList.map { c =>
             val typ = genIotsTypeRef(c.ref)
-            if (genAdtNs) Doc.text(a.name.name) + Doc.char('.') + typ else typ
+            if (genAdtNs)
+              Doc.text(s"${a.name.name}${cfg.codecsObjectEnding}.") + typ
+            else typ
           }
         )
         .tightBracketBy(prefix, Doc.text(s"""], "${a.name.name}")"""), indent)
@@ -218,8 +270,37 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
   private def genADTTypeConst(indent: Int, tagName: String, genAdtNs: Boolean)(
     a: ADT
   ): Doc = {
-    genTypeConstPrefix(a.name, None, a.parameters, a.ref) +
+    genTypeConstPrefix(
+      a.name,
+      None,
+      a.parameters,
+      a.ref,
+      generateExport = true,
+      generateField = false
+    ) +
       genADTTaggedUnionImpl(indent, tagName, genAdtNs)(a)
+  }
+
+  private def withCodec(a: ADT, indent: Int)(what: List[Doc]): Doc =
+    Doc
+      .intercalate(Doc.char(',') + dblLine, what)
+      .tightBracketBy(
+        Doc.text(s"const ${a.name.name}${cfg.codecsObjectEnding} = {"),
+        Doc.char('}'),
+        indent
+      )
+
+  private def adtConstructorTypeRef(a: ADT,
+                                    c: ADTConstructor,
+                                    genAdtNs: Boolean): TypeRef = {
+    if (genAdtNs) {
+      TypeRef.cata[TypeRef](
+        s => s.copy(name = s.name.copy(prefix = a.name :: s.name.prefix)),
+        identity
+      )(c.ref)
+    } else {
+      c.ref
+    }
   }
 
   override def handleADT(a: ADT) =
@@ -229,23 +310,21 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       tagName <- getAdtTag
       genAdtNs <- getGenerateAdtNs
       constructors0 = a.constructors.toList.map { c =>
-        val ref = c.ref
+        val ref = adtConstructorTypeRef(a, c, genAdtNs)
         val tag = Doc.text(c.name.name)
         val tagExpr = Doc.text(s"""$tagName: t.literal("""") + tag + Doc.text(
           """")"""
         )
-        genRecordTypeConst(opt, indent)(
-          c.name,
-          tagName.some,
-          a.parameters,
-          List(tagExpr),
-          c.fields,
-          ref
-        )
+        genRecordTypeConst(
+          opt,
+          indent,
+          generateExport = false,
+          generateField = genAdtNs
+        )(c.name, tagName.some, a.parameters, List(tagExpr), c.fields, ref)
       }
       constructors = genAdtNs match {
         case false => constructors0
-        case _ => List(withNamespace(a.name.name, indent)(constructors0))
+        case _ => List(withCodec(a, indent)(constructors0))
       }
     } yield constructors ++ List(genADTTypeConst(indent, tagName, genAdtNs)(a))
 
@@ -255,7 +334,14 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       name = e.name.name
     } yield
       List(
-        genTypeConstPrefix(e.name, None, Nil, e.ref) +
+        genTypeConstPrefix(
+          e.name,
+          None,
+          Nil,
+          e.ref,
+          generateExport = true,
+          generateField = false
+        ) +
           Doc.text(s"""stringEnumImpl<$name>($name, "$name")""")
       )
 }

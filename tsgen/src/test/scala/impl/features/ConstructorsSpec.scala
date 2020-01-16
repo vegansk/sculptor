@@ -70,10 +70,10 @@ object ConstructorsSpec
 
       "with namespaces" >> {
         runFeature(Constructors.handleADT(a), cfg.copy(generateAdtNs = true)) must beEqvTo(
-          """|export namespace Maybe {
-             |  export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty"}}
+          """|export const Maybe = {
+             |  Empty: <A>(): Maybe<A> => {return {__tag: "Empty"}},
              |
-             |  export const Just = <A>(value: A): Maybe<A> => {
+             |  Just: <A>(value: A): Maybe<A> => {
              |    return {
              |      __tag: "Just",
              |      value
