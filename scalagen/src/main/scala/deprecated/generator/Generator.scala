@@ -806,7 +806,7 @@ class Generator(config: Config) {
     )
     val prefix = spread(
       List(
-        text("object"),
+        text("case object"),
         ident(m.name),
         text("extends"),
         typeName(e.`type`),
