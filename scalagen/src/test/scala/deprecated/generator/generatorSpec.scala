@@ -68,11 +68,11 @@ object generatorSpec
                     |}""".stripMargin))
       enumObjectDecl(e) must beEqvTo(
         Doc.text("""|object Test {
-                    |  object A extends Test {
+                    |  case object A extends Test {
                     |    override val code = "valueA"
                     |    override val description = "Value A"
                     |  }
-                    |  object B extends Test {
+                    |  case object B extends Test {
                     |    override val code = "valueB"
                     |    override val description = "valueB"
                     |  }
