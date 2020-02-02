@@ -31,7 +31,8 @@ object PackageGen extends GenHelpers {
         .flatMap(_ => p.comment)
         .map(c => Doc.text(s"/*\n${c}\n*/"))
       packageName <- packageDoc(p.name)
-      types <- p.types.traverse(typeDoc)
+      types0 <- p.sortedTypes.fold[Result[List[TypeDef]]](error, ok)
+      types <- types0.traverse(typeDoc)
       prefix <- getPrefixCode
       features <- features.collectFeatures(_.handlePackage(p))
     } yield

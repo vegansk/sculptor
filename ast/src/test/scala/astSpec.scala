@@ -3,8 +3,9 @@ package ast
 
 import org.specs2._
 import cats.data._
+import cats.implicits._
 
-object astShapeSpec extends mutable.Specification {
+object astSpec extends mutable.Specification {
 
   "sculptor.ast.Newtype" should {
 
@@ -162,6 +163,26 @@ object astShapeSpec extends mutable.Specification {
         NonEmptyList.of(left, right)
       )
       true must_=== true
+    }
+  }
+
+  "sculptor.ast.Package" should {
+    "sort types" >> {
+      val newtype = Newtype(Ident("Z"), Nil, TypeRef.spec("Int"))
+      val newtype2 = Newtype(Ident("A"), Nil, TypeRef.spec("Int"))
+      val alias = Alias(Ident("Y"), Nil, newtype.ref)
+      val record = Record(
+        Ident("X"),
+        Nil,
+        NonEmptyList.of(
+          FieldDef(Ident("y"), alias.ref),
+          FieldDef(Ident("z"), newtype.ref)
+        )
+      )
+      val pkg = Package(FQName.of("p"), List(record, alias, newtype, newtype2))
+
+      val result = pkg.sortedTypes
+      result must_=== List(newtype2, newtype, alias, record).asRight[String]
     }
   }
 }
