@@ -19,7 +19,6 @@ object Dependencies {
 
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % Versions.scalaXml
   val scalaGraphCore = "org.scala-graph" %% "graph-core" % Versions.scalaGraph
-  val scalaGraphDot = "org.scala-graph" %% "graph-dot" % Versions.scalaGraph
   val specs2 = "org.specs2" %% "specs2-core" % Versions.specs2
   val specs2ScalaCheck = "org.specs2" %% "specs2-scalacheck" % Versions.specs2
   val cats = "org.typelevel" %% "cats-core" % Versions.cats
@@ -33,7 +32,8 @@ object Dependencies {
 
   val ast = Seq(
     cats,
-    paigesCore
+    paigesCore,
+    scalaGraphCore,
   ) ++ Seq(
     specs2
   ).map(_ % "test")

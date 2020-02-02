@@ -4,6 +4,8 @@ package ast
 import cats.data._
 import cats.implicits._
 import org.typelevel.paiges.Doc
+import scalax.collection.{State => _, _}, GraphEdge._
+import scalax.collection.GraphPredef.EdgeLikeIn
 
 /** Identifier representation */
 final case class Ident(name: String) extends AnyVal
@@ -26,12 +28,20 @@ object FQName {
 /** Types references ADT, used in type definitions */
 sealed trait TypeRef {
   def asString: String
+  def `type`: Option[TypeDef]
 }
 
 object TypeRef {
 
-  /** Specialized type reference */
-  final case class Specialized(name: FQName, parameters: List[TypeRef] = Nil)
+  /** Specialized type reference
+    *
+    * @param name       Name of the type
+    * @param parameters Generic parameters
+    * @param type       Link to the real type to support dependencies
+    */
+  final case class Specialized(name: FQName,
+                               parameters: List[TypeRef] = Nil,
+                               `type`: Option[TypeDef] = None)
       extends TypeRef {
     def asString = name.mkString(".")
   }
@@ -39,10 +49,16 @@ object TypeRef {
   /** Generic type reference */
   final case class Generic(name: Ident) extends TypeRef {
     def asString = name.name
+    val `type` = None
   }
 
   def spec(name: String, parameters: TypeRef*): Specialized =
-    Specialized(FQName.of(name), parameters.toList)
+    spec0(FQName.of(name), None, parameters.toList)
+
+  def spec0(name: FQName,
+            `type`: Option[TypeDef],
+            parameters: List[TypeRef]): Specialized =
+    Specialized(name, parameters, `type`)
 
   def gen(name: String): Generic = Generic(Ident(name))
 
@@ -78,6 +94,15 @@ sealed trait TypeDef {
   def isEnum: Boolean = false
   def isADT: Boolean = false
   def additionalCode: Option[NonEmptyList[Doc]]
+
+  def dependencies: List[TypeDef] =
+    TypeDef.cata[List[TypeDef]](
+      _.baseType.`type`.toList,
+      _.baseType.`type`.toList,
+      _.fields.toList.map(_.`type`.`type`).flattenOption,
+      _ => Nil,
+      _.constructors.map(_.fields.map(_.`type`.`type`).flattenOption).combineAll
+    )(this)
 }
 
 object TypeDef {
@@ -113,7 +138,7 @@ final case class Newtype(name: Ident,
     ref(parameters.map(_.`type`): _*)
 
   def ref(parameters: TypeRef*): TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.toList)
+    TypeRef.spec0(FQName(name), this.some, parameters.toList)
 
   override def isNewtype = true
 }
@@ -129,7 +154,7 @@ final case class Alias(name: Ident,
     ref(parameters.map(_.`type`): _*)
 
   def ref(parameters: TypeRef*): TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.toList)
+    TypeRef.spec0(FQName(name), this.some, parameters.toList)
 
   override def isAlias = true
 }
@@ -152,7 +177,7 @@ final case class Record(name: Ident,
     ref(parameters.map(_.`type`): _*)
 
   def ref(parameters: TypeRef*): TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.toList)
+    TypeRef.spec0(FQName(name), this.some, parameters.toList)
 
   override def isRecord = true
 }
@@ -170,7 +195,7 @@ final case class Enum(name: Ident,
                       comment: Option[String] = None,
                       additionalCode: Option[NonEmptyList[Doc]] = None)
     extends TypeDef {
-  lazy val ref: TypeRef = TypeRef.Specialized(FQName(name))
+  lazy val ref: TypeRef = TypeRef.spec0(FQName(name), this.some, Nil)
 
   def ref(parameters: TypeRef*): TypeRef = ref
 
@@ -184,7 +209,7 @@ final case class ADTConstructor(name: Ident,
                                 comment: Option[String] = None,
                                 tag: Option[String] = None) {
   def ref: TypeRef =
-    TypeRef.Specialized(FQName.of(name.name), parameters.map(_.`type`))
+    TypeRef.spec0(FQName.of(name.name), None, parameters.map(_.`type`))
 }
 
 /** ADT definition */
@@ -199,7 +224,7 @@ final case class ADT(name: Ident,
     ref(parameters.map(_.`type`): _*)
 
   def ref(parameters: TypeRef*): TypeRef =
-    TypeRef.Specialized(FQName(name), parameters.toList)
+    TypeRef.spec0(FQName(name), this.some, parameters.toList)
 
   override def isADT = true
 }
@@ -207,5 +232,32 @@ final case class ADT(name: Ident,
 /** Types package */
 final case class Package(name: FQName,
                          types: List[TypeDef],
-                         comment: Option[String],
-                         additionalCode: Option[NonEmptyList[Doc]] = None)
+                         comment: Option[String] = None,
+                         additionalCode: Option[NonEmptyList[Doc]] = None) {
+  def sortedTypes: Either[String, List[TypeDef]] = {
+    val dependencies: List[DiEdge[TypeDef]] =
+      types.map(t => DiEdge(t, t) :: t.dependencies.map(DiEdge(_, t))).flatten
+    val graph = Graph(dependencies: _*)
+    stableTopologicalSort(graph)
+      .map(_.toList.map(_._2.toList))
+      .fold[Either[String, List[TypeDef]]](
+        _ => s"Found cyclic dependency: ${graph.findCycle}".asLeft,
+        _.value.flatten.map(_.value).asRight
+      )
+  }
+
+  private def stableTopologicalSort[E[X] <: EdgeLikeIn[X]](
+    graph: Graph[TypeDef, E]
+  ): Either[graph.NodeT, graph.LayeredTopologicalOrder[graph.NodeT]] = {
+    val compareByName = graph.NodeOrdering { (a, b) =>
+      String.CASE_INSENSITIVE_ORDER
+        .compare(a.value.name.name, b.value.name.name)
+    }
+
+    graph.topologicalSort
+      .map { ts =>
+        ts.toLayered
+          .withLayerOrdering(compareByName)
+      }
+  }
+}

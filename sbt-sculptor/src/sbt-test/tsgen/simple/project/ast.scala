@@ -14,7 +14,7 @@ object Simple {
 
   val Record = record("Record")
     .generic("A".gen)
-    .field("id", "A".gen, "The id")
+    .field("id", Id.build.ref("A".gen), "The id")
     .field("name", "Option".spec("string".spec), "The name")
     .field("age", "number".spec, "The age")
 
@@ -44,9 +44,9 @@ object Simple {
   val packageAst = pkg("test.types")
     .types(
       MyInt,
+      Record,
       Id,
       Maybe,
-      Record,
       RecordWithSingleField,
       Enum,
       Either,

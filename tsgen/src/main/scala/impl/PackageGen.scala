@@ -22,7 +22,8 @@ object PackageGen extends GenHelpers {
 
   def generate(p: Package): Result[Doc] =
     for {
-      types <- p.types.traverse(typeDoc)
+      types0 <- p.sortedTypes.fold[Result[List[TypeDef]]](error, ok)
+      types <- types0.traverse(typeDoc)
       prefix <- getPrefixCode
       features <- features.collectFeatures(_.handlePackage(p))
     } yield
