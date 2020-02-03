@@ -1,6 +1,7 @@
 package sculptor.tsgen
 package impl
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import org.specs2._
 
@@ -26,11 +27,57 @@ object EnumGenSpec
       .build
 
     "generate ADTs" >> {
-      runGen(EnumGen.generate(e), cfg) must beEqvTo("""|export enum Colors {
+      runGen(EnumGen.generate(e), cfg) must beEqvTo(
+        """|export enum Colors {
            |  Red = "red",
            |  Green = "green",
            |  Blue = "blue"
-           |}""".fix.asRight)
+           |}
+           |
+           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]""".fix.asRight
+      )
+    }
+
+    "generate full descriptions" >> {
+      runGen(EnumGen.generate(e), cfg.copy(generateEnumsDescriptions = true)) must beEqvTo(
+        """|export enum Colors {
+           |  Red = "red",
+           |  Green = "green",
+           |  Blue = "blue"
+           |}
+           |
+           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]
+           |
+           |export const colorsDescription = (v: Colors): string => {
+           |  switch(v) {
+           |    case Red: return "Red color"
+           |    case Green: return "Green color"
+           |    case Blue: return "Blue color"
+           |  }
+           |}""".fix.asRight
+      )
+    }
+
+    "generate partial descriptions" >> {
+      val e0 = e.copy(
+        values = NonEmptyList(e.values.head.copy(comment = None), e.values.tail)
+      )
+      runGen(EnumGen.generate(e0), cfg.copy(generateEnumsDescriptions = true)) must beEqvTo(
+        """|export enum Colors {
+           |  Red = "red",
+           |  Green = "green",
+           |  Blue = "blue"
+           |}
+           |
+           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]
+           |
+           |export const colorsDescription = (v: Colors): string | undefined => {
+           |  switch(v) {
+           |    case Green: return "Green color"
+           |    case Blue: return "Blue color"
+           |  }
+           |}""".fix.asRight
+      )
     }
 
     "generate comments" >> {
@@ -41,7 +88,9 @@ object EnumGenSpec
            |  Red = "red" /* Red color */,
            |  Green = "green" /* Green color */,
            |  Blue = "blue" /* Blue color */
-           |}""".fix.asRight
+           |}
+           |
+           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]""".fix.asRight
       )
     }
   }

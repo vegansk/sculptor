@@ -75,6 +75,8 @@ trait GenHelpers extends CommonGenHelpers {
 
   val objectPostfix = Doc.char('}')
 
+  val functionPostfix = Doc.char('}')
+
   val fieldDelim = Doc.char(',') + Doc.line
 
   val paramDelim = Doc.text(", ")

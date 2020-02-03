@@ -37,7 +37,8 @@ final case class Config(tabSize: Int = 2,
                         prefixCode: String = "",
                         optionalEncoding: OptionalEncoding = OptionalEncoding(),
                         generateComments: Boolean = true,
-                        generateAdtNs: Boolean = true)
+                        generateAdtNs: Boolean = true,
+                        generateEnumsDescriptions: Boolean = false)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -54,4 +55,6 @@ object Config {
     c.generateComments
   def generateAdtNs(c: Config): Boolean =
     c.generateAdtNs
+  def generateEnumsDescriptions(c: Config): Boolean =
+    c.generateEnumsDescriptions
 }

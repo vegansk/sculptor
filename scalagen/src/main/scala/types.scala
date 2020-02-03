@@ -17,7 +17,8 @@ final case class Config(tabSize: Int = 2,
                         lineWidth: Int = 120,
                         prefixCode: String = "",
                         generateComments: Boolean = true,
-                        generateAdtConstructorsHelpers: Boolean = true)
+                        generateAdtConstructorsHelpers: Boolean = true,
+                        generateEnumsDescriptions: Boolean = false)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -30,4 +31,6 @@ object Config {
     c.generateComments
   def generateAdtConstructorsHelpers(c: Config): Boolean =
     c.generateAdtConstructorsHelpers
+  def generateEnumDescriptions(c: Config): Boolean =
+    c.generateEnumsDescriptions
 }

@@ -1,6 +1,7 @@
 package sculptor.scalagen
 package impl
 
+import cats.data.NonEmptyList
 import cats.implicits._
 import org.specs2._
 
@@ -16,23 +17,27 @@ object EnumGenSpec
 
   "EnumGenSpec" should {
 
+    val testEnum = enum("Colors")
+      .values(
+        enumValue("Red").value("red").comment("Red color"),
+        enumValue("Green").value("green").comment("Green color"),
+        enumValue("Blue").value("blue").comment("Blue color")
+      )
+      .comment("The Colors enum")
+      .additionalCodeS("// Additional comment")
+      .build
+
     "generate ADTs" >> {
 
-      val e = enum("Colors")
-        .values(
-          enumValue("Red").value("red"),
-          enumValue("Green").value("green"),
-          enumValue("Blue").value("blue")
-        )
-        .build
-
-      runGen(EnumGen.generate(e), cfg) must beEqvTo(
+      runGen(EnumGen.generate(testEnum), cfg) must beEqvTo(
         """|sealed trait Colors extends Product with Serializable
            |
            |object Colors {
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
+           |
+           |  val values: List[Colors] = List(Red, Green, Blue)
            |
            |  val asString: Colors => String = {
            |    case Red => "red"
@@ -49,12 +54,6 @@ object EnumGenSpec
       )
     }
 
-    val testEnum = enum("Colors")
-      .values(enumValue("Red").value("red").comment("Red color"))
-      .comment("The Colors enum")
-      .additionalCodeS("// Additional comment")
-      .build
-
     "generate Eq typeclass" >> {
       runGen(
         EnumGen.generate(testEnum),
@@ -64,10 +63,22 @@ object EnumGenSpec
            |
            |object Colors {
            |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
            |
-           |  val asString: Colors => String = {case Red => "red"}
+           |  val values: List[Colors] = List(Red, Green, Blue)
            |
-           |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
            |
            |  implicit val ColorsEq: Eq[Colors] = Eq.fromUniversalEquals
            |}""".fix.asRight
@@ -83,10 +94,22 @@ object EnumGenSpec
            |
            |object Colors {
            |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
            |
-           |  val asString: Colors => String = {case Red => "red"}
+           |  val values: List[Colors] = List(Red, Green, Blue)
            |
-           |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
            |
            |  implicit val ColorsEncoder: Encoder[Colors] = Encoder[String].contramap(Colors.asString(_))
            |
@@ -104,10 +127,94 @@ object EnumGenSpec
            |object Colors {
            |  // Red color
            |  case object Red extends Colors
+           |  // Green color
+           |  case object Green extends Colors
+           |  // Blue color
+           |  case object Blue extends Colors
            |
-           |  val asString: Colors => String = {case Red => "red"}
+           |  val values: List[Colors] = List(Red, Green, Blue)
            |
-           |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
+           |}""".fix.asRight
+      )
+    }
+
+    "generate full descriptions" >> {
+      runGen(
+        EnumGen.generate(testEnum),
+        cfg.copy(generateEnumsDescriptions = true)
+      ) must beEqvTo("""|sealed trait Colors extends Product with Serializable
+           |
+           |object Colors {
+           |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
+           |
+           |  val values: List[Colors] = List(Red, Green, Blue)
+           |
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
+           |
+           |  val description: Colors => String = {
+           |    case Red => "Red color"
+           |    case Green => "Green color"
+           |    case Blue => "Blue color"
+           |  }
+           |}""".fix.asRight)
+    }
+
+    "generate partial descriptions" >> {
+      val e = testEnum.copy(
+        values = NonEmptyList(
+          testEnum.values.head.copy(comment = None),
+          testEnum.values.tail
+        )
+      )
+      runGen(EnumGen.generate(e), cfg.copy(generateEnumsDescriptions = true)) must beEqvTo(
+        """|sealed trait Colors extends Product with Serializable
+           |
+           |object Colors {
+           |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
+           |
+           |  val values: List[Colors] = List(Red, Green, Blue)
+           |
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
+           |
+           |  val description: PartialFunction[Colors, String] = {
+           |    case Green => "Green color"
+           |    case Blue => "Blue color"
+           |  }
            |}""".fix.asRight
       )
     }
@@ -116,19 +223,29 @@ object EnumGenSpec
       runGen(
         EnumGen.generate(testEnum),
         cfg.copy(features = List(Feature.AdditionalCode))
-      ) must beEqvTo(
-        """|sealed trait Colors extends Product with Serializable
+      ) must beEqvTo("""|sealed trait Colors extends Product with Serializable
            |
            |object Colors {
            |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
            |
-           |  val asString: Colors => String = {case Red => "red"}
+           |  val values: List[Colors] = List(Red, Green, Blue)
            |
-           |  val fromString: PartialFunction[String, Colors] = {case "red" => Red}
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
            |
            |  // Additional comment
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
   }
 }

@@ -30,6 +30,13 @@ package object impl {
       State.get[GeneratorState].map(s => Config.generateComments(s.config))
     )
 
+  def getGenerateEnumDescriptions: Result[Boolean] =
+    EitherT.liftF(
+      State
+        .get[GeneratorState]
+        .map(s => Config.generateEnumDescriptions(s.config))
+    )
+
   def getGenerateAdtConstructorsHelpers: Result[Boolean] =
     EitherT.liftF(
       State
