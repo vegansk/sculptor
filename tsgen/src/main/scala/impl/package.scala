@@ -42,4 +42,11 @@ package object impl {
     EitherT.liftF(
       State.get[GeneratorState].map(s => Config.generateAdtNs(s.config))
     )
+
+  def getGenerateEnumsDescriptions: Result[Boolean] =
+    EitherT.liftF(
+      State
+        .get[GeneratorState]
+        .map(s => Config.generateEnumsDescriptions(s.config))
+    )
 }

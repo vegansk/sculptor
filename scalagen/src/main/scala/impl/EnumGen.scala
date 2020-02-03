@@ -16,11 +16,27 @@ object EnumGen extends GenHelpers {
       .toList ++
       List(extend(caseObject(Doc.text(e.name.name)), enumType))
 
+  def generateValues(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
+    val prefix = Doc.text("val values: List[") + enumType + Doc.text(
+      "] = List("
+    )
+    val postfix = Doc.char(')')
+
+    ok(
+      Doc
+        .intercalate(
+          Doc.comma + Doc.lineOrSpace,
+          e.values.toList.map(v => Doc.text(v.name.name))
+        )
+        .tightBracketBy(prefix, postfix, indent)
+    )
+  }
+
   def generateAsString(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
     val prefix = Doc.text("val asString: ") + enumType + Doc.text(
       " => String = {"
     )
-    val postfix = objectPostfix
+    val postfix = functionPostfix
 
     val cases = e.values.map { v =>
       Doc.text(s"""case ${v.name.name} => "${v.value}"""")
@@ -36,7 +52,7 @@ object EnumGen extends GenHelpers {
   def generateFromString(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
     val prefix = Doc.text("val fromString: PartialFunction[String, ") + enumType + Doc
       .text("] = {")
-    val postfix = objectPostfix
+    val postfix = functionPostfix
 
     val cases = e.values.map { v =>
       Doc.text(s"""case "${v.value}" => ${v.name.name}""")
@@ -49,21 +65,61 @@ object EnumGen extends GenHelpers {
     )
   }
 
+  def generateDescription(e: Enum,
+                          enumType: Doc,
+                          indent: Int): Result[Option[Doc]] =
+    e.values.toList
+      .map(v => v.comment.map((v, _)))
+      .flattenOption
+      .toNel
+      .fold[Result[Option[Doc]]](ok(None)) { valsWithDesc =>
+        val funType = if (valsWithDesc.length === e.values.length) {
+          enumType + Doc.text(" => String")
+        } else {
+          Doc.text("PartialFunction[") + enumType + Doc.text(", String]")
+        }
+        val prefix = Doc.text("val description: ") + funType + Doc.text(" = {")
+        val postfix = functionPostfix
+
+        val cases = valsWithDesc.map {
+          case (v, d) =>
+            Doc.text(s"""case ${v.name.name} => "$d"""")
+        }
+
+        ok(
+          Doc
+            .intercalate(line, cases.toList)
+            .tightBracketBy(prefix, postfix, indent)
+            .some
+        )
+      }
+
   def generateEnumBody(e: Enum, enumType: Doc, indent: Int): Result[Doc] =
     for {
       genComments <- getGenerateComments
+      genDescriptions <- getGenerateEnumDescriptions
       values = Doc.intercalate(
         line,
         e.values.toList
-          .traverse(generateEnumValue(genComments)(_, enumType))
-          .flatten
+          .map(generateEnumValue(genComments)(_, enumType))
+          .combineAll
       )
+
+      valuesList <- generateValues(e, enumType, indent)
 
       asString <- generateAsString(e, enumType, indent)
 
       fromString <- generateFromString(e, enumType, indent)
 
-    } yield Doc.intercalate(dblLine, values :: asString :: fromString :: Nil)
+      descriptions <- if (genDescriptions)
+        generateDescription(e, enumType, indent)
+      else ok(None)
+
+    } yield
+      Doc.intercalate(
+        dblLine,
+        values :: valuesList :: asString :: fromString :: descriptions.toList
+      )
 
   def generate(e: Enum): Result[Doc] =
     for {

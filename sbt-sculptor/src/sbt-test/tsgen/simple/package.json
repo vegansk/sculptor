@@ -4,7 +4,7 @@
   "description": "io-ts generator test for sculptor project",
   "main": "build/index.js",
   "scripts": {
-    "start": "NODE_PATH=build/src node build/src/index.js",
+    "start": "node build/src/index.js",
     "build": "node --max_old_space_size=4096 node_modules/typescript/lib/tsc.js",
     "clean": "rm -rf build"
   },
