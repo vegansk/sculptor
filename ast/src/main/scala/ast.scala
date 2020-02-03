@@ -28,7 +28,12 @@ object FQName {
 /** Types references ADT, used in type definitions */
 sealed trait TypeRef {
   def asString: String
-  def `type`: Option[TypeDef]
+
+  def dependencies: List[TypeDef] =
+    TypeRef.cata[List[TypeDef]](
+      s => s.`type`.toList ++ s.parameters.foldMap(_.dependencies),
+      _ => Nil
+    )(this)
 }
 
 object TypeRef {
@@ -49,7 +54,6 @@ object TypeRef {
   /** Generic type reference */
   final case class Generic(name: Ident) extends TypeRef {
     def asString = name.name
-    val `type` = None
   }
 
   def spec(name: String, parameters: TypeRef*): Specialized =
@@ -71,7 +75,10 @@ object TypeRef {
 
 /** Generic parameter definition */
 final case class GenericDef(`type`: TypeRef.Generic,
-                            `extends`: List[TypeRef] = Nil)
+                            `extends`: List[TypeRef] = Nil) {
+  def dependencies: List[TypeDef] =
+    `extends`.foldMap(_.dependencies)
+}
 
 object GenericDef {
   implicit def genericDefFromGeneric(g: TypeRef.Generic): GenericDef =
@@ -97,11 +104,22 @@ sealed trait TypeDef {
 
   def dependencies: List[TypeDef] =
     TypeDef.cata[List[TypeDef]](
-      _.baseType.`type`.toList,
-      _.baseType.`type`.toList,
-      _.fields.toList.map(_.`type`.`type`).flattenOption,
+      newtype =>
+        newtype.baseType.dependencies ++ newtype.parameters
+          .foldMap(_.dependencies),
+      alias =>
+        alias.baseType.dependencies ++ alias.parameters.foldMap(_.dependencies),
+      record =>
+        record.fields.toList.foldMap(_.`type`.dependencies) ++ record.parameters
+          .foldMap(_.dependencies),
       _ => Nil,
-      _.constructors.map(_.fields.map(_.`type`.`type`).flattenOption).combineAll
+      _.constructors
+        .map(
+          c =>
+            c.fields.foldMap(_.`type`.dependencies) ++ c.parameters
+              .foldMap(_.dependencies)
+        )
+        .combineAll
     )(this)
 }
 
