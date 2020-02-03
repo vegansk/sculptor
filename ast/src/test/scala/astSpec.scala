@@ -184,5 +184,29 @@ object astSpec extends mutable.Specification {
       val result = pkg.sortedTypes
       result must_=== List(newtype2, newtype, alias, record).asRight[String]
     }
+
+    "sort according to generic dependencies" >> {
+      val alias = Alias(Ident("C"), Nil, TypeRef.spec("Int"))
+      val newtype =
+        Newtype(Ident("B"), List(GenericDef.of("A")), TypeRef.gen("A"))
+      val alias2 = Alias(Ident("A"), Nil, newtype.ref(alias.ref))
+      val pkg = Package(FQName.of("p"), List(alias2, newtype, alias))
+
+      val result = pkg.sortedTypes
+      result must_=== List(newtype, alias, alias2).asRight[String]
+    }
+
+    "sort according to generic dependencies - records" >> {
+      val alias = Alias(Ident("B"), Nil, TypeRef.spec("Int"))
+      val record = Record(
+        Ident("A"),
+        Nil,
+        NonEmptyList.of(FieldDef(Ident("x"), TypeRef.spec("List", alias.ref)))
+      )
+      val pkg = Package(FQName.of("p"), List(record, alias))
+
+      val result = pkg.sortedTypes
+      result must_=== List(alias, record).asRight[String]
+    }
   }
 }
