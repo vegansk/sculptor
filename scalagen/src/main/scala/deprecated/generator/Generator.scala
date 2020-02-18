@@ -906,7 +906,16 @@ class Generator(config: Config) {
 
   def enumTypeDecl(e: EnumDecl): Doc = {
     val prefix = spread(
-      List(text("sealed"), text("trait"), typeName(e.`type`), char('{'))
+      List(
+        text("sealed"),
+        text("trait"),
+        typeName(e.`type`),
+        text("extends"),
+        text("Product"),
+        text("with"),
+        text("Serializable"),
+        char('{')
+      )
     )
     val suffix = char('}')
 
