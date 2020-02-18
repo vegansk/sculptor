@@ -62,10 +62,12 @@ object generatorSpec
         None
       )
 
-      enumTypeDecl(e) must beEqvTo(Doc.text("""|sealed trait Test {
+      enumTypeDecl(e) must beEqvTo(
+        Doc.text("""|sealed trait Test extends Product with Serializable {
                     |  val code: String
                     |  val description: String
-                    |}""".stripMargin))
+                    |}""".stripMargin)
+      )
       enumObjectDecl(e) must beEqvTo(
         Doc.text("""|object Test {
                     |  case object A extends Test {
