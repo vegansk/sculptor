@@ -45,7 +45,8 @@ object EnumGen extends GenHelpers {
         val postfix = functionPostfix
         val cases = Doc
           .intercalate(line, valsWithDesc.toList.map {
-            case (v, d) => Doc.text(s"""case ${v.name.name}: return "$d"""")
+            case (v, d) =>
+              Doc.text(s"""case ${e.name.name}.${v.name.name}: return "$d"""")
           })
           .tightBracketBy(Doc.text("switch(v) {"), Doc.char('}'), indent)
         ok(cases.tightBracketBy(prefix, postfix, indent).some)

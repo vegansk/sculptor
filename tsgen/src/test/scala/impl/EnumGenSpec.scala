@@ -50,9 +50,9 @@ object EnumGenSpec
            |
            |export const colorsDescription = (v: Colors): string => {
            |  switch(v) {
-           |    case Red: return "Red color"
-           |    case Green: return "Green color"
-           |    case Blue: return "Blue color"
+           |    case Colors.Red: return "Red color"
+           |    case Colors.Green: return "Green color"
+           |    case Colors.Blue: return "Blue color"
            |  }
            |}""".fix.asRight
       )
@@ -73,8 +73,8 @@ object EnumGenSpec
            |
            |export const colorsDescription = (v: Colors): string | undefined => {
            |  switch(v) {
-           |    case Green: return "Green color"
-           |    case Blue: return "Blue color"
+           |    case Colors.Green: return "Green color"
+           |    case Colors.Blue: return "Blue color"
            |  }
            |}""".fix.asRight
       )
