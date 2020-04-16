@@ -1,4 +1,4 @@
-scalaVersion in ThisBuild := "2.12.10"
+scalaVersion in ThisBuild := "2.12.11"
 
 val npmInstall = taskKey[Unit]("Install npm dependencies")
 val npmBuild = taskKey[Unit]("Builds project via npm")
