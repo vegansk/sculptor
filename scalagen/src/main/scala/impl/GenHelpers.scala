@@ -60,6 +60,27 @@ trait GenHelpers extends CommonGenHelpers {
   def sealedTrait(typ: Doc): Doc =
     Doc.text("sealed trait ") + typ
 
+  def createTypeclassDef(r: TypeRef,
+                         className: String,
+                         classInParams: Boolean): Doc = {
+    val typ = createTypeRef(r)
+    val (definition, name, params) = TypeRef.cata(
+      s =>
+        (
+          if (s.parameters.isEmpty) "val" else "def",
+          s.name.name.name,
+          createParameters0(
+            s.parameters.map(createTypeRef),
+            if (classInParams) Doc.text(s":$className") else Doc.empty
+          )
+      ),
+      g => ("val", g.name.name, Doc.empty)
+    )(r)
+
+    Doc.text(s"implicit $definition $name$className") + params +
+      Doc.text(s": $className[") + typ + Doc.text("] = ")
+  }
+
   def caseClassPrefix(`type`: Doc): Doc =
     Doc.text("final case class ") + `type` + Doc.char('(')
 

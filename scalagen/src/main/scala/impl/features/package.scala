@@ -11,6 +11,7 @@ package object features {
     case v: FeatureConfig.CirceCodecs => new CirceCodecs(v)
     case FeatureConfig.CatsEqTypeclass => CatsEqTypeclass
     case FeatureConfig.AdditionalCode => AdditionalCode
+    case FeatureConfig.TapirSchema => TapirSchema
   }
 
   def collectFeatures(f: Feature => Result[List[Doc]]): Result[List[Doc]] =
