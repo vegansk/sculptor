@@ -1,5 +1,7 @@
 import Sculptor._
 
+scalaVersion.in(ThisBuild) := Dependencies.Versions.scala212
+
 lazy val ast = Sculptor.ast
 lazy val xsd = Sculptor.xsd
 lazy val common = Sculptor.common

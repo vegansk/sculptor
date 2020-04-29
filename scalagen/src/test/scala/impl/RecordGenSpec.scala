@@ -77,6 +77,22 @@ object RecordGenSpec
       )
     }
 
+    "generate tapir Schema" >> {
+      runGen(
+        RecordGen.generate(rec),
+        cfg.copy(features = List(Feature.TapirSchema))
+      ) must beEqvTo(
+        """|final case class Record[A](id: Int, nameO: Option[A])
+           |
+           |object Record {
+           |  implicit def RecordSchema[A:Schema]: Schema[Record[A]] = implicitly[Derived[Schema[Record[A]]]].value
+           |    .description("The Record")
+           |    .modify(_.id)(_.description("The id"))
+           |    .modify(_.nameO)(_.description("The name"))
+           |}""".fix.asRight
+      )
+    }
+
     "generate comments" >> {
       runGen(RecordGen.generate(rec), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Record Record[A]: The Record

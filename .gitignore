@@ -9,3 +9,6 @@ build/
 src_managed/
 local.sbt
 .idea/
+.bloop
+.metals
+metals.sbt

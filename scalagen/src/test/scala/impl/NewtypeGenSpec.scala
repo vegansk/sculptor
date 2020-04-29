@@ -79,6 +79,20 @@ object NewtypeGenSpec
       )
     }
 
+    "generate tapir Schemas" >> {
+      runGen(
+        NewtypeGen.generate(myInt),
+        cfg.copy(features = List(Feature.TapirSchema))
+      ) must beEqvTo(
+        """|final case class MyInt(value: Int) extends AnyVal
+           |
+           |object MyInt {
+           |  implicit val MyIntSchema: Schema[MyInt] = implicitly[Derived[Schema[MyInt]]].value
+           |    .description("The Int type")
+           |}""".fix.asRight
+      )
+    }
+
     "generate comments" >> {
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Newtype MyInt: The Int type

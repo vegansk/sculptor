@@ -9,6 +9,7 @@ object Feature {
   case object CatsEqTypeclass extends Feature
   final case class CirceCodecs(adtTag: String = "") extends Feature
   case object AdditionalCode extends Feature
+  case object TapirSchema extends Feature
 
 }
 
