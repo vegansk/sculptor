@@ -21,9 +21,16 @@ trait CommonGenHelpers {
     )(typ)
 
   def typeComment(typ: TypeDef, typDoc: Doc): Doc = {
-    Doc.text(s"// ${typeDefKindName(typ)} ") + typDoc + typ.comment.fold(
-      Doc.empty
-    )(c => Doc.text(s": $c"))
+    val header = Doc.text(s"// ${typeDefKindName(typ)} ") + typDoc
+
+    typ.comment match {
+      case None => header
+      case Some(c) =>
+        Doc.stack(
+          (header + Doc.text(":")) +:
+            c.linesIterator.map(line => Doc.text(s"// $line")).toVector
+        )
+    }
   }
 
   def optionalComment(

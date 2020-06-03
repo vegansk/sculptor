@@ -53,7 +53,8 @@ object NewtypeGenSpec
 
     "generate comments" >> {
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
-        """|// Newtype MyInt: The Int
+        """|// Newtype MyInt:
+           |// The Int
            |
            |export type MyInt = number & {__brand: "MyInt"}""".fix.asRight
       )
