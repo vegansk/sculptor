@@ -82,7 +82,8 @@ object EnumGenSpec
 
     "generate comments" >> {
       runGen(EnumGen.generate(e), cfg.copy(generateComments = true)) must beEqvTo(
-        """|// Enum Colors: The Colors enum
+        """|// Enum Colors:
+           |// The Colors enum
            |
            |export enum Colors {
            |  Red = "red" /* Red color */,
@@ -91,6 +92,29 @@ object EnumGenSpec
            |}
            |
            |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]""".fix.asRight
+      )
+    }
+
+    "generate multiline type comments" >> {
+      val e = enum("Foo")
+        .comment(
+          """|Lorem
+             |ipsum
+             |dolor"""
+            .stripMargin
+        ).values(
+          enumValue("Bar")
+        ).build
+
+      runGen(EnumGen.generate(e), cfg.copy(generateComments = true)) must beEqvTo(
+        """|// Enum Foo:
+           |// Lorem
+           |// ipsum
+           |// dolor
+           |
+           |export enum Foo {Bar = "Bar"}
+           |
+           |export const fooValues: Foo[] = [Foo.Bar]""".fix.asRight
       )
     }
   }

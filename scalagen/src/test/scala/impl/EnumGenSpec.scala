@@ -120,7 +120,8 @@ object EnumGenSpec
 
     "generate comments" >> {
       runGen(EnumGen.generate(testEnum), cfg.copy(generateComments = true)) must beEqvTo(
-        """|// Enum Colors: The Colors enum
+        """|// Enum Colors:
+           |// The Colors enum
            |
            |sealed trait Colors extends Product with Serializable
            |

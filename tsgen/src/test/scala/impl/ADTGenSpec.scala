@@ -57,7 +57,8 @@ object ADTGenSpec
 
     "generate comments" >> {
       runGen(ADTGen.generate(maybeAdt), cfg.copy(generateComments = true)) must beEqvTo(
-        """|// ADT Maybe<A>: The type representing optional value
+        """|// ADT Maybe<A>:
+           |// The type representing optional value
            |
            |export type Maybe<A> = Empty<A> | Just<A>
            |

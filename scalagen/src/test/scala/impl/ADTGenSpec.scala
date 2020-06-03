@@ -181,7 +181,8 @@ object ADTGenSpec
 
     "generate comments" >> {
       runGen(ADTGen.generate(maybeAdt), cfg.copy(generateComments = true)) must beEqvTo(
-        """|// ADT Maybe[A]: The type representing optional value
+        """|// ADT Maybe[A]:
+           |// The type representing optional value
            |
            |sealed trait Maybe[A] extends Product with Serializable
            |
