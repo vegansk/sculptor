@@ -97,14 +97,11 @@ object EnumGenSpec
 
     "generate multiline type comments" >> {
       val e = enum("Foo")
-        .comment(
-          """|Lorem
+        .comment("""|Lorem
              |ipsum
-             |dolor"""
-            .stripMargin
-        ).values(
-          enumValue("Bar")
-        ).build
+             |dolor""".stripMargin)
+        .values(enumValue("Bar"))
+        .build
 
       runGen(EnumGen.generate(e), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Enum Foo:
