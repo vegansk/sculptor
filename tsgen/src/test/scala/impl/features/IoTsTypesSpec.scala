@@ -204,7 +204,8 @@ object IoTsTypesSpec
     "allow to use custom iots types" >> {
 
       val a = adt("Test")
-        .constructors(cons("A"), cons("B"))
+        .generic("X".gen)
+        .constructors(cons("A").generic("X".gen), cons("B").generic("X".gen))
         .build
 
       val feature0 = feature.copy(
@@ -216,11 +217,17 @@ object IoTsTypesSpec
         IoTsTypes(feature0).handleADT(a),
         cfg.copy(features = List(feature0))
       ) must beEqvTo(
-        """|const AType: MyTaggedType<"__tag", A> = typeImpl({__tag: t.literal("A")}, {}, "A")
+        """|const AType: <X>(XType: MyType<X>) => MyTaggedType<"__tag", A<X>> = <X>(XType: MyType<X>) => typeImpl(
+           |  {__tag: t.literal("A")}, {}, "A"
+           |)
            |
-           |const BType: MyTaggedType<"__tag", B> = typeImpl({__tag: t.literal("B")}, {}, "B")
+           |const BType: <X>(XType: MyType<X>) => MyTaggedType<"__tag", B<X>> = <X>(XType: MyType<X>) => typeImpl(
+           |  {__tag: t.literal("B")}, {}, "B"
+           |)
            |
-           |export const TestType: MyType<Test> = t.union([AType, BType], "Test")""".fix.asRight
+           |export const TestType: <X>(XType: MyType<X>) => MyType<Test<X>> = <X>(XType: MyType<X>) => t.union([
+           |  AType(XType), BType(XType)
+           |], "Test")""".fix.asRight
       )
     }
 

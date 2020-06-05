@@ -48,7 +48,7 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
         l.map(
           f =>
             genIotsTypeRef(f.`type`) + Doc
-              .text(s": ${iots}Type<${f.`type`.name.name}>")
+              .text(s": ${iotsType}<${f.`type`.name.name}>")
         )
       ) + Doc.char(')')
   }
