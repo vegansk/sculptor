@@ -1,4 +1,4 @@
-scalaVersion in ThisBuild := "2.12.11"
+scalaVersion in ThisBuild := "2.12.12"
 
 lazy val generateSources = taskKey[Unit]("generateSources")
 

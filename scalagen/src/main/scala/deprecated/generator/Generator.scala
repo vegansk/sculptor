@@ -229,7 +229,10 @@ class Generator(config: Config) {
           case TypeRef.std(_) =>
             createElem(elemName, text("Null"), text(s"Text($varName.toString)"))
           case _ =>
-            text(s"$name.toXml(s)(") + text(elemName) + text(s")($varName)")
+            val serializers = if (!config.externalTypes.isEmpty) "(s)" else ""
+            text(s"$name.toXml$serializers(") + text(elemName) + text(
+              s")($varName)"
+            )
         }
     }
   }
