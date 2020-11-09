@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="windows-1251" standalone="no"?>
+<?xml-model href="../../../xsd/nrd-documents-2020-08-17.xsd" type="application/xml" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<MeetingNotification>
+  <AppHdr>
+    <Fr>
+      <OrgId>
+        <Nm>Регистратор "РНР"</Nm>
+        <Id>
+          <OrgId>
+            <Othr>
+              <Id>1027700003924</Id>
+              <Issr>OGRN</Issr>
+            </Othr>
+          </OrgId>
+        </Id>
+      </OrgId>
+    </Fr>
+    <To>
+      <OrgId>
+        <Nm>НКО ЗАО НРД</Nm>
+        <Id>
+          <OrgId>
+            <Othr>
+              <Id>1027739132563</Id>
+              <Issr>OGRN</Issr>
+            </Othr>
+          </OrgId>
+        </Id>
+      </OrgId>
+    </To>
+    <BizMsgIdr>00019320A2600001</BizMsgIdr>
+    <MsgDefIdr>seev.001.001.04</MsgDefIdr>
+    <BizSvc>CA012</BizSvc>
+    <CreDt>2020-10-02T08:50:24Z</CreDt>
+  </AppHdr>
+  <Document>
+    <MtgNtfctn>
+      <Id>
+        <Id>00019320A2600001</Id>
+        <CreDtTm>2020-10-02T11:50:24</CreDtTm>
+      </Id>
+      <NtfctnSts>
+        <Sts>ECON</Sts>
+      </NtfctnSts>
+      <Mtg>
+        <MtgId>513307</MtgId>
+        <Tp>GMET</Tp>
+        <Clssfctn>
+          <Cd>AMET</Cd>
+        </Clssfctn>
+        <AnncmntDt>2020-03-01</AnncmntDt>
+        <AttndncReqrd>true</AttndncReqrd>
+      </Mtg>
+      <MtgDtls>
+        <DtAndTm>
+          <Dt>2020-10-26T07:00:00</Dt>
+        </DtAndTm>
+        <QrmReqrd>true</QrmReqrd>
+        <Lctn>
+          <Adr>
+            <AdrLine>г.Нововсибирск, ул. Комсомольский пр-т 13/1, оф. 305 (место проведения</AdrLine>
+            <AdrLine>)</AdrLine>
+            <Ctry>RU</Ctry>
+          </Adr>
+        </Lctn>
+      </MtgDtls>
+      <NtifngPty>
+        <PrtryId>
+          <Id>1027700003924</Id>
+          <Issr>OGRN</Issr>
+        </PrtryId>
+      </NtifngPty>
+      <Issr>
+        <Id>
+          <PrtryId>
+            <Id>1026601814799</Id>
+            <Issr>OGRN</Issr>
+          </PrtryId>
+        </Id>
+      </Issr>
+      <Scty>
+        <Id>
+          <Id>
+            <ISIN>RU0009046452</ISIN>
+          </Id>
+          <Desc>RU0009046452#RU#1-01-31254-D#Акция обыкновенная именная (Вып.4)</Desc>
+        </Id>
+      </Scty>
+      <Scty>
+        <Id>
+          <Id>
+            <ISIN>RU000A0JPD81</ISIN>
+          </Id>
+          <Desc>RU000A0JPD81#RU#1-04-99999-A-001D#Акция обыкновенная именная (Вып.4-доп.)</Desc>
+        </Id>
+      </Scty>
+      <Scty>
+        <Id>
+          <Id>
+            <ISIN>RU100A0JPD72</ISIN>
+          </Id>
+          <Desc>RU100A0JPD72#RU#44#Акция обыкновенная именная (вып.4 доп.4)</Desc>
+        </Id>
+      </Scty>
+      <Scty>
+        <Id>
+          <Id>
+            <ISIN>RU000A0JPD82</ISIN>
+          </Id>
+          <Desc>RU000A0JPD82#RU#506995668#Акция обыкновенная именная (вып.15)</Desc>
+        </Id>
+      </Scty>
+      <Vote>
+        <PrtlVoteAllwd>false</PrtlVoteAllwd>
+        <SpltVoteAllwd>false</SpltVoteAllwd>
+        <VoteMktDdln>
+          <Dt>2020-10-28T08:00:00</Dt>
+        </VoteMktDdln>
+        <VoteMthds>
+          <VoteByMail>
+            <AdrLine>Регистратор "РНР", г.Нововсибирск, ул. Комсомольский пр-т 13/1, оф. 30</AdrLine>
+            <AdrLine>5 (возврат бюл)</AdrLine>
+            <Ctry>RU</Ctry>
+          </VoteByMail>
+          <ElctrncVote>
+            <EmailAdr>NDC000000000</EmailAdr>
+            <URLAdr>www.eldis.ru</URLAdr>
+          </ElctrncVote>
+        </VoteMthds>
+        <BnfclOwnrDsclsr>true</BnfclOwnrDsclsr>
+      </Vote>
+      <EntitlmntSpcfctn>
+        <EntitlmntFxgDt>
+          <Dt>2020-03-17</Dt>
+        </EntitlmntFxgDt>
+      </EntitlmntSpcfctn>
+      <Xtnsn>
+        <XtnsnEnvlp>
+          <XtnsnDt>
+            <RegnPrtcptnMktStrt>
+              <Dt>2020-10-26T06:00:00</Dt>
+            </RegnPrtcptnMktStrt>
+            <AddtlInf>
+              <AddtlTxt>
+                <UpdDesc>Agenda</UpdDesc>
+                <AddtlInf>1. Об утверждении годового отчета, годовой бухгалтерской (финансовой) отчетности, а также о распределении прибыли (в том числе о выплате дивидендов) и убытков по результатам 2016 отчетного года. 2. Об избрании членов Совета директоров ПАО «Русские самоцветы». 3. Об избрании членов Ревизионной комиссии ПАО «Русские самоцветы». 4. Об утверждении аудитора ПАО «Русские самоцветы». 5. Об одобрении сделок, в совершении которых имеется заинтересованность. </AddtlInf>
+              </AddtlTxt>
+            </AddtlInf>
+            <SbLwsInPlc>
+              <SbrdntLwsInPlcCd>MX01</SbrdntLwsInPlcCd>
+            </SbLwsInPlc>
+          </XtnsnDt>
+        </XtnsnEnvlp>
+      </Xtnsn>
+      <Xtnsn>
+        <XtnsnEnvlp>
+          <XtnsnDt>
+            <PrcdrFmlrzInf>
+              <AddtlInf>С информацией можно ознакомиться по адресу г.Нововсибирск, ул. Комсомольский пр-т 13/1, оф. 305</AddtlInf>
+            </PrcdrFmlrzInf>
+            <MtgAuthrtyInttr>
+              <MtgAuthrtyInttrDtls>Совет директоров АО "Металлургический завод им. А.К. Серова"</MtgAuthrtyInttrDtls>
+              <CnvngDt>2020-07-23</CnvngDt>
+              <PrtclNb>123-2020</PrtclNb>
+              <PrtclDt>2020-04-21</PrtclDt>
+            </MtgAuthrtyInttr>
+            <CourtDecisionData>
+              <CrtDcsnName>Гор. суд г.Новосибирска</CrtDcsnName>
+              <CrtDcsnDt>2020-02-22</CrtDcsnDt>
+              <CrtDcsnNb>555-2020</CrtDcsnNb>
+              <CrtDcsnAddtlInf>
+                <AddtlInf>Что-то важное и интересное</AddtlInf>
+              </CrtDcsnAddtlInf>
+            </CourtDecisionData>
+          </XtnsnDt>
+        </XtnsnEnvlp>
+      </Xtnsn>
+      <Xtnsn>
+        <XtnsnEnvlp>
+          <MeetingNotificationIdentificationInfo>
+            <meeting_id>ea43c628-d61e-46c2-84bb-c4df495a9a0b</meeting_id>
+            <securities>
+              <security>
+                <id>ee81b58b-c3d3-419a-a9a1-d29587dac890</id>
+                <identification_info>
+                  <reg_num>11.22.33-OPPA</reg_num>
+                </identification_info>
+              </security>
+            </securities>
+          </MeetingNotificationIdentificationInfo>
+        </XtnsnEnvlp>
+      </Xtnsn>
+    </MtgNtfctn>
+  </Document>
+</MeetingNotification>

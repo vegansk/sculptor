@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+    <xs:simpleType name="uuid_t">
+        <xs:annotation>
+            <xs:documentation>Глобальный уникальный идентификатор</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="meeting_id_t">
+        <xs:annotation>
+            <xs:documentation>Идентификатор собрания</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="uuid_t" />
+    </xs:simpleType>
+    <xs:simpleType name="security_id_t">
+        <xs:annotation>
+            <xs:documentation>Идентификатор ценной бумаги</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="uuid_t" />
+    </xs:simpleType>
+    <xs:simpleType name="isin_t">
+        <xs:annotation>
+            <xs:documentation>ISIN</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z0-9]{12,12}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="security_nsd_code_t">
+        <xs:annotation>
+            <xs:documentation>Код ЦБ НРД</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:simpleType name="security_reg_num_t">
+        <xs:annotation>
+            <xs:documentation>Регистрационный номер ЦБ</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string" />
+    </xs:simpleType>
+    <xs:complexType name="security_identifier_t">
+        <xs:annotation>
+            <xs:documentation>Описание ценной бумаги</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element name="id" type="security_id_t">
+                <xs:annotation>
+                    <xs:documentation>Идентификатор ЦБ</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="identification_info">
+                <xs:annotation>
+                    <xs:documentation>Идентификационная информация</xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="isin" type="isin_t">
+                            <xs:annotation>
+                                <xs:documentation>ISIN</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="nsd_code" type="security_nsd_code_t">
+                            <xs:annotation>
+                                <xs:documentation>Код НРД</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element name="reg_num" type="security_reg_num_t">
+                            <xs:annotation>
+                                <xs:documentation>Регистрационный номер</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="MEETING_NOTIFICATION_IDENTIFICATION_INFO">
+        <xs:annotation>
+            <xs:documentation>Идентификационная информация для сообщения MeetingNotification</xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="meeting_id" type="meeting_id_t">
+                    <xs:annotation>
+                        <xs:documentation>ИД собрания</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="securities">
+                    <xs:annotation>
+                        <xs:documentation>Список ЦБ</xs:documentation>
+                    </xs:annotation>
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="security" type="security_identifier_t" minOccurs="1" maxOccurs="unbounded">
+                                <xs:annotation>
+                                    <xs:documentation>Описание ЦБ</xs:documentation>
+                                </xs:annotation>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
