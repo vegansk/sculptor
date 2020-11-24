@@ -6,11 +6,8 @@ import org.typelevel.paiges._
 import cats.implicits._
 
 import sculptor.ast._
-import sculptor.scalagen.{Feature => FeatureConfig}
 
-final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
-    extends Feature
-    with GenHelpers {
+final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
 
   private def genNames(encType: String,
                        params0: List[GenericDef],
@@ -65,7 +62,7 @@ final class CirceCodecs(cfg: FeatureConfig.CirceCodecs)
   }
 
   private lazy val tagName: String =
-    if (cfg.adtTag.isEmpty) "__tag" else cfg.adtTag
+    if (adtTag.isEmpty) "__tag" else adtTag
 
   private def genRecordEncoderBody(objName: String,
                                    tag0: Option[String],

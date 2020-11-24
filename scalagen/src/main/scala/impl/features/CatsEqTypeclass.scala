@@ -4,6 +4,7 @@ package features
 import org.typelevel.paiges._
 
 import sculptor.ast._
+import sculptor.scalagen.Feature
 
 object CatsEqTypeclass extends Feature with GenHelpers {
 
