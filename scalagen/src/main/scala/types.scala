@@ -36,8 +36,7 @@ final case class Config(tabSize: Int = 2,
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
-  def features(c: Config): List[Feature] =
-    Map(c.features.map(f => (f.getClass, f)): _*).values.toList
+  def features(c: Config): List[Feature] = c.features
   def lineWidth(c: Config): Int = c.lineWidth
   def prefixCode(c: Config): Option[Doc] =
     Option(c.prefixCode).filterNot(_.isEmpty).map(Doc.text)
