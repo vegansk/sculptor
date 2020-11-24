@@ -2,15 +2,28 @@ package sculptor.scalagen
 
 import org.typelevel.paiges._
 
-sealed trait Feature
+import sculptor.ast._
+
+trait Feature {
+  def handleNewtype(n: Newtype): impl.Result[List[Doc]] = impl.ok(List.empty)
+
+  def handleAlias(a: Alias): impl.Result[List[Doc]] = impl.ok(List.empty)
+
+  def handleRecord(r: Record): impl.Result[List[Doc]] = impl.ok(List.empty)
+
+  def handleADT(a: ADT): impl.Result[List[Doc]] = impl.ok(List.empty)
+
+  def handleEnum(e: Enum): impl.Result[List[Doc]] = impl.ok(List.empty)
+
+  def handlePackage(p: Package): impl.Result[List[Doc]] = impl.ok(List.empty)
+}
 
 object Feature {
-
-  case object CatsEqTypeclass extends Feature
-  final case class CirceCodecs(adtTag: String = "") extends Feature
-  case object AdditionalCode extends Feature
-  case object TapirSchema extends Feature
-
+  val CatsEqTypeclass: Feature = impl.features.CatsEqTypeclass
+  def CirceCodecs(adtTag: String = ""): Feature =
+    new impl.features.CirceCodecs(adtTag = adtTag)
+  val AdditionalCode: Feature = impl.features.AdditionalCode
+  val TapirSchema: Feature = impl.features.TapirSchema
 }
 
 final case class Config(tabSize: Int = 2,
