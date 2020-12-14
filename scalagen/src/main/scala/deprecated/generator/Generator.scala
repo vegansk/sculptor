@@ -207,7 +207,7 @@ class Generator(config: Config) {
           intercalate(
             comma + line,
             config.externalTypes.map(_.name).distinct.map { name =>
-              xmlSerializerName(name) + text(s": String => ${name} => Node")
+              xmlSerializerName(name) + text(s": String => ${name} => Elem")
             }
           )
         )(prefix, postfix).some
@@ -264,7 +264,7 @@ class Generator(config: Config) {
               s"(elemName: String)($varName:"
             ),
             typeName(`type`) + text("):"),
-            text("Node = {")
+            text("Elem = {")
           )
         )
         val postfix = char('}')
@@ -705,10 +705,7 @@ class Generator(config: Config) {
             extensionContentFieldName,
             t.baseType
           ) +
-            text(".asInstanceOf[Elem] % ") + complexTypeAttrsXmlSerializer(
-            t.fields.toList,
-            "t"
-          )
+            text(" % ") + complexTypeAttrsXmlSerializer(t.fields.toList, "t")
         )
       }
       case false => None
