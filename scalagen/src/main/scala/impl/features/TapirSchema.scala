@@ -65,9 +65,8 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
 
   private def mkEnumValidator(t: Enum): Result[Doc] =
     getIndent.map { indent =>
-      val typ = createTypeRef(t.ref)
       createTypeclassDef(t.ref, "Validator", true)
-        .line(Doc.text("Validator.enum[") + typ + Doc.text("]"))
+        .line("Validator.enum(values, x => Some(asString(x)))")
         .nested(indent)
     }
 
