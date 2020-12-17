@@ -3,8 +3,11 @@ package tsgen
 package testing
 
 import cats._
+import cats.syntax.show._
 import org.typelevel.paiges._
 import org.specs2.matcher._
+import org.specs2.matcher.describe.Diffable
+import org.specs2.matcher.describe.LinesDiffable._
 import common.StringOps
 
 trait Helpers extends StringOps { outer =>
@@ -28,10 +31,17 @@ trait Helpers extends StringOps { outer =>
     def apply[S <: T](actual: Expectable[S]): MatchResult[S] = {
       val actualT = actual.value.asInstanceOf[T]
       def test = Eq[T].eqv(expected, actualT)
-      def koMessage =
-        "%s =!= %s".format(Show[T].show(actualT), Show[T].show(expected))
-      def okMessage =
-        "%s === %s".format(Show[T].show(actualT), Show[T].show(expected))
+      def koMessage = {
+        val diff = Diffable.diff(actualT.show, expected.show)
+        val diffStr = if (diff.identical) {
+          "String representations match!"
+        } else {
+          "Diff:\n" + diff.render
+        }
+
+        "Values don't match!\n" + diffStr
+      }
+      def okMessage = "Values match"
       Matcher.result(test, okMessage, koMessage, actual)
     }
   }
