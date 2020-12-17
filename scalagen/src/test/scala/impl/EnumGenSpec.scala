@@ -280,7 +280,7 @@ object EnumGenSpec
            |      .description("The Colors enum")
            |
            |  implicit val ColorsValidator: Validator[Colors] =
-           |    Validator.enum[Colors]
+           |    Validator.enum(values, x => Some(asString(x)))
            |}""".fix.asRight
       )
     }
