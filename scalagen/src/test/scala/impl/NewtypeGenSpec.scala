@@ -79,16 +79,20 @@ object NewtypeGenSpec
       )
     }
 
-    "generate tapir Schemas" >> {
+    "generate tapir Schema and Validator" >> {
       runGen(
         NewtypeGen.generate(myInt),
-        cfg.copy(features = List(Feature.TapirSchema))
+        cfg.copy(features = List(Feature.TapirSchema()))
       ) must beEqvTo(
         """|final case class MyInt(value: Int) extends AnyVal
            |
            |object MyInt {
-           |  implicit val MyIntSchema: Schema[MyInt] = implicitly[Derived[Schema[MyInt]]].value
-           |    .description("The Int type")
+           |  implicit val MyIntSchema: Schema[MyInt] =
+           |    Schema.derive[MyInt]
+           |      .description("The Int type")
+           |
+           |  implicit val MyIntValidator: Validator[MyInt] =
+           |    Validator.derive[MyInt]
            |}""".fix.asRight
       )
     }

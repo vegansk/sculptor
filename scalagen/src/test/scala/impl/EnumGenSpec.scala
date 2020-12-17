@@ -248,5 +248,41 @@ object EnumGenSpec
            |  // Additional comment
            |}""".fix.asRight)
     }
+
+    "generate tapir Schema and Validator" >> {
+      runGen(
+        EnumGen.generate(testEnum),
+        cfg.copy(features = List(Feature.TapirSchema()))
+      ) must beEqvTo(
+        """|sealed trait Colors extends Product with Serializable
+           |
+           |object Colors {
+           |  case object Red extends Colors
+           |  case object Green extends Colors
+           |  case object Blue extends Colors
+           |
+           |  val values: List[Colors] = List(Red, Green, Blue)
+           |
+           |  val asString: Colors => String = {
+           |    case Red => "red"
+           |    case Green => "green"
+           |    case Blue => "blue"
+           |  }
+           |
+           |  val fromString: PartialFunction[String, Colors] = {
+           |    case "red" => Red
+           |    case "green" => Green
+           |    case "blue" => Blue
+           |  }
+           |
+           |  implicit val ColorsSchema: Schema[Colors] =
+           |    Schema(SchemaType.SString)
+           |      .description("The Colors enum")
+           |
+           |  implicit val ColorsValidator: Validator[Colors] =
+           |    Validator.enum[Colors]
+           |}""".fix.asRight
+      )
+    }
   }
 }

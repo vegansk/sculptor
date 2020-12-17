@@ -78,7 +78,7 @@ trait GenHelpers extends CommonGenHelpers {
     )(r)
 
     Doc.text(s"implicit $definition $name$className") + params +
-      Doc.text(s": $className[") + typ + Doc.text("] = ")
+      Doc.text(s": $className[") + typ + Doc.text("] =")
   }
 
   def caseClassPrefix(`type`: Doc): Doc =
