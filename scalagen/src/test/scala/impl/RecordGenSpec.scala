@@ -77,18 +77,22 @@ object RecordGenSpec
       )
     }
 
-    "generate tapir Schema" >> {
+    "generate tapir Schema and Validator" >> {
       runGen(
         RecordGen.generate(rec),
-        cfg.copy(features = List(Feature.TapirSchema))
+        cfg.copy(features = List(Feature.TapirSchema()))
       ) must beEqvTo(
         """|final case class Record[A](id: Int, nameO: Option[A])
            |
            |object Record {
-           |  implicit def RecordSchema[A:Schema]: Schema[Record[A]] = implicitly[Derived[Schema[Record[A]]]].value
-           |    .description("The Record")
-           |    .modify(_.id)(_.description("The id"))
-           |    .modify(_.nameO)(_.description("The name"))
+           |  implicit def RecordSchema[A:Schema]: Schema[Record[A]] =
+           |    Schema.derive[Record[A]]
+           |      .description("The Record")
+           |      .modify(_.id)(_.description("The id"))
+           |      .modify(_.nameO)(_.description("The name"))
+           |
+           |  implicit def RecordValidator[A:Validator]: Validator[Record[A]] =
+           |    Validator.derive[Record[A]]
            |}""".fix.asRight
       )
     }

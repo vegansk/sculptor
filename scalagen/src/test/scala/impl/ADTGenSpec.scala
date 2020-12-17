@@ -213,6 +213,95 @@ object ADTGenSpec
       )
     }
 
-  }
+    "generate tapir Schema and Validator (non-generic)" >> {
+      runGen(
+        ADTGen.generate(maybeIntAdt),
+        cfg.copy(features = Feature.TapirSchema().pure[List])
+      ) must beEqvTo(
+        """|sealed trait MaybeInt extends Product with Serializable
+           |
+           |object MaybeInt {
+           |  case object Empty extends MaybeInt
+           |  final case class JustInt(value: Int) extends MaybeInt
+           |
+           |  implicit val MaybeIntSchema: Schema[MaybeInt] = {
+           |    implicit val EmptySchema: Schema[Empty.type] =
+           |      Schema.derive[Empty.type]
+           |    implicit val JustIntSchema: Schema[JustInt] =
+           |      Schema.derive[JustInt]
+           |    mouse.ignore(EmptySchema)
+           |    mouse.ignore(JustIntSchema)
+           |    val base = Schema.derive[MaybeInt]
+           |    val mappings = Map(
+           |      "Empty" -> EmptySchema.schemaType,
+           |      "JustInt" -> JustIntSchema.schemaType
+           |    ).collect {
+           |      case (k, sp: SchemaType.SProduct) => (k, SchemaType.SRef(sp.info))
+           |    }
+           |    base.copy(
+           |      schemaType = base.schemaType match {
+           |        case sc: SchemaType.SCoproduct =>
+           |          sc.addDiscriminatorField(
+           |            FieldName("__tag", "__tag"),
+           |            discriminatorMappingOverride = mappings
+           |          )
+           |        case _ => sys.error("unexpected schemaType")
+           |      }
+           |    )
+           |  }
+           |
+           |  implicit val MaybeIntValidator: Validator[MaybeInt] =
+           |    Validator.derive[MaybeInt]
+           |}""".fix.asRight
+      )
+    }
 
+    "generate tapir Schema and Validator (generic, custom tag)" >> {
+      runGen(
+        ADTGen.generate(maybeAdt),
+        cfg.copy(features = List(
+          Feature.TapirSchema(adtTag = "__customTag")
+        ))
+      ) must beEqvTo(
+        """|sealed trait Maybe[A] extends Product with Serializable
+           |
+           |object Maybe {
+           |  final case class Empty[A]() extends Maybe[A]
+           |  final case class Just[A](value: A) extends Maybe[A]
+           |
+           |  implicit def MaybeSchema[A:Schema]: Schema[Maybe[A]] = {
+           |    implicit val EmptySchema: Schema[Empty[A]] =
+           |      Schema.derive[Empty[A]]
+           |        .description("The empty value")
+           |    implicit val JustSchema: Schema[Just[A]] =
+           |      Schema.derive[Just[A]]
+           |        .description("The non empty value")
+           |        .modify(_.value)(_.description("The value"))
+           |    mouse.ignore(EmptySchema)
+           |    mouse.ignore(JustSchema)
+           |    val base = Schema.derive[Maybe[A]]
+           |    val mappings = Map(
+           |      "Empty" -> EmptySchema.schemaType,
+           |      "Just" -> JustSchema.schemaType
+           |    ).collect {
+           |      case (k, sp: SchemaType.SProduct) => (k, SchemaType.SRef(sp.info))
+           |    }
+           |    base.copy(
+           |      schemaType = base.schemaType match {
+           |        case sc: SchemaType.SCoproduct =>
+           |          sc.addDiscriminatorField(
+           |            FieldName("__customTag", "__customTag"),
+           |            discriminatorMappingOverride = mappings
+           |          )
+           |        case _ => sys.error("unexpected schemaType")
+           |      }
+           |    )
+           |  }
+           |
+           |  implicit def MaybeValidator[A:Validator]: Validator[Maybe[A]] =
+           |    Validator.derive[Maybe[A]]
+           |}""".fix.asRight
+      )
+    }
+  }
 }
