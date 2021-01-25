@@ -59,6 +59,25 @@ object PackageGenSpec
            |// Additional comment""".fix.asRight)
     }
 
+    "support manual dependencies" >> {
+      val `package` = {
+        val B = newtype("B").baseType("number".spec)
+          .build
+        val A = newtype("A").baseType("number".spec)
+          .additionalDependencies(List(B))
+          .build
+
+        pkg("test").typeDefs(A, B).build
+      }
+      runGen(PackageGen.generate(`package`), cfg) must beEqvTo(
+        """|package test
+           |
+           |final case class B(value: number) extends AnyVal
+           |
+           |final case class A(value: number) extends AnyVal""".fix.asRight
+      )
+    }
+
   }
 
 }

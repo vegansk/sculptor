@@ -101,6 +101,7 @@ sealed trait TypeDef {
   def isEnum: Boolean = false
   def isADT: Boolean = false
   def additionalCode: Option[NonEmptyList[Doc]]
+  def additionalDependencies: List[TypeDef]
 
   def dependencies: List[TypeDef] =
     TypeDef.cata[List[TypeDef]](
@@ -120,7 +121,7 @@ sealed trait TypeDef {
               .foldMap(_.dependencies)
         )
         .combineAll
-    )(this)
+    )(this) ++ additionalDependencies
 }
 
 object TypeDef {
@@ -150,7 +151,8 @@ final case class Newtype(name: Ident,
                          baseType: TypeRef,
                          comment: Option[String] = None,
                          validator: Option[Validator] = None,
-                         additionalCode: Option[NonEmptyList[Doc]] = None)
+                         additionalCode: Option[NonEmptyList[Doc]] = None,
+                         additionalDependencies: List[TypeDef] = Nil)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -166,7 +168,8 @@ final case class Alias(name: Ident,
                        parameters: List[GenericDef],
                        baseType: TypeRef,
                        comment: Option[String] = None,
-                       additionalCode: Option[NonEmptyList[Doc]] = None)
+                       additionalCode: Option[NonEmptyList[Doc]] = None,
+                       additionalDependencies: List[TypeDef] = Nil)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -189,7 +192,8 @@ final case class Record(name: Ident,
                         fields: NonEmptyList[FieldDef],
                         comment: Option[String] = None,
                         validator: Option[Validator] = None,
-                        additionalCode: Option[NonEmptyList[Doc]] = None)
+                        additionalCode: Option[NonEmptyList[Doc]] = None,
+                        additionalDependencies: List[TypeDef] = Nil)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
@@ -211,7 +215,8 @@ final case class EnumValue(name: Ident,
 final case class Enum(name: Ident,
                       values: NonEmptyList[EnumValue],
                       comment: Option[String] = None,
-                      additionalCode: Option[NonEmptyList[Doc]] = None)
+                      additionalCode: Option[NonEmptyList[Doc]] = None,
+                      additionalDependencies: List[TypeDef] = Nil)
     extends TypeDef {
   lazy val ref: TypeRef = TypeRef.spec0(FQName(name), this.some, Nil)
 
@@ -236,7 +241,8 @@ final case class ADT(name: Ident,
                      constructors: NonEmptyList[ADTConstructor],
                      comment: Option[String] = None,
                      validator: Option[Validator] = None,
-                     additionalCode: Option[NonEmptyList[Doc]] = None)
+                     additionalCode: Option[NonEmptyList[Doc]] = None,
+                     additionalDependencies: List[TypeDef] = Nil)
     extends TypeDef {
   lazy val ref: TypeRef =
     ref(parameters.map(_.`type`): _*)
