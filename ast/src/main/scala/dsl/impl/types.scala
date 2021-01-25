@@ -28,6 +28,8 @@ final case class NewtypeBuilderImpl[State <: NewtypeBuilderState] private (
     )
   def additionalCodeS(code: String, rest: String*) =
     additionalCode(Doc.text(code), rest.map(Doc.text): _*)
+  def additionalDependencies(deps: List[TypeDef]) =
+    this.copy(value = value.copy(additionalDependencies = deps))
 
   def build(implicit ev: State =:= NewtypeBuilderState.Complete): Newtype =
     this.value
@@ -58,6 +60,8 @@ final case class AliasBuilderImpl[State <: AliasBuilderState] private (
     )
   def additionalCodeS(code: String, rest: String*) =
     additionalCode(Doc.text(code), rest.map(Doc.text): _*)
+  def additionalDependencies(deps: List[TypeDef]) =
+    this.copy(value = value.copy(additionalDependencies = deps))
 
   def build(implicit ev: State =:= AliasBuilderState.Complete) = this.value
 }
@@ -128,6 +132,8 @@ final case class RecordBuilderImpl[State <: RecordBuilderState] private (
     )
   def additionalCodeS(code: String, rest: String*) =
     additionalCode(Doc.text(code), rest.map(Doc.text): _*)
+  def additionalDependencies(deps: List[TypeDef]) =
+    this.copy(value = value.copy(additionalDependencies = deps))
 
   def build(implicit ev: State =:= RecordBuilderState.Complete) =
     this.value
@@ -173,6 +179,8 @@ final case class EnumBuilderImpl[State <: EnumBuilderState] private (enum: Enum)
     )
   def additionalCodeS(code: String, rest: String*) =
     additionalCode(Doc.text(code), rest.map(Doc.text): _*)
+  def additionalDependencies(deps: List[TypeDef]) =
+    this.copy(enum = enum.copy(additionalDependencies = deps))
 
   def build(implicit ev: State =:= EnumBuilderState.Complete) =
     this.enum
@@ -240,6 +248,8 @@ final case class ADTBuilderImpl[State <: ADTBuilderState] private (value: ADT)
     )
   def additionalCodeS(code: String, rest: String*) =
     additionalCode(Doc.text(code), rest.map(Doc.text): _*)
+  def additionalDependencies(deps: List[TypeDef]) =
+    this.copy(value = value.copy(additionalDependencies = deps))
 
   def build(implicit ev: State =:= ADTBuilderState.Complete) =
     this.value

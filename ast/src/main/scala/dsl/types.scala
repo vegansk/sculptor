@@ -22,6 +22,7 @@ trait NewtypeBuilder[State <: NewtypeBuilderState] {
   def validator(v: Validator): NewtypeBuilder[State]
   def additionalCode(code: Doc, rest: Doc*): NewtypeBuilder[State]
   def additionalCodeS(code: String, rest: String*): NewtypeBuilder[State]
+  def additionalDependencies(deps: List[TypeDef]): NewtypeBuilder[State]
 
   def build(implicit ev: State =:= NewtypeBuilderState.Complete): Newtype
 }
@@ -46,6 +47,7 @@ trait AliasBuilder[State <: AliasBuilderState] {
   def comment(value: String): AliasBuilder[State]
   def additionalCode(code: Doc, rest: Doc*): AliasBuilder[State]
   def additionalCodeS(code: String, rest: String*): AliasBuilder[State]
+  def additionalDependencies(deps: List[TypeDef]): AliasBuilder[State]
 
   def build(implicit ev: State =:= AliasBuilderState.Complete): Alias
 }
@@ -103,6 +105,7 @@ trait RecordBuilder[State <: RecordBuilderState] {
   def validator(v: Validator): RecordBuilder[State]
   def additionalCode(code: Doc, rest: Doc*): RecordBuilder[State]
   def additionalCodeS(code: String, rest: String*): RecordBuilder[State]
+  def additionalDependencies(deps: List[TypeDef]): RecordBuilder[State]
 
   def build(implicit ev: State =:= RecordBuilderState.Complete): Record
 }
@@ -135,6 +138,7 @@ trait EnumBuilder[State <: EnumBuilderState] {
   def comment(value: String): EnumBuilder[State]
   def additionalCode(code: Doc, rest: Doc*): EnumBuilder[State]
   def additionalCodeS(code: String, rest: String*): EnumBuilder[State]
+  def additionalDependencies(deps: List[TypeDef]): EnumBuilder[State]
 
   def build(implicit ev: State =:= EnumBuilderState.Complete): Enum
 }
@@ -184,6 +188,7 @@ trait ADTBuilder[State <: ADTBuilderState] {
   def validator(v: Validator): ADTBuilder[State]
   def additionalCode(code: Doc, rest: Doc*): ADTBuilder[State]
   def additionalCodeS(code: String, rest: String*): ADTBuilder[State]
+  def additionalDependencies(deps: List[TypeDef]): ADTBuilder[State]
 
   def build(implicit ev: State =:= ADTBuilderState.Complete): ADT
 }
