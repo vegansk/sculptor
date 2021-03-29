@@ -15,6 +15,7 @@ object Dependencies {
     val kindProjector = "0.10.3"
     val paiges = "0.2.2-SNAPSHOT"
     val scalacheck = "1.14.2"
+    val diffx = "0.4.4"
   }
 
   val scalaXml = "org.scala-lang.modules" %% "scala-xml" % Versions.scalaXml
@@ -29,13 +30,18 @@ object Dependencies {
   val paigesCore = "com.github.eldis" %% "paiges-core" % Versions.paiges
   val paigesCats = "com.github.eldis" %% "paiges-cats" % Versions.paiges
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck
+  val diffxCore = "com.softwaremill.diffx" %% "diffx-core" % Versions.diffx
+  val diffxSpecs2 = "com.softwaremill.diffx" %% "diffx-specs2" % Versions.diffx
+
 
   val ast = Seq(
     cats,
     paigesCore,
     scalaGraphCore,
   ) ++ Seq(
-    specs2
+    specs2,
+    diffxCore,
+    diffxSpecs2
   ).map(_ % "test")
 
   val xsd = Seq(

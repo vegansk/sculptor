@@ -61,9 +61,9 @@ object PackageGenSpec
 
     "support manual dependencies" >> {
       val `package` = {
-        val B = newtype("B").baseType("number".spec)
-          .build
-        val A = newtype("A").baseType("number".spec)
+        val B = newtype("B").baseType("number".spec).build
+        val A = newtype("A")
+          .baseType("number".spec)
           .additionalDependencies(List(B))
           .build
 

@@ -259,9 +259,7 @@ object ADTGenSpec
     "generate tapir Schema and Validator (generic, custom tag)" >> {
       runGen(
         ADTGen.generate(maybeAdt),
-        cfg.copy(features = List(
-          Feature.TapirSchema(adtTag = "__customTag")
-        ))
+        cfg.copy(features = List(Feature.TapirSchema(adtTag = "__customTag")))
       ) must beEqvTo(
         """|sealed trait Maybe[A] extends Product with Serializable
            |

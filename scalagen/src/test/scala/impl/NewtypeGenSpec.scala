@@ -83,8 +83,7 @@ object NewtypeGenSpec
       runGen(
         NewtypeGen.generate(myInt),
         cfg.copy(features = List(Feature.TapirSchema()))
-      ) must beEqvTo(
-        """|final case class MyInt(value: Int) extends AnyVal
+      ) must beEqvTo("""|final case class MyInt(value: Int) extends AnyVal
            |
            |object MyInt {
            |  implicit val MyIntSchema: Schema[MyInt] =
@@ -93,8 +92,7 @@ object NewtypeGenSpec
            |
            |  implicit val MyIntValidator: Validator[MyInt] =
            |    Validator.derive[MyInt]
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
 
     "generate comments" >> {

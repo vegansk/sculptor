@@ -15,9 +15,9 @@ object PackageGenSpec
   val cfg = Config(generateComments = false)
 
   val `package` = {
-    val B = newtype("B").baseType("number".spec)
-      .build
-    val A = newtype("A").baseType("number".spec)
+    val B = newtype("B").baseType("number".spec).build
+    val A = newtype("A")
+      .baseType("number".spec)
       .additionalDependencies(List(B))
       .build
 
