@@ -253,8 +253,7 @@ object EnumGenSpec
       runGen(
         EnumGen.generate(testEnum),
         cfg.copy(features = List(Feature.TapirSchema()))
-      ) must beEqvTo(
-        """|sealed trait Colors extends Product with Serializable
+      ) must beEqvTo("""|sealed trait Colors extends Product with Serializable
            |
            |object Colors {
            |  case object Red extends Colors
@@ -281,8 +280,7 @@ object EnumGenSpec
            |
            |  implicit val ColorsValidator: Validator[Colors] =
            |    Validator.enum(values, x => Some(asString(x)))
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
   }
 }

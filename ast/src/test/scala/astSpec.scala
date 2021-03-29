@@ -4,8 +4,13 @@ package ast
 import org.specs2._
 import cats.data._
 import cats.implicits._
+import com.softwaremill.diffx.specs2.DiffMatcher
+import com.softwaremill.diffx.generic.DiffDerivation
 
-object astSpec extends mutable.Specification {
+object astSpec
+    extends mutable.Specification
+    with DiffMatcher
+    with DiffDerivation {
 
   "sculptor.ast.Newtype" should {
 
@@ -207,6 +212,34 @@ object astSpec extends mutable.Specification {
 
       val result = pkg.sortedTypes
       result must_=== List(alias, record).asRight[String]
+    }
+
+    "support transitive dependencies" >> {
+      val enum =
+        Enum(Ident("Enum"), NonEmptyList.of(EnumValue(Ident("EnumValue"))))
+      val alias = Alias(Ident("Alias"), Nil, enum.ref)
+      val newtype = Newtype(Ident("Newtype"), Nil, alias.ref)
+      val record = Record(
+        Ident("Record"),
+        Nil,
+        NonEmptyList.of(FieldDef(Ident("field"), newtype.ref))
+      )
+      val adt = ADT(
+        Ident("ADT"),
+        Nil,
+        NonEmptyList.of(
+          ADTConstructor(
+            Ident("ADTConstructor"),
+            Nil,
+            List(FieldDef(Ident("field"), record.ref))
+          )
+        )
+      )
+      val pkg = Package(FQName.of("p"), List(adt))
+      val result = pkg.sortedTypes
+      result must matchTo(
+        List(enum, alias, newtype, record, adt).asRight[String]
+      )
     }
   }
 }

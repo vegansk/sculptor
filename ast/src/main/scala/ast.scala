@@ -260,7 +260,9 @@ final case class Package(name: FQName,
                          additionalCode: Option[NonEmptyList[Doc]] = None) {
   def sortedTypes: Either[String, List[TypeDef]] = {
     val dependencies: List[DiEdge[TypeDef]] =
-      types.map(t => DiEdge(t, t) :: t.dependencies.map(DiEdge(_, t))).flatten
+      collectAllTypes(types)
+        .map(t => DiEdge(t, t) :: t.dependencies.map(DiEdge(_, t)))
+        .flatten
     val graph = Graph(dependencies: _*)
     stableTopologicalSort(graph)
       .map(_.toList.map(_._2.toList))
@@ -268,6 +270,19 @@ final case class Package(name: FQName,
         _ => s"Found cyclic dependency: ${graph.findCycle}".asLeft,
         _.value.flatten.map(_.value).asRight
       )
+  }
+
+  private def collectAllTypes(t: List[TypeDef]): List[TypeDef] = {
+    @scala.annotation.tailrec
+    def impl(acc: Set[TypeDef], xs: Set[TypeDef]): Set[TypeDef] =
+      if (xs.size === 0) acc
+      else {
+        val acc0 = acc ++ xs
+        val deps = xs.toList.flatMap(_.dependencies).toSet.diff(acc0)
+        impl(acc0, deps)
+      }
+
+    impl(Set.empty[TypeDef], t.toSet).toList
   }
 
   private def stableTopologicalSort[E[X] <: EdgeLikeIn[X]](
