@@ -65,12 +65,13 @@ object IoTsTypesSpec
     }
 
     "handle packages" >> {
+      val enum0 = enum("Enum")
+        .values("A".en)
+        .build
       val p = pkg("test")
         .types(
           record("Record")
-            .field("id", "number".spec),
-          enum("Enum")
-            .values("A".en)
+            .field("v", enum0.ref)
         )
         .build
 
