@@ -148,33 +148,37 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
     (required(reql.map(_._2)), optional(optl.map(_._2)))
   }
 
-  override def handlePackage(p: Package) = ok(
-    p.types
-      .find(t => t.isRecord || t.isADT)
-      .map { _ =>
-        Doc.text(
-          s"""|const typeImpl = <R extends ${iots}Props, O extends ${iots}Props>(r: R, o: O, name: string) =>
-            |  ${iots}intersection([${iots}interface(r), ${iots}partial(o)], name)""".stripMargin
-        )
-      }
-      .toList ++ p.types
-      .find(_.isEnum)
-      .map { _ =>
-        Doc.text(s"""|const getStringEnumValues = (o: object): string[] =>
-              |  Object.keys(o).map(_ => (o as { [n: string]: any })[_]).filter(v => typeof v === "string")
-              |
-              |const stringEnumImpl = <E>(e: object, name: string): ${iots}Type<E> => {
-              |  const values = getStringEnumValues(e)
-              |  return new ${iots}Type<E>(
-              |    name,
-              |    (v): v is E => values.indexOf(v as string) >= 0,
-              |    (v, c) => values.indexOf(v as string) >= 0 ? ${iots}success<E>(v as E) : ${iots}failure<E>(v, c),
-              |    ${iots}identity
-              |  )
-              |}""".stripMargin)
-      }
-      .toList
-  )
+  override def handlePackage(p: Package) = p.sortedTypes match {
+    case Right(types) =>
+      ok(
+        types
+          .find(t => t.isRecord || t.isADT)
+          .map { _ =>
+            Doc.text(
+              s"""|const typeImpl = <R extends ${iots}Props, O extends ${iots}Props>(r: R, o: O, name: string) =>
+                |  ${iots}intersection([${iots}interface(r), ${iots}partial(o)], name)""".stripMargin
+            )
+          }
+          .toList ++ types
+          .find(_.isEnum)
+          .map { _ =>
+            Doc.text(s"""|const getStringEnumValues = (o: object): string[] =>
+                  |  Object.keys(o).map(_ => (o as { [n: string]: any })[_]).filter(v => typeof v === "string")
+                  |
+                  |const stringEnumImpl = <E>(e: object, name: string): ${iots}Type<E> => {
+                  |  const values = getStringEnumValues(e)
+                  |  return new ${iots}Type<E>(
+                  |    name,
+                  |    (v): v is E => values.indexOf(v as string) >= 0,
+                  |    (v, c) => values.indexOf(v as string) >= 0 ? ${iots}success<E>(v as E) : ${iots}failure<E>(v, c),
+                  |    ${iots}identity
+                  |  )
+                  |}""".stripMargin)
+          }
+          .toList
+      )
+    case Left(err) => error(err)
+  }
 
   private def genFields(indent: Int,
                         append: List[Doc] = Nil)(l: List[FieldDef]): Doc =
