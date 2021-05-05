@@ -34,7 +34,9 @@ object EnumGenSpec
            |  Blue = "blue"
            |}
            |
-           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]""".fix.asRight
+           |export const colorsValues: Colors[] = [
+           |  Colors.Red, Colors.Green, Colors.Blue
+           |]""".fix.asRight
       )
     }
 
@@ -46,7 +48,9 @@ object EnumGenSpec
            |  Blue = "blue"
            |}
            |
-           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]
+           |export const colorsValues: Colors[] = [
+           |  Colors.Red, Colors.Green, Colors.Blue
+           |]
            |
            |export const colorsDescription = (v: Colors): string => {
            |  switch(v) {
@@ -69,7 +73,9 @@ object EnumGenSpec
            |  Blue = "blue"
            |}
            |
-           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]
+           |export const colorsValues: Colors[] = [
+           |  Colors.Red, Colors.Green, Colors.Blue
+           |]
            |
            |export const colorsDescription = (v: Colors): string | undefined => {
            |  switch(v) {
@@ -91,7 +97,9 @@ object EnumGenSpec
            |  Blue = "blue" /* Blue color */
            |}
            |
-           |export const colorsValues: Colors[] = [Colors.Red, Colors.Green, Colors.Blue]""".fix.asRight
+           |export const colorsValues: Colors[] = [
+           |  Colors.Red, Colors.Green, Colors.Blue
+           |]""".fix.asRight
       )
     }
 
@@ -109,9 +117,13 @@ object EnumGenSpec
            |// ipsum
            |// dolor
            |
-           |export enum Foo {Bar = "Bar"}
+           |export enum Foo {
+           |  Bar = "Bar"
+           |}
            |
-           |export const fooValues: Foo[] = [Foo.Bar]""".fix.asRight
+           |export const fooValues: Foo[] = [
+           |  Foo.Bar
+           |]""".fix.asRight
       )
     }
   }

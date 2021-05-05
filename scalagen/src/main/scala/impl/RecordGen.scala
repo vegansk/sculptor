@@ -24,19 +24,16 @@ object RecordGen extends GenHelpers {
 
       body = Doc.intercalate(fieldDelim, fields)
 
-      record = body.tightBracketBy(
-        caseClassPrefix(typ),
-        caseClassPostfix,
-        indent
-      )
+      record = bracketBy(body)(caseClassPrefix(typ), caseClassPostfix, indent)
 
       features <- features.collectFeatures(_.handleRecord(r))
 
       result = comment.toList ++ List(record) ++ features.toNel.map { f =>
         val prefix = objectPrefix(createTypeExpr(r.name.name, Nil))
-        Doc
-          .intercalate(dblLine, f.toList)
-          .tightBracketBy(prefix, objectPostfix, indent)
+        bracketBy(
+          Doc
+            .intercalate(dblLine, f.toList)
+        )(prefix, objectPostfix, indent)
 
       }.toList
     } yield Doc.intercalate(dblLine, result)

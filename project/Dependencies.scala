@@ -13,7 +13,7 @@ object Dependencies {
     val shapeless = "2.3.3"
     val pprint = "0.5.5"
     val kindProjector = "0.10.3"
-    val paiges = "0.2.2-SNAPSHOT"
+    val paiges = "0.3.0"
     val scalacheck = "1.14.2"
     val diffx = "0.4.4"
   }
@@ -27,8 +27,8 @@ object Dependencies {
   val shapeless = "com.chuusai" %% "shapeless" % Versions.shapeless
   val pprint = "com.lihaoyi" %% "pprint" % Versions.pprint
   val kindProjector = "org.typelevel" %% "kind-projector" % Versions.kindProjector
-  val paigesCore = "com.github.eldis" %% "paiges-core" % Versions.paiges
-  val paigesCats = "com.github.eldis" %% "paiges-cats" % Versions.paiges
+  val paigesCore = "org.typelevel" %% "paiges-core" % Versions.paiges
+  val paigesCats = "org.typelevel" %% "paiges-cats" % Versions.paiges
   val scalacheck = "org.scalacheck" %% "scalacheck" % Versions.scalacheck
   val diffxCore = "com.softwaremill.diffx" %% "diffx-core" % Versions.diffx
   val diffxSpecs2 = "com.softwaremill.diffx" %% "diffx-specs2" % Versions.diffx

@@ -17,10 +17,13 @@ object ADTGen extends GenHelpers {
       typeDef = {
         if (c.fields.isEmpty && c.parameters.isEmpty)
           caseObject(typ)
+        else if (c.fields.isEmpty)
+          caseClassPrefix(typ) + caseClassPostfix
         else
-          Doc
-            .intercalate(fieldDelim, c.fields.map(createField(genComments)))
-            .tightBracketBy(caseClassPrefix(typ), caseClassPostfix, indent)
+          bracketBy(
+            Doc
+              .intercalate(fieldDelim, c.fields.map(createField(genComments)))
+          )(caseClassPrefix(typ), caseClassPostfix, indent)
       }
 
     } yield comment.toList ++ List(extend(typeDef, adtType))
@@ -42,12 +45,14 @@ object ADTGen extends GenHelpers {
         Doc.text("def ") + fName + Doc.text(": ") + adtType + Doc.text(" = ") + fImpl + Doc
           .text("()")
       case (_, fields) => {
-        val func = Doc
-          .intercalate(fieldDelim, c.fields.map(createField(false)))
-          .tightBracketBy(fName + Doc.char('('), Doc.char(')'), indent)
-        val call = Doc
-          .intercalate(paramDelim, fields.map(f => Doc.text(f.name.name)))
-          .tightBracketBy(fImpl + Doc.char('('), Doc.char(')'), indent)
+        val func = bracketBy(
+          Doc
+            .intercalate(fieldDelim, c.fields.map(createField(false)))
+        )(fName + Doc.char('('), Doc.char(')'), indent)
+        val call = bracketBy(
+          Doc
+            .intercalate(paramDelim, fields.map(f => Doc.text(f.name.name)))
+        )(fImpl + Doc.char('('), Doc.char(')'), indent)
         Doc.text("def ") + func + Doc.text(": ") + adtType + Doc.text(" = ") + call
       }
     }
@@ -90,9 +95,10 @@ object ADTGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleADT(a))
 
-      impl = Doc
-        .intercalate(dblLine, List(implBody) ++ helpers ++ features)
-        .tightBracketBy(implPrefix, objectPostfix, indent)
+      impl = bracketBy(
+        Doc
+          .intercalate(dblLine, List(implBody) ++ helpers ++ features)
+      )(implPrefix, objectPostfix, indent)
 
     } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, impl))
 

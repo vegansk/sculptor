@@ -80,7 +80,9 @@ object RecordGenSpec
         .field("v", "A".gen)
         .build
       runGen(RecordGen.generate(r), cfg) must beEqvTo(
-        """export interface Test<A extends string> {v: A}""".fix.asRight
+        """|export interface Test<A extends string> {
+           |  v: A
+           |}""".fix.asRight
       )
     }
 

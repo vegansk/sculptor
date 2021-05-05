@@ -32,7 +32,9 @@ object ADTGenSpec
       runGen(ADTGen.generate(maybeAdt), cfg) must beEqvTo(
         """|export type Maybe<A> = Empty<A> | Just<A>
            |
-           |export interface Empty<A> {__tag: "Empty"}
+           |export interface Empty<A> {
+           |  __tag: "Empty"
+           |}
            |
            |export interface Just<A> {
            |  __tag: "Just"
@@ -47,7 +49,9 @@ object ADTGenSpec
         cfg.copy(optionalEncoding = OptionalEncoding(allFieldsOptional = true))
       ) must beEqvTo("""|export type Maybe<A> = Empty<A> | Just<A>
            |
-           |export interface Empty<A> {__tag: "Empty"}
+           |export interface Empty<A> {
+           |  __tag: "Empty"
+           |}
            |
            |export interface Just<A> {
            |  __tag: "Just"
@@ -63,7 +67,9 @@ object ADTGenSpec
            |export type Maybe<A> = Empty<A> | Just<A>
            |
            |/* The empty value */
-           |export interface Empty<A> {__tag: "Empty"}
+           |export interface Empty<A> {
+           |  __tag: "Empty"
+           |}
            |
            |/* The non empty value */
            |export interface Just<A> {
@@ -78,8 +84,10 @@ object ADTGenSpec
         """|export type Maybe<A> = Maybe.Empty<A> | Maybe.Just<A>
            |
            |export declare namespace Maybe {
-           |  export interface Empty<A> {__tag: "Empty"}
-           |
+           |  export interface Empty<A> {
+           |    __tag: "Empty"
+           |  }
+           |  
            |  export interface Just<A> {
            |    __tag: "Just"
            |    value: A

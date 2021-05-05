@@ -155,7 +155,7 @@ object IoTsTypesSpec
              |  EmptyType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Empty<A>> => typeImpl(
              |    {__tag: t.literal("Empty")}, {}, "Empty"
              |  ),
-             |
+             |  
              |  JustType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Just<A>> => typeImpl(
              |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
              |  )

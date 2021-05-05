@@ -24,7 +24,7 @@ object Constructors extends Feature with GenHelpers {
     ) + Doc
       .text(" {")
     val exported0 = if (generateField) identity[Doc](_) else exported(_)
-    exported0(body.tightBracketBy(prefix, functionPostfix, indent))
+    exported0(bracketBy(body)(prefix, functionPostfix, indent))
   }
 
   override def handleNewtype(n: Newtype) =
@@ -55,12 +55,13 @@ object Constructors extends Feature with GenHelpers {
     indent: Int
   ): Doc =
     genConstructor(opt, generateField)(name, typ, genParams, params, indent) {
-      Doc
-        .intercalate(
-          Doc.char(',') + line,
-          paramsPrefixes ++ params.map(f => Doc.text(f.name.name))
-        )
-        .tightBracketBy(Doc.text("return {"), Doc.char('}'), indent)
+      bracketBy(
+        Doc
+          .intercalate(
+            Doc.char(',') + line,
+            paramsPrefixes ++ params.map(f => Doc.text(f.name.name))
+          )
+      )(Doc.text("return {"), Doc.char('}'), indent)
     }
 
   override def handleRecord(r: Record) =
@@ -99,13 +100,10 @@ object Constructors extends Feature with GenHelpers {
   }
 
   private def withConst(a: ADT, indent: Int)(what: List[Doc]): Doc =
-    Doc
-      .intercalate(Doc.char(',') + dblLine, what)
-      .tightBracketBy(
-        Doc.text(s"export const ${a.name.name} = {"),
-        Doc.char('}'),
-        indent
-      )
+    bracketBy(
+      Doc
+        .intercalate(Doc.char(',') + dblLine, what)
+    )(Doc.text(s"export const ${a.name.name} = {"), Doc.char('}'), indent)
 
   override def handleADT(a: ADT) =
     for {

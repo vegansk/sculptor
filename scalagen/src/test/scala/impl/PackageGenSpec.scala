@@ -61,9 +61,9 @@ object PackageGenSpec
 
     "support manual dependencies" >> {
       val `package` = {
-        val B = newtype("B").baseType("number".spec).build
+        val B = newtype("B").baseType("Int".spec).build
         val A = newtype("A")
-          .baseType("number".spec)
+          .baseType("Int".spec)
           .additionalDependencies(List(B))
           .build
 
@@ -72,9 +72,13 @@ object PackageGenSpec
       runGen(PackageGen.generate(`package`), cfg) must beEqvTo(
         """|package test
            |
-           |final case class B(value: number) extends AnyVal
+           |final case class B(
+           |  value: Int
+           |) extends AnyVal
            |
-           |final case class A(value: number) extends AnyVal""".fix.asRight
+           |final case class A(
+           |  value: Int
+           |) extends AnyVal""".fix.asRight
       )
     }
 

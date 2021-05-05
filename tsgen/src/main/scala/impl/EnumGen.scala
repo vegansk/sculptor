@@ -15,12 +15,13 @@ object EnumGen extends GenHelpers {
     val postfix = Doc.char(']')
 
     ok(
-      Doc
-        .intercalate(
-          Doc.comma + Doc.lineOrSpace,
-          e.values.toList.map(v => Doc.text(s"${e.name.name}.${v.name.name}"))
-        )
-        .tightBracketBy(prefix, postfix, indent)
+      bracketBy(
+        Doc
+          .intercalate(
+            Doc.comma + Doc.lineOrSpace,
+            e.values.toList.map(v => Doc.text(s"${e.name.name}.${v.name.name}"))
+          )
+      )(prefix, postfix, indent)
     )
   }
 
@@ -43,13 +44,14 @@ object EnumGen extends GenHelpers {
             + funType + Doc.text(" => {")
         )
         val postfix = functionPostfix
-        val cases = Doc
-          .intercalate(line, valsWithDesc.toList.map {
-            case (v, d) =>
-              Doc.text(s"""case ${e.name.name}.${v.name.name}: return "$d"""")
-          })
-          .tightBracketBy(Doc.text("switch(v) {"), Doc.char('}'), indent)
-        ok(cases.tightBracketBy(prefix, postfix, indent).some)
+        val cases = bracketBy(
+          Doc
+            .intercalate(line, valsWithDesc.toList.map {
+              case (v, d) =>
+                Doc.text(s"""case ${e.name.name}.${v.name.name}: return "$d"""")
+            })
+        )(Doc.text("switch(v) {"), Doc.char('}'), indent)
+        ok(bracketBy(cases)(prefix, postfix, indent).some)
       }
 
   def generate(e: Enum): Result[Doc] =
@@ -73,7 +75,7 @@ object EnumGen extends GenHelpers {
         e.values.toList.map(createEnumValue(genComment))
       )
 
-      enum_ = body.tightBracketBy(prefix, postfix, indent)
+      enum_ = bracketBy(body)(prefix, postfix, indent)
 
       values <- generateValues(e, typ, indent)
 

@@ -21,17 +21,14 @@ object ADTGen extends GenHelpers {
         line,
         comment.toList ++
           List(
-            Doc
-              .intercalate(
-                line,
-                Doc.text(s"""$adtTag: """") + tag + Doc.char('"') ::
-                  c.fields.map(createField(genComment)(_, optEnc))
-              )
-              .tightBracketBy(
-                exported(interfacePrefix(typ)),
-                interfacePostfix,
-                indent
-              )
+            bracketBy(
+              Doc
+                .intercalate(
+                  line,
+                  Doc.text(s"""$adtTag: """") + tag + Doc.char('"') ::
+                    c.fields.map(createField(genComment)(_, optEnc))
+                )
+            )(exported(interfacePrefix(typ)), interfacePostfix, indent)
           )
       )
     } yield result
