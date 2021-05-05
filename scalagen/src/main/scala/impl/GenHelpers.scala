@@ -102,8 +102,8 @@ trait GenHelpers extends CommonGenHelpers {
 
   val paramDelim = Doc.text(", ")
 
-  val line = Doc.lineNoFlat
-  val dblLine = Doc.lineNoFlatNoIndent + Doc.lineNoFlat
+  val line = Doc.hardLine
+  val dblLine = Doc.hardLine * 2
 
   def extend(what: Doc, `with`: Doc): Doc =
     what + Doc.text(" extends ") + `with`

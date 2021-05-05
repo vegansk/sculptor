@@ -36,15 +36,17 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
@@ -65,21 +67,23 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  implicit val ColorsEq: Eq[Colors] = Eq.fromUniversalEquals
            |}""".fix.asRight
       )
@@ -96,23 +100,25 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  implicit val ColorsEncoder: Encoder[Colors] = Encoder[String].contramap(Colors.asString(_))
-           |
+           |  
            |  implicit val ColorsDecoder: Decoder[Colors] = Decoder[String].emap(v => Colors.fromString.lift(v).toRight("Invalid enum value Colors." + v))
            |}""".fix.asRight
       )
@@ -132,15 +138,17 @@ object EnumGenSpec
            |  case object Green extends Colors
            |  // Blue color
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
@@ -160,21 +168,23 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  val description: Colors => String = {
            |    case Red => "Red color"
            |    case Green => "Green color"
@@ -197,21 +207,23 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  val description: PartialFunction[Colors, String] = {
            |    case Green => "Green color"
            |    case Blue => "Blue color"
@@ -230,21 +242,23 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  // Additional comment
            |}""".fix.asRight)
     }
@@ -259,25 +273,27 @@ object EnumGenSpec
            |  case object Red extends Colors
            |  case object Green extends Colors
            |  case object Blue extends Colors
-           |
-           |  val values: List[Colors] = List(Red, Green, Blue)
-           |
+           |  
+           |  val values: List[Colors] = List(
+           |    Red, Green, Blue
+           |  )
+           |  
            |  val asString: Colors => String = {
            |    case Red => "red"
            |    case Green => "green"
            |    case Blue => "blue"
            |  }
-           |
+           |  
            |  val fromString: PartialFunction[String, Colors] = {
            |    case "red" => Red
            |    case "green" => Green
            |    case "blue" => Blue
            |  }
-           |
+           |  
            |  implicit val ColorsSchema: Schema[Colors] =
            |    Schema(SchemaType.SString)
            |      .description("The Colors enum")
-           |
+           |  
            |  implicit val ColorsValidator: Validator[Colors] =
            |    Validator.enum(values, x => Some(asString(x)))
            |}""".fix.asRight)

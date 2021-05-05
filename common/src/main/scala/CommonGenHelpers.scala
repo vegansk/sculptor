@@ -6,6 +6,11 @@ import sculptor.ast._
 
 trait CommonGenHelpers {
 
+  def bracketBy(
+    body: Doc
+  )(left: Doc, right: Doc, indent: Int = 2, delim: Doc = Doc.hardLine): Doc =
+    left + (delim + body).nested(indent) + delim + right
+
   def decapitalize(s: String): String = {
     val (x, xs) = s.splitAt(1)
     x.toLowerCase + xs

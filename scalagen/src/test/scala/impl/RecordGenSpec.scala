@@ -22,7 +22,10 @@ object RecordGenSpec
         .field("nameO", "Option".spec("String".spec))
         .build
       runGen(RecordGen.generate(r), cfg) must beEqvTo(
-        "final case class Record(id: Int, nameO: Option[String])".fix.asRight
+        """|final case class Record(
+           |  id: Int,
+           |  nameO: Option[String]
+           |)""".stripMargin.fix.asRight
       )
     }
 
@@ -37,7 +40,10 @@ object RecordGenSpec
     "generate generic records" >> {
 
       runGen(RecordGen.generate(rec), cfg) must beEqvTo(
-        "final case class Record[A](id: Int, nameO: Option[A])".fix.asRight
+        """|final case class Record[A](
+           |  id: Int,
+           |  nameO: Option[A]
+           |)""".stripMargin.fix.asRight
       )
     }
 
@@ -46,9 +52,14 @@ object RecordGenSpec
         RecordGen.generate(rec),
         cfg.copy(features = List(Feature.CatsEqTypeclass))
       ) must beEqvTo(
-        """|final case class Record[A](id: Int, nameO: Option[A])
+        """|final case class Record[A](
+           |  id: Int,
+           |  nameO: Option[A]
+           |)
            |
-           |object Record {implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals}""".fix.asRight
+           |object Record {
+           |  implicit def RecordEq[A]: Eq[Record[A]] = Eq.fromUniversalEquals
+           |}""".fix.asRight
       )
     }
 
@@ -57,7 +68,10 @@ object RecordGenSpec
         RecordGen.generate(rec),
         cfg.copy(features = List(Feature.CirceCodecs()))
       ) must beEqvTo(
-        """|final case class Record[A](id: Int, nameO: Option[A])
+        """|final case class Record[A](
+           |  id: Int,
+           |  nameO: Option[A]
+           |)
            |
            |object Record {
            |  implicit def RecordEncoder[A:Encoder]: Encoder.AsObject[Record[A]] = Encoder.AsObject.instance[Record[A]] { v =>
@@ -66,12 +80,14 @@ object RecordGenSpec
            |      "nameO" := v.nameO
            |    )
            |  }
-           |
+           |  
            |  implicit def RecordDecoder[A:Decoder]: Decoder[Record[A]] = Decoder.instance[Record[A]] { c =>
            |    for {
            |      id <- c.downField("id").as[Int]
            |      nameO <- c.downField("nameO").as[Option[A]]
-           |    } yield Record[A](id, nameO)
+           |    } yield Record[A](
+           |      id, nameO
+           |    )
            |  }
            |}""".fix.asRight
       )
@@ -82,7 +98,10 @@ object RecordGenSpec
         RecordGen.generate(rec),
         cfg.copy(features = List(Feature.TapirSchema()))
       ) must beEqvTo(
-        """|final case class Record[A](id: Int, nameO: Option[A])
+        """|final case class Record[A](
+           |  id: Int,
+           |  nameO: Option[A]
+           |)
            |
            |object Record {
            |  implicit def RecordSchema[A:Schema]: Schema[Record[A]] =
@@ -90,7 +109,7 @@ object RecordGenSpec
            |      .description("The Record")
            |      .modify(_.id)(_.description("The id"))
            |      .modify(_.nameO)(_.description("The name"))
-           |
+           |  
            |  implicit def RecordValidator[A:Validator]: Validator[Record[A]] =
            |    Validator.derive[Record[A]]
            |}""".fix.asRight
@@ -102,7 +121,10 @@ object RecordGenSpec
         """|// Record Record[A]:
            |// The Record
            |
-           |final case class Record[A](id: Int /* The id */, nameO: Option[A] /* The name */)""".fix.asRight
+           |final case class Record[A](
+           |  id: Int /* The id */,
+           |  nameO: Option[A] /* The name */
+           |)""".fix.asRight
       )
     }
 
@@ -111,9 +133,16 @@ object RecordGenSpec
       runGen(
         RecordGen.generate(rec),
         cfg.copy(features = Feature.AdditionalCode.pure[List])
-      ) must beEqvTo("""|final case class Record[A](id: Int, nameO: Option[A])
+      ) must beEqvTo(
+        """|final case class Record[A](
+           |  id: Int,
+           |  nameO: Option[A]
+           |)
            |
-           |object Record {/* Additional comment */}""".fix.asRight)
+           |object Record {
+           |  /* Additional comment */
+           |}""".fix.asRight
+      )
     }
   }
 

@@ -23,7 +23,9 @@ object ConstructorsSpec
         .baseType("Either".spec("string".spec, "A".gen))
         .build
       runFeature(Constructors.handleNewtype(n), cfg) must beEqvTo(
-        """|export const Result = <A>(value: Either<string, A>): Result<A> => {return value as Result<A>}""".fix.asRight
+        """|export const Result = <A>(value: Either<string, A>): Result<A> => {
+           |  return value as Result<A>
+           |}""".stripMargin.fix.asRight
       )
     }
 
@@ -57,7 +59,11 @@ object ConstructorsSpec
 
       "without namespaces" >> {
         runFeature(Constructors.handleADT(a), cfg) must beEqvTo(
-          """|export const Empty = <A>(): Maybe<A> => {return {__tag: "Empty"}}
+          """|export const Empty = <A>(): Maybe<A> => {
+             |  return {
+             |    __tag: "Empty"
+             |  }
+             |}
              |
              |export const Just = <A>(value: A): Maybe<A> => {
              |  return {
@@ -71,8 +77,12 @@ object ConstructorsSpec
       "with namespaces" >> {
         runFeature(Constructors.handleADT(a), cfg.copy(generateAdtNs = true)) must beEqvTo(
           """|export const Maybe = {
-             |  Empty: <A>(): Maybe<A> => {return {__tag: "Empty"}},
-             |
+             |  Empty: <A>(): Maybe<A> => {
+             |    return {
+             |      __tag: "Empty"
+             |    }
+             |  },
+             |  
              |  Just: <A>(value: A): Maybe<A> => {
              |    return {
              |      __tag: "Just",

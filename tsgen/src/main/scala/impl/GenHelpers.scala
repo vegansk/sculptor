@@ -114,9 +114,9 @@ trait GenHelpers extends CommonGenHelpers {
 
   val fieldDelim = Doc.char(',') + Doc.line
 
-  val line = Doc.lineNoFlat
+  val line = Doc.hardLine
 
-  val dblLine = Doc.lineNoFlatNoIndent + Doc.lineNoFlat
+  val dblLine = Doc.hardLine * 2
 
   def exported(what: Doc): Doc =
     Doc.text("export ") + what
@@ -148,7 +148,9 @@ trait GenHelpers extends CommonGenHelpers {
   val endNamespace = Doc.char('}')
 
   def withNamespace(ns: String, indent: Int)(what: List[Doc]): Doc =
-    Doc
-      .intercalate(dblLine, what)
-      .tightBracketBy(beginNamespace(ns), endNamespace, indent)
+    bracketBy(Doc.intercalate(dblLine, what))(
+      beginNamespace(ns),
+      endNamespace,
+      indent
+    )
 }

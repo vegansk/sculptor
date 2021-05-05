@@ -23,12 +23,13 @@ object EnumGen extends GenHelpers {
     val postfix = Doc.char(')')
 
     ok(
-      Doc
-        .intercalate(
-          Doc.comma + Doc.lineOrSpace,
-          e.values.toList.map(v => Doc.text(v.name.name))
-        )
-        .tightBracketBy(prefix, postfix, indent)
+      bracketBy(
+        Doc
+          .intercalate(
+            Doc.comma + Doc.lineOrSpace,
+            e.values.toList.map(v => Doc.text(v.name.name))
+          )
+      )(prefix, postfix, indent)
     )
   }
 
@@ -43,9 +44,10 @@ object EnumGen extends GenHelpers {
     }
 
     ok(
-      Doc
-        .intercalate(line, cases.toList)
-        .tightBracketBy(prefix, postfix, indent)
+      bracketBy(
+        Doc
+          .intercalate(line, cases.toList)
+      )(prefix, postfix, indent)
     )
   }
 
@@ -59,9 +61,10 @@ object EnumGen extends GenHelpers {
     }
 
     ok(
-      Doc
-        .intercalate(line, cases.toList)
-        .tightBracketBy(prefix, postfix, indent)
+      bracketBy(
+        Doc
+          .intercalate(line, cases.toList)
+      )(prefix, postfix, indent)
     )
   }
 
@@ -87,10 +90,10 @@ object EnumGen extends GenHelpers {
         }
 
         ok(
-          Doc
-            .intercalate(line, cases.toList)
-            .tightBracketBy(prefix, postfix, indent)
-            .some
+          bracketBy(
+            Doc
+              .intercalate(line, cases.toList)
+          )(prefix, postfix, indent).some
         )
       }
 
@@ -137,9 +140,10 @@ object EnumGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleEnum(e))
 
-      enum_ = Doc
-        .intercalate(dblLine, body :: features)
-        .tightBracketBy(enumPrefix, objectPostfix, indent)
+      enum_ = bracketBy(
+        Doc
+          .intercalate(dblLine, body :: features)
+      )(enumPrefix, objectPostfix, indent)
 
     } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, enum_))
 

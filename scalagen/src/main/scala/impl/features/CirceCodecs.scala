@@ -71,15 +71,16 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
     val prefix = Doc.text("JsonObject(")
     val postfix = caseClassPostfix
     val tag = tag0.toList.map(t => Doc.text(s""""${tagName}" := "$t""""))
-    Doc
-      .intercalate(
-        Doc.char(',') + line,
-        tag ++
-          fields.map(
-            f => Doc.text(s""""${f.name.name}" := $objName.${f.name.name}""")
-          )
-      )
-      .tightBracketBy(prefix, postfix, indent)
+    bracketBy(
+      Doc
+        .intercalate(
+          Doc.char(',') + line,
+          tag ++
+            fields.map(
+              f => Doc.text(s""""${f.name.name}" := $objName.${f.name.name}""")
+            )
+        )
+    )(prefix, postfix, indent)
   }
 
   private def genRecordDecoderBody(typeName: String,
@@ -91,27 +92,29 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
     val prefix = Doc.text("for {")
     val params = createParameters(params0)
     val postfix = objectPostfix +
+      bracketBy(
+        Doc
+          .intercalate(
+            Doc.char(',') + Doc.lineOrSpace,
+            fields.map(f => Doc.text(f.name.name))
+          )
+      )(
+        Doc.text(s" yield $typeName") + params + Doc.text("("),
+        caseClassPostfix,
+        indent
+      )
+    bracketBy(
       Doc
         .intercalate(
-          Doc.char(',') + Doc.lineOrSpace,
-          fields.map(f => Doc.text(f.name.name))
+          line,
+          fields.map(
+            f =>
+              Doc.text(
+                s"""${f.name.name} <- $cursorName.downField("${f.name.name}").as["""
+              ) + createTypeRef(f.`type`) + Doc.char(']')
+          )
         )
-        .tightBracketBy(
-          Doc.text(s" yield $typeName") + params + Doc.text("("),
-          caseClassPostfix,
-          indent
-        )
-    Doc
-      .intercalate(
-        line,
-        fields.map(
-          f =>
-            Doc.text(
-              s"""${f.name.name} <- $cursorName.downField("${f.name.name}").as["""
-            ) + createTypeRef(f.`type`) + Doc.char(']')
-        )
-      )
-      .tightBracketBy(prefix, postfix, indent)
+    )(prefix, postfix, indent)
   }
 
   override def handleRecord(r: Record) =
@@ -122,19 +125,22 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
       (enc, dec) = genNames(name, r.parameters, true)
       encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] { v =>")
-      encoder = genRecordEncoderBody("v", None, r.fields.toList, indent)
-        .tightBracketBy(encPrefix, objectPostfix, indent)
+      encoder = bracketBy(
+        genRecordEncoderBody("v", None, r.fields.toList, indent)
+      )(encPrefix, objectPostfix, indent)
       decPrefix = dec + Doc.text(s" = Decoder.instance[") + typ + Doc.text(
         "] { c =>"
       )
-      decoder = genRecordDecoderBody(
-        name,
-        None,
-        r.parameters,
-        "c",
-        r.fields.toList,
-        indent
-      ).tightBracketBy(decPrefix, objectPostfix, indent)
+      decoder = bracketBy(
+        genRecordDecoderBody(
+          name,
+          None,
+          r.parameters,
+          "c",
+          r.fields.toList,
+          indent
+        )
+      )(decPrefix, objectPostfix, indent)
       result = List(encoder, decoder)
     } yield result
 
@@ -165,33 +171,34 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
     val prefix =
       Doc.text(s"""$cursorName.downField("$tagName").as[String].flatMap {""")
     val postfix = objectPostfix
-    Doc
-      .intercalate(
-        line,
-        a.constructors.toList.map { c =>
-          val tagValue = c.tag.getOrElse(c.name.name)
-          val consRef = createTypeExpr(c.name.name, c.parameters)
-          val prefix0 = Doc.text(s"""case "$tagValue" => """)
-          if (isCaseObject(a, c)) {
-            prefix0 + Doc.text(s"Right(") + consRef + Doc.text(")")
-          } else if (c.fields.isEmpty)
-            prefix0 + Doc.text(s"Right(") + consRef + Doc.text("())")
-          else
-            prefix0 + genRecordDecoderBody(
-              c.name.name,
-              tagValue.some,
-              c.parameters,
-              cursorName,
-              c.fields,
-              indent
+    bracketBy(
+      Doc
+        .intercalate(
+          line,
+          a.constructors.toList.map { c =>
+            val tagValue = c.tag.getOrElse(c.name.name)
+            val consRef = createTypeExpr(c.name.name, c.parameters)
+            val prefix0 = Doc.text(s"""case "$tagValue" => """)
+            if (isCaseObject(a, c)) {
+              prefix0 + Doc.text(s"Right(") + consRef + Doc.text(")")
+            } else if (c.fields.isEmpty)
+              prefix0 + Doc.text(s"Right(") + consRef + Doc.text("())")
+            else
+              prefix0 + genRecordDecoderBody(
+                c.name.name,
+                tagValue.some,
+                c.parameters,
+                cursorName,
+                c.fields,
+                indent
+              )
+          } ++ List(
+            Doc.text(
+              s"""case tag => Left(DecodingFailure("Invalid ADT tag value ${a.name.name}." + tag, $cursorName.history))"""
             )
-        } ++ List(
-          Doc.text(
-            s"""case tag => Left(DecodingFailure("Invalid ADT tag value ${a.name.name}." + tag, $cursorName.history))"""
           )
         )
-      )
-      .tightBracketBy(prefix, postfix, indent)
+    )(prefix, postfix, indent)
   }
 
   override def handleADT(a: ADT) =
@@ -202,7 +209,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
       (enc, dec) = genNames(name, a.parameters, true)
       encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] {")
-      encoder = genADTEncoderBody(a, indent).tightBracketBy(
+      encoder = bracketBy(genADTEncoderBody(a, indent))(
         encPrefix,
         objectPostfix,
         indent
@@ -210,7 +217,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
       decPrefix = dec + Doc.text(s" = Decoder.instance[") + typ + Doc.text(
         "] { c =>"
       )
-      decoder = genADTDecoderBody(a, "c", indent).tightBracketBy(
+      decoder = bracketBy(genADTDecoderBody(a, "c", indent))(
         decPrefix,
         objectPostfix,
         indent

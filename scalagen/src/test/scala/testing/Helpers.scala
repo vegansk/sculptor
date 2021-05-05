@@ -16,7 +16,7 @@ trait Helpers extends StringOps { outer =>
                  cfg: Config): sculptor.scalagen.Result[String] =
     run(
       r.map(
-        l => Doc.intercalate(Doc.lineNoFlat * 2, l).render(cfg.lineWidth).fix
+        l => Doc.intercalate(Doc.hardLine * 2, l).render(cfg.lineWidth).fix
       ),
       cfg
     )

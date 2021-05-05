@@ -25,15 +25,16 @@ object NewtypeGen extends GenHelpers {
 
       body = Doc.text("value: ") + valueType
 
-      newtype = body.tightBracketBy(prefix, newtypePostfix, indent)
+      newtype = bracketBy(body)(prefix, newtypePostfix, indent)
 
       features <- features.collectFeatures(_.handleNewtype(n))
 
       result = comment.toList ++ List(newtype) ++ features.toNel.map { f =>
         val prefix = objectPrefix(createTypeExpr(n.name.name, Nil))
-        Doc
-          .intercalate(dblLine, f.toList)
-          .tightBracketBy(prefix, objectPostfix, indent)
+        bracketBy(
+          Doc
+            .intercalate(dblLine, f.toList)
+        )(prefix, objectPostfix, indent)
       }.toList
     } yield Doc.intercalate(dblLine, result)
 }

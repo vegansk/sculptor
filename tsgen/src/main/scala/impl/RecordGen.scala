@@ -26,7 +26,7 @@ object RecordGen extends GenHelpers {
       body = Doc.intercalate(line, fields)
 
       record = exported(
-        body.tightBracketBy(interfacePrefix(typ), interfacePostfix, indent)
+        bracketBy(body)(interfacePrefix(typ), interfacePostfix, indent)
       )
 
       features <- features.collectFeatures(_.handleRecord(r))

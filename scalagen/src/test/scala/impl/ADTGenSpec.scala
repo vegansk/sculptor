@@ -45,7 +45,9 @@ object ADTGenSpec
              |
              |object Maybe {
              |  final case class Empty[A]() extends Maybe[A]
-             |  final case class Just[A](value: A) extends Maybe[A]
+             |  final case class Just[A](
+             |    value: A
+             |  ) extends Maybe[A]
              |}""".fix.asRight
         )
       }
@@ -59,10 +61,16 @@ object ADTGenSpec
              |
              |object Maybe {
              |  final case class Empty[A]() extends Maybe[A]
-             |  final case class Just[A](value: A) extends Maybe[A]
-             |
+             |  final case class Just[A](
+             |    value: A
+             |  ) extends Maybe[A]
+             |  
              |  def empty[A]: Maybe[A] = Empty[A]()
-             |  def just[A](value: A): Maybe[A] = Just[A](value)
+             |  def just[A](
+             |    value: A
+             |  ): Maybe[A] = Just[A](
+             |    value
+             |  )
              |}""".fix.asRight
         )
       }
@@ -95,7 +103,7 @@ object ADTGenSpec
              |  case object Red extends Colors
              |  case object Green extends Colors
              |  case object Blue extends Colors
-             |
+             |  
              |  val red: Colors = Red
              |  val green: Colors = Green
              |  val blue: Colors = Blue
@@ -112,8 +120,10 @@ object ADTGenSpec
            |
            |object Maybe {
            |  final case class Empty[A]() extends Maybe[A]
-           |  final case class Just[A](value: A) extends Maybe[A]
-           |
+           |  final case class Just[A](
+           |    value: A
+           |  ) extends Maybe[A]
+           |  
            |  implicit def MaybeEq[A]: Eq[Maybe[A]] = Eq.fromUniversalEquals
            |}""".fix.asRight
       )
@@ -128,20 +138,28 @@ object ADTGenSpec
            |
            |object Maybe {
            |  final case class Empty[A]() extends Maybe[A]
-           |  final case class Just[A](value: A) extends Maybe[A]
-           |
+           |  final case class Just[A](
+           |    value: A
+           |  ) extends Maybe[A]
+           |  
            |  implicit def MaybeEncoder[A:Encoder]: Encoder.AsObject[Maybe[A]] = Encoder.AsObject.instance[Maybe[A]] {
-           |    case _: Empty[A] => JsonObject("__customTag" := "Empty")
+           |    case _: Empty[A] => JsonObject(
+           |      "__customTag" := "Empty"
+           |    )
            |    case v: Just[A] => JsonObject(
            |      "__customTag" := "Just",
            |      "value" := v.value
            |    )
            |  }
-           |
+           |  
            |  implicit def MaybeDecoder[A:Decoder]: Decoder[Maybe[A]] = Decoder.instance[Maybe[A]] { c =>
            |    c.downField("__customTag").as[String].flatMap {
            |      case "Empty" => Right(Empty[A]())
-           |      case "Just" => for {value <- c.downField("value").as[A]} yield Just[A](value)
+           |      case "Just" => for {
+           |        value <- c.downField("value").as[A]
+           |      } yield Just[A](
+           |        value
+           |      )
            |      case tag => Left(DecodingFailure("Invalid ADT tag value Maybe." + tag, c.history))
            |    }
            |  }
@@ -158,20 +176,28 @@ object ADTGenSpec
            |
            |object MaybeInt {
            |  case object Empty extends MaybeInt
-           |  final case class JustInt(value: Int) extends MaybeInt
-           |
+           |  final case class JustInt(
+           |    value: Int
+           |  ) extends MaybeInt
+           |  
            |  implicit val MaybeIntEncoder: Encoder.AsObject[MaybeInt] = Encoder.AsObject.instance[MaybeInt] {
-           |    case Empty => JsonObject("__tag" := "Empty")
+           |    case Empty => JsonObject(
+           |      "__tag" := "Empty"
+           |    )
            |    case v: JustInt => JsonObject(
            |      "__tag" := "JustInt",
            |      "value" := v.value
            |    )
            |  }
-           |
+           |  
            |  implicit val MaybeIntDecoder: Decoder[MaybeInt] = Decoder.instance[MaybeInt] { c =>
            |    c.downField("__tag").as[String].flatMap {
            |      case "Empty" => Right(Empty)
-           |      case "JustInt" => for {value <- c.downField("value").as[Int]} yield JustInt(value)
+           |      case "JustInt" => for {
+           |        value <- c.downField("value").as[Int]
+           |      } yield JustInt(
+           |        value
+           |      )
            |      case tag => Left(DecodingFailure("Invalid ADT tag value MaybeInt." + tag, c.history))
            |    }
            |  }
@@ -190,7 +216,9 @@ object ADTGenSpec
            |  /* The empty value */
            |  final case class Empty[A]() extends Maybe[A]
            |  /* The non empty value */
-           |  final case class Just[A](value: A /* The value */) extends Maybe[A]
+           |  final case class Just[A](
+           |    value: A /* The value */
+           |  ) extends Maybe[A]
            |}""".fix.asRight
       )
     }
@@ -204,10 +232,12 @@ object ADTGenSpec
            |
            |object Maybe {
            |  final case class Empty[A]() extends Maybe[A]
-           |  final case class Just[A](value: A) extends Maybe[A]
-           |
+           |  final case class Just[A](
+           |    value: A
+           |  ) extends Maybe[A]
+           |  
            |  // Additional code comment
-           |
+           |  
            |  def fold[A, B](empty: => B, f: A => B)(fa: Maybe[A]): B = ???
            |}""".fix.asRight
       )
@@ -222,8 +252,10 @@ object ADTGenSpec
            |
            |object MaybeInt {
            |  case object Empty extends MaybeInt
-           |  final case class JustInt(value: Int) extends MaybeInt
-           |
+           |  final case class JustInt(
+           |    value: Int
+           |  ) extends MaybeInt
+           |  
            |  implicit val MaybeIntSchema: Schema[MaybeInt] = {
            |    implicit val EmptySchema: Schema[Empty.type] =
            |      Schema.derive[Empty.type]
@@ -249,7 +281,7 @@ object ADTGenSpec
            |      }
            |    )
            |  }
-           |
+           |  
            |  implicit val MaybeIntValidator: Validator[MaybeInt] =
            |    Validator.derive[MaybeInt]
            |}""".fix.asRight
@@ -265,8 +297,10 @@ object ADTGenSpec
            |
            |object Maybe {
            |  final case class Empty[A]() extends Maybe[A]
-           |  final case class Just[A](value: A) extends Maybe[A]
-           |
+           |  final case class Just[A](
+           |    value: A
+           |  ) extends Maybe[A]
+           |  
            |  implicit def MaybeSchema[A:Schema]: Schema[Maybe[A]] = {
            |    implicit val EmptySchema: Schema[Empty[A]] =
            |      Schema.derive[Empty[A]]
@@ -295,7 +329,7 @@ object ADTGenSpec
            |      }
            |    )
            |  }
-           |
+           |  
            |  implicit def MaybeValidator[A:Validator]: Validator[Maybe[A]] =
            |    Validator.derive[Maybe[A]]
            |}""".fix.asRight
