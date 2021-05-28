@@ -263,7 +263,7 @@ object EnumGenSpec
            |}""".fix.asRight)
     }
 
-    "generate tapir Schema and Validator" >> {
+    "generate tapir Schema" >> {
       runGen(
         EnumGen.generate(testEnum),
         cfg.copy(features = List(Feature.TapirSchema()))
@@ -293,9 +293,7 @@ object EnumGenSpec
            |  implicit val ColorsSchema: Schema[Colors] =
            |    Schema(SchemaType.SString)
            |      .description("The Colors enum")
-           |  
-           |  implicit val ColorsValidator: Validator[Colors] =
-           |    Validator.enum(values, x => Some(asString(x)))
+           |      .validate(Validator.enum(values, x => Some(asString(x))))
            |}""".fix.asRight)
     }
   }

@@ -243,7 +243,7 @@ object ADTGenSpec
       )
     }
 
-    "generate tapir Schema and Validator (non-generic)" >> {
+    "generate tapir Schema (non-generic)" >> {
       runGen(
         ADTGen.generate(maybeIntAdt),
         cfg.copy(features = Feature.TapirSchema().pure[List])
@@ -258,12 +258,12 @@ object ADTGenSpec
            |  
            |  implicit val MaybeIntSchema: Schema[MaybeInt] = {
            |    implicit val EmptySchema: Schema[Empty.type] =
-           |      Schema.derive[Empty.type]
+           |      Schema.derived[Empty.type]
            |    implicit val JustIntSchema: Schema[JustInt] =
-           |      Schema.derive[JustInt]
+           |      Schema.derived[JustInt]
            |    mouse.ignore(EmptySchema)
            |    mouse.ignore(JustIntSchema)
-           |    val base = Schema.derive[MaybeInt]
+           |    val base = Schema.derived[MaybeInt]
            |    val mappings = Map(
            |      "Empty" -> EmptySchema.schemaType,
            |      "JustInt" -> JustIntSchema.schemaType
@@ -281,14 +281,11 @@ object ADTGenSpec
            |      }
            |    )
            |  }
-           |  
-           |  implicit val MaybeIntValidator: Validator[MaybeInt] =
-           |    Validator.derive[MaybeInt]
            |}""".fix.asRight
       )
     }
 
-    "generate tapir Schema and Validator (generic, custom tag)" >> {
+    "generate tapir Schema (generic, custom tag)" >> {
       runGen(
         ADTGen.generate(maybeAdt),
         cfg.copy(features = List(Feature.TapirSchema(adtTag = "__customTag")))
@@ -303,15 +300,15 @@ object ADTGenSpec
            |  
            |  implicit def MaybeSchema[A:Schema]: Schema[Maybe[A]] = {
            |    implicit val EmptySchema: Schema[Empty[A]] =
-           |      Schema.derive[Empty[A]]
+           |      Schema.derived[Empty[A]]
            |        .description("The empty value")
            |    implicit val JustSchema: Schema[Just[A]] =
-           |      Schema.derive[Just[A]]
+           |      Schema.derived[Just[A]]
            |        .description("The non empty value")
            |        .modify(_.value)(_.description("The value"))
            |    mouse.ignore(EmptySchema)
            |    mouse.ignore(JustSchema)
-           |    val base = Schema.derive[Maybe[A]]
+           |    val base = Schema.derived[Maybe[A]]
            |    val mappings = Map(
            |      "Empty" -> EmptySchema.schemaType,
            |      "Just" -> JustSchema.schemaType
@@ -329,9 +326,6 @@ object ADTGenSpec
            |      }
            |    )
            |  }
-           |  
-           |  implicit def MaybeValidator[A:Validator]: Validator[Maybe[A]] =
-           |    Validator.derive[Maybe[A]]
            |}""".fix.asRight
       )
     }

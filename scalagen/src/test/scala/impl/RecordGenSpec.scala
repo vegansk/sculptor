@@ -93,7 +93,7 @@ object RecordGenSpec
       )
     }
 
-    "generate tapir Schema and Validator" >> {
+    "generate tapir Schema" >> {
       runGen(
         RecordGen.generate(rec),
         cfg.copy(features = List(Feature.TapirSchema()))
@@ -105,13 +105,10 @@ object RecordGenSpec
            |
            |object Record {
            |  implicit def RecordSchema[A:Schema]: Schema[Record[A]] =
-           |    Schema.derive[Record[A]]
+           |    Schema.derived[Record[A]]
            |      .description("The Record")
            |      .modify(_.id)(_.description("The id"))
            |      .modify(_.nameO)(_.description("The name"))
-           |  
-           |  implicit def RecordValidator[A:Validator]: Validator[Record[A]] =
-           |    Validator.derive[Record[A]]
            |}""".fix.asRight
       )
     }
