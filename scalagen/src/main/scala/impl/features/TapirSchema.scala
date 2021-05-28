@@ -31,7 +31,7 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
                                     comment: Option[String],
                                     fields: List[FieldDef],
                                     indent: Int): Doc = {
-    val base: Doc = Doc.text("Schema.derive[") + typ + Doc.text("]")
+    val base: Doc = Doc.text("Schema.derived[") + typ + Doc.text("]")
     val fields0: List[Doc] =
       fields.foldMap(f => f.comment.map((f.name.name, _)).toList).map {
         case (name, comment) =>
@@ -43,30 +43,20 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
       .nested(indent)
   }
 
-  private def mkDerivedValidator(t: TypeDef): Result[Doc] =
-    getIndent.map { indent =>
-      val typ = createTypeRef(t.ref)
-      createTypeclassDef(t.ref, "Validator", true)
-        .line(Doc.text("Validator.derive[") + typ + Doc.text("]"))
-        .nested(indent)
-    }
-
   private def mkEnumSchema(t: TypeDef): Result[Doc] =
     getIndent.map { indent =>
       val base = Doc.text("Schema(SchemaType.SString)")
-      val value = (base :: mkDescription(t.comment).toList)
-        .intercalate(Doc.line)
+      val value = (
+        base ::
+          mkDescription(t.comment).toList :::
+          List(
+          Doc.text(".validate(Validator.enum(values, x => Some(asString(x))))")
+        )
+      ).intercalate(Doc.line)
         .nested(indent)
 
       createTypeclassDef(t.ref, "Schema", true)
         .line(value)
-        .nested(indent)
-    }
-
-  private def mkEnumValidator(t: Enum): Result[Doc] =
-    getIndent.map { indent =>
-      createTypeclassDef(t.ref, "Validator", true)
-        .line("Validator.enum(values, x => Some(asString(x)))")
         .nested(indent)
     }
 
@@ -92,7 +82,7 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
       val ignores = t.constructors.map { c =>
         Doc.text(s"mouse.ignore(${schemaValName(c)})")
       }.toList
-      val base = Doc.text("val base = Schema.derive[") + createTypeRef(t.ref) + Doc
+      val base = Doc.text("val base = Schema.derived[") + createTypeRef(t.ref) + Doc
         .text("]")
 
       val mappings = {
@@ -152,18 +142,15 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
     }
 
   override def handleNewtype(n: Newtype): Result[List[Doc]] =
-    List(
-      // It just so happens that this works for newtypes as well.
-      mkRecordSchema(n, Nil),
-      mkDerivedValidator(n)
-    ).sequence
+    // It just so happens that this works for newtypes as well.
+    mkRecordSchema(n, Nil).map(List(_))
 
   override def handleRecord(r: Record): Result[List[Doc]] =
-    List(mkRecordSchema(r, r.fields.toList), mkDerivedValidator(r)).sequence
+    mkRecordSchema(r, r.fields.toList).map(List(_))
 
   override def handleEnum(e: Enum): Result[List[Doc]] =
-    List(mkEnumSchema(e), mkEnumValidator(e)).sequence
+    mkEnumSchema(e).map(List(_))
 
   override def handleADT(a: ADT): Result[List[Doc]] =
-    List(mkAdtSchema(a), mkDerivedValidator(a)).sequence
+    mkAdtSchema(a).map(List(_))
 }

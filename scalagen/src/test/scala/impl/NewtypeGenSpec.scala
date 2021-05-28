@@ -91,7 +91,7 @@ object NewtypeGenSpec
       )
     }
 
-    "generate tapir Schema and Validator" >> {
+    "generate tapir Schema" >> {
       runGen(
         NewtypeGen.generate(myInt),
         cfg.copy(features = List(Feature.TapirSchema()))
@@ -102,11 +102,8 @@ object NewtypeGenSpec
            |
            |object MyInt {
            |  implicit val MyIntSchema: Schema[MyInt] =
-           |    Schema.derive[MyInt]
+           |    Schema.derived[MyInt]
            |      .description("The Int type")
-           |  
-           |  implicit val MyIntValidator: Validator[MyInt] =
-           |    Validator.derive[MyInt]
            |}""".fix.asRight
       )
     }
