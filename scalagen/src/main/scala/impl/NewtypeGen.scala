@@ -7,11 +7,16 @@ import sculptor.ast._
 
 object NewtypeGen extends GenHelpers {
 
+  import ScalaIdent._
+
   def generate(n: Newtype): Result[Doc] =
     for {
       indent <- getIndent
 
-      typ = createTypeExpr0(n.name.name, n.parameters.map(createGenericParam))
+      typ = createTypeExpr00(
+        n.name.asScalaId,
+        n.parameters.map(createGenericParam)
+      )
 
       genComments <- getGenerateComments
 
@@ -30,7 +35,7 @@ object NewtypeGen extends GenHelpers {
       features <- features.collectFeatures(_.handleNewtype(n))
 
       result = comment.toList ++ List(newtype) ++ features.toNel.map { f =>
-        val prefix = objectPrefix(createTypeExpr(n.name.name, Nil))
+        val prefix = objectPrefix(n.name)
         bracketBy(
           Doc
             .intercalate(dblLine, f.toList)

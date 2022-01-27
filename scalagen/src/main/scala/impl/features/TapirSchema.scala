@@ -10,12 +10,14 @@ import sculptor.ast._
 
 final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
 
+  import ScalaIdent._
+
   // Should match CirceCodecs!
   private lazy val tagName: String =
     if (adtTag.isEmpty) "__tag" else adtTag
 
   private def mkDescription(comment: Option[String]): Option[Doc] =
-    comment.map(c => Doc.text(s""".description("$c")"""))
+    comment.map(c => Doc.text(s""".description(${mkQuotedString(c)})"""))
 
   private def mkRecordSchema(t: TypeDef, fields: List[FieldDef]): Result[Doc] =
     getIndent.map { indent =>
@@ -33,9 +35,11 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
                                     indent: Int): Doc = {
     val base: Doc = Doc.text("Schema.derived[") + typ + Doc.text("]")
     val fields0: List[Doc] =
-      fields.foldMap(f => f.comment.map((f.name.name, _)).toList).map {
+      fields.foldMap(f => f.comment.map((f.name.asScalaId, _)).toList).map {
         case (name, comment) =>
-          Doc.text(s""".modify(_.$name)(_.description("$comment"))""")
+          Doc.text(
+            s""".modify(_.$name)(_.description(${mkQuotedString(comment)}))"""
+          )
       }
 
     (base :: mkDescription(comment).toList ++: fields0)
@@ -43,15 +47,33 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
       .nested(indent)
   }
 
-  private def mkEnumSchema(t: TypeDef): Result[Doc] =
+  private def mkEnumSchema(t: Enum): Result[Doc] = {
+    val description: Option[String] = {
+      val title = t.comment
+      val elements = t.values.toList
+        .flatMap(v => v.comment.map(c => s"* `${v.value}` - $c").toList)
+        .toNel
+        .map(_.toList.mkString("\n"))
+      val description = List(title, elements).flattenOption match {
+        case Nil => None
+        case xs => Some(xs.mkString("\n\n"))
+      }
+      description.map(mkQuotedString(_))
+    }
     getIndent.map { indent =>
-      val base = Doc.text("Schema(SchemaType.SString)")
+      val base = Doc.text("Schema(SchemaType.SString())")
       val value = (
         base ::
-          mkDescription(t.comment).toList :::
           List(
-          Doc.text(".validate(Validator.enum(values, x => Some(asString(x))))")
-        )
+          description.map(
+            d => Doc.text(".description(") + Doc.text(d) + Doc.text(")")
+          ),
+          Doc
+            .text(
+              s""".validate(Validator.enumeration(values, x => Some(asString(x)), Some(Schema.SName("${t.name.name}"))))"""
+            )
+            .some
+        ).flattenOption
       ).intercalate(Doc.line)
         .nested(indent)
 
@@ -59,6 +81,7 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
         .line(value)
         .nested(indent)
     }
+  }
 
   private def mkAdtSchema(t: ADT): Result[Doc] =
     getIndent.map { indent =>
@@ -68,20 +91,16 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
       def schemaValDefinition(c: ADTConstructor): Doc = {
         val typ = if (c.fields.isEmpty && c.parameters.isEmpty) {
           // In this case the constructor is represented by a `case object`.
-          Doc.text(c.ref.asString + ".type")
+          Doc.text(c.name.asScalaId + ".type")
         } else createTypeRef(c.ref)
 
-        (Doc.text(s"implicit val ${schemaValName(c)}: Schema[") +
-          typ +
-          Doc.text("] ="))
+        Doc
+          .text(s"val ${schemaValName(c)} =")
           .line(recordLikeSchemaValue(typ, c.comment, c.fields, indent))
           .nested(indent)
       }
 
       val schemaVals = t.constructors.map(schemaValDefinition).toList
-      val ignores = t.constructors.map { c =>
-        Doc.text(s"mouse.ignore(${schemaValName(c)})")
-      }.toList
       val base = Doc.text("val base = Schema.derived[") + createTypeRef(t.ref) + Doc
         .text("]")
 
@@ -92,9 +111,9 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
             t.constructors
               .map(
                 c =>
-                  Doc.spaces(indent) + Doc.text(
-                    s""""${c.name.name}" -> ${schemaValName(c)}.schemaType"""
-                )
+                  Doc.spaces(indent) + Doc.text(s""""${c.name.name}" -> (${schemaValName(
+                    c
+                  )}.schemaType -> ${schemaValName(c)}.name)""")
               )
               .intercalate(Doc.text(",") + Doc.line)
           )
@@ -102,7 +121,7 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
           .line(
             Doc.spaces(indent) +
               Doc.text(
-                "case (k, sp: SchemaType.SProduct) => (k, SchemaType.SRef(sp.info))"
+                "case (k, (_: SchemaType.SProduct[_], Some(name))) => (k, SchemaType.SRef(name))"
               )
           )
           .line("}")
@@ -113,10 +132,10 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
         // https://gitlab.com/vegansk/sculptor/-/issues/147
         s"""|base.copy(
             |  schemaType = base.schemaType match {
-            |    case sc: SchemaType.SCoproduct =>
+            |    case sc: SchemaType.SCoproduct[_] =>
             |      sc.addDiscriminatorField(
             |        FieldName("${tagName}", "${tagName}"),
-            |        discriminatorMappingOverride = mappings
+            |        discriminatorMapping = mappings
             |      )
             |    case _ => sys.error("unexpected schemaType")
             |  }
@@ -125,7 +144,6 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
 
       List[Doc](
         schemaVals.intercalate(Doc.line),
-        ignores.intercalate(Doc.line),
         base,
         mappings,
         fixDiscriminator

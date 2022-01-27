@@ -63,15 +63,13 @@ object NewtypeGenSpec
       runGen(
         NewtypeGen.generate(myInt),
         cfg.copy(features = List(Feature.CatsEqTypeclass))
-      ) must beEqvTo(
-        """|final case class MyInt(
+      ) must beEqvTo("""|final case class MyInt(
            |  value: Int
            |) extends AnyVal
            |
            |object MyInt {
            |  implicit val MyIntEq: Eq[MyInt] = Eq.fromUniversalEquals
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
 
     "generate circe codecs" >> {
@@ -95,8 +93,7 @@ object NewtypeGenSpec
       runGen(
         NewtypeGen.generate(myInt),
         cfg.copy(features = List(Feature.TapirSchema()))
-      ) must beEqvTo(
-        """|final case class MyInt(
+      ) must beEqvTo("""|final case class MyInt(
            |  value: Int
            |) extends AnyVal
            |
@@ -104,8 +101,7 @@ object NewtypeGenSpec
            |  implicit val MyIntSchema: Schema[MyInt] =
            |    Schema.derived[MyInt]
            |      .description("The Int type")
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
 
     "generate comments" >> {
@@ -116,6 +112,39 @@ object NewtypeGenSpec
            |final case class MyInt(
            |  value: Int
            |) extends AnyVal""".fix.asRight
+      )
+    }
+
+    "escape reserved words" >> {
+      val a = newtype("case")
+        .generic(GenericDef.of("P", TypeRef.spec("val"), TypeRef.spec("class")))
+        .baseType(TypeRef.spec("object", TypeRef.gen("P")))
+        .build
+
+      runGen(
+        NewtypeGen.generate(a),
+        cfg.copy(
+          features = List(
+            Feature.TapirSchema(),
+            Feature.CatsEqTypeclass,
+            Feature.CirceCodecs()
+          )
+        )
+      ) must beEqvTo(
+        """|final case class `case`[P <: `val` with `class`](
+          |  value: `object`[P]
+          |) extends AnyVal
+          |
+          |object `case` {
+          |  implicit def caseSchema[P:Schema]: Schema[`case`[P]] =
+          |    Schema.derived[`case`[P]]
+          |  
+          |  implicit def caseEq[P]: Eq[`case`[P]] = Eq.fromUniversalEquals
+          |  
+          |  implicit def caseEncoder[P:Encoder]: Encoder[`case`[P]] = Encoder[`object`[P]].contramap(_.value)
+          |  
+          |  implicit def caseDecoder[P:Decoder]: Decoder[`case`[P]] = Decoder[`object`[P]].map(`case`(_))
+          |}""".fix.asRight
       )
     }
   }

@@ -264,10 +264,11 @@ object EnumGenSpec
     }
 
     "generate tapir Schema" >> {
+      val s = "\"\"\""
       runGen(
         EnumGen.generate(testEnum),
         cfg.copy(features = List(Feature.TapirSchema()))
-      ) must beEqvTo("""|sealed trait Colors extends Product with Serializable
+      ) must beEqvTo(s"""|sealed trait Colors extends Product with Serializable
            |
            |object Colors {
            |  case object Red extends Colors
@@ -291,10 +292,58 @@ object EnumGenSpec
            |  }
            |  
            |  implicit val ColorsSchema: Schema[Colors] =
-           |    Schema(SchemaType.SString)
-           |      .description("The Colors enum")
-           |      .validate(Validator.enum(values, x => Some(asString(x))))
+           |    Schema(SchemaType.SString())
+           |      .description($s|The Colors enum
+           |
+           |* `red` - Red color
+           |* `green` - Green color
+           |* `blue` - Blue color$s.stripMargin)
+           |      .validate(Validator.enumeration(values, x => Some(asString(x)), Some(Schema.SName("Colors"))))
            |}""".fix.asRight)
+    }
+
+    "escapes reserved words" >> {
+      val e = enum("class")
+        .values(enumValue("val"))
+        .build
+      runGen(
+        EnumGen.generate(e),
+        cfg.copy(
+          features = List(
+            Feature.TapirSchema(),
+            Feature.CatsEqTypeclass,
+            Feature.CirceCodecs()
+          )
+        )
+      ) must beEqvTo(
+        """|sealed trait `class` extends Product with Serializable
+          |
+          |object `class` {
+          |  case object `val` extends `class`
+          |  
+          |  val values: List[`class`] = List(
+          |    `val`
+          |  )
+          |  
+          |  val asString: `class` => String = {
+          |    case `val` => "val"
+          |  }
+          |  
+          |  val fromString: PartialFunction[String, `class`] = {
+          |    case "val" => `val`
+          |  }
+          |  
+          |  implicit val classSchema: Schema[`class`] =
+          |    Schema(SchemaType.SString())
+          |      .validate(Validator.enumeration(values, x => Some(asString(x)), Some(Schema.SName("class"))))
+          |  
+          |  implicit val classEq: Eq[`class`] = Eq.fromUniversalEquals
+          |  
+          |  implicit val classEncoder: Encoder[`class`] = Encoder[String].contramap(`class`.asString(_))
+          |  
+          |  implicit val classDecoder: Decoder[`class`] = Decoder[String].emap(v => `class`.fromString.lift(v).toRight("Invalid enum value `class`." + v))
+          |}""".fix.asRight
+      )
     }
   }
 }

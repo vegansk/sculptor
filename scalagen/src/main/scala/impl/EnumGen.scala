@@ -7,6 +7,8 @@ import sculptor.ast._
 
 object EnumGen extends GenHelpers {
 
+  import ScalaIdent._
+
   def generateEnumValue(genComment: Boolean)(e: EnumValue,
                                              enumType: Doc): List[Doc] =
     Option(genComment)
@@ -14,7 +16,7 @@ object EnumGen extends GenHelpers {
       .flatMap(_ => e.comment)
       .map(c => Doc.text(s"// $c"))
       .toList ++
-      List(extend(caseObject(Doc.text(e.name.name)), enumType))
+      List(extend(caseObject(e.name), enumType))
 
   def generateValues(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
     val prefix = Doc.text("val values: List[") + enumType + Doc.text(
@@ -27,7 +29,7 @@ object EnumGen extends GenHelpers {
         Doc
           .intercalate(
             Doc.comma + Doc.lineOrSpace,
-            e.values.toList.map(v => Doc.text(v.name.name))
+            e.values.toList.map(v => Doc.text(v.name.asScalaId))
           )
       )(prefix, postfix, indent)
     )
@@ -40,7 +42,7 @@ object EnumGen extends GenHelpers {
     val postfix = functionPostfix
 
     val cases = e.values.map { v =>
-      Doc.text(s"""case ${v.name.name} => "${v.value}"""")
+      Doc.text(s"""case ${v.name.asScalaId} => "${v.value}"""")
     }
 
     ok(
@@ -57,7 +59,7 @@ object EnumGen extends GenHelpers {
     val postfix = functionPostfix
 
     val cases = e.values.map { v =>
-      Doc.text(s"""case "${v.value}" => ${v.name.name}""")
+      Doc.text(s"""case "${v.value}" => ${v.name.asScalaId}""")
     }
 
     ok(
@@ -128,13 +130,13 @@ object EnumGen extends GenHelpers {
     for {
       indent <- getIndent
 
-      typ = createTypeExpr(e.name.name, Nil)
+      typ = createTypeExpr(e.name, Nil)
 
       comment <- getGenerateComments.map(doc(_)(typeComment(e, typ)))
 
-      trait_ = adtSealedTrait(typ)
+      trait_ = adtSealedTrait(e.name)
 
-      enumPrefix = objectPrefix(typ)
+      enumPrefix = objectPrefix(e.name)
 
       body <- generateEnumBody(e, typ, indent)
 

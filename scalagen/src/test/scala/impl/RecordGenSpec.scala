@@ -97,8 +97,7 @@ object RecordGenSpec
       runGen(
         RecordGen.generate(rec),
         cfg.copy(features = List(Feature.TapirSchema()))
-      ) must beEqvTo(
-        """|final case class Record[A](
+      ) must beEqvTo("""|final case class Record[A](
            |  id: Int,
            |  nameO: Option[A]
            |)
@@ -109,8 +108,7 @@ object RecordGenSpec
            |      .description("The Record")
            |      .modify(_.id)(_.description("The id"))
            |      .modify(_.nameO)(_.description("The name"))
-           |}""".fix.asRight
-      )
+           |}""".fix.asRight)
     }
 
     "generate comments" >> {
@@ -130,17 +128,57 @@ object RecordGenSpec
       runGen(
         RecordGen.generate(rec),
         cfg.copy(features = Feature.AdditionalCode.pure[List])
-      ) must beEqvTo(
-        """|final case class Record[A](
+      ) must beEqvTo("""|final case class Record[A](
            |  id: Int,
            |  nameO: Option[A]
            |)
            |
            |object Record {
            |  /* Additional comment */
-           |}""".fix.asRight
+           |}""".fix.asRight)
+    }
+
+    "escape reserved words" >> {
+      val r = record("case")
+        .generic("A".gen)
+        .field("val", "object".spec)
+        .build
+
+      runGen(
+        RecordGen.generate(r),
+        cfg.copy(
+          features = List(
+            Feature.TapirSchema(),
+            Feature.CatsEqTypeclass,
+            Feature.CirceCodecs()
+          )
+        )
+      ) must beEqvTo(
+        """final case class `case`[A](
+          |  `val`: `object`
+          |)
+          |
+          |object `case` {
+          |  implicit def caseSchema[A:Schema]: Schema[`case`[A]] =
+          |    Schema.derived[`case`[A]]
+          |  
+          |  implicit def caseEq[A]: Eq[`case`[A]] = Eq.fromUniversalEquals
+          |  
+          |  implicit def caseEncoder[A:Encoder]: Encoder.AsObject[`case`[A]] = Encoder.AsObject.instance[`case`[A]] { v =>
+          |    JsonObject(
+          |      "val" := v.`val`
+          |    )
+          |  }
+          |  
+          |  implicit def caseDecoder[A:Decoder]: Decoder[`case`[A]] = Decoder.instance[`case`[A]] { c =>
+          |    for {
+          |      `val` <- c.downField("val").as[`object`]
+          |    } yield `case`[A](
+          |      `val`
+          |    )
+          |  }
+          |}""".fix.asRight
       )
     }
   }
-
 }

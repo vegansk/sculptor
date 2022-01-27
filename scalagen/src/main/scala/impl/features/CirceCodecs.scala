@@ -9,48 +9,52 @@ import sculptor.ast._
 
 final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
 
-  private def genNames(encType: String,
+  import ScalaIdent._
+
+  private def genNames(encType: Ident,
                        params0: List[GenericDef],
                        objEncoder: Boolean) = {
-    val params1 = params0.map(p => Doc.text(p.`type`.name.name))
+    val params1 = params0.map(p => Doc.text(p.`type`.name.asScalaId))
     val params = createParameters0(params1)
     val paramsEnc = createParameters0(params1, Doc.text(":Encoder"))
     val paramsDec = createParameters0(params1, Doc.text(":Decoder"))
     val (enc0, dec0) = params0.toNel.fold(
       (
-        Doc.text(s"implicit val ${encType}Encoder"),
-        Doc.text(s"implicit val ${encType}Decoder")
+        Doc.text(s"implicit val ${encType.name}Encoder"),
+        Doc.text(s"implicit val ${encType.name}Decoder")
       )
     ) { l =>
       (
-        Doc.text(s"implicit def ${encType}Encoder") + paramsEnc,
-        Doc.text(s"implicit def ${encType}Decoder") + paramsDec
+        Doc.text(s"implicit def ${encType.name}Encoder") + paramsEnc,
+        Doc.text(s"implicit def ${encType.name}Decoder") + paramsDec
       )
     }
     (
       enc0 + Doc.text(
-        s""": ${if (objEncoder) "Encoder.AsObject" else "Encoder"}[$encType"""
+        s""": ${if (objEncoder) "Encoder.AsObject" else "Encoder"}[${encType.asScalaId}"""
       ) + params + Doc.char(']'),
-      dec0 + Doc.text(s": Decoder[$encType") + params + Doc.char(']')
+      dec0 + Doc.text(s": Decoder[${encType.asScalaId}") + params + Doc.char(
+        ']'
+      )
     )
   }
 
   override def handleNewtype(n: Newtype) = {
-    val (enc, dec) = genNames(n.name.name, n.parameters, false)
+    val (enc, dec) = genNames(n.name, n.parameters, false)
     val valType = createTypeRef(n.baseType)
     ok(
       List(
         enc + Doc.text(" = Encoder[") + valType + Doc
           .text("].contramap(_.value)"),
         dec + Doc.text(" = Decoder[") + valType + Doc
-          .text(s"].map(${n.name.name}(_))")
+          .text(s"].map(${n.name.asScalaId}(_))")
       )
     )
   }
 
   override def handleEnum(e: Enum) = {
-    val name = e.name.name
-    val (enc, dec) = genNames(name, Nil, false)
+    val name = e.name.asScalaId
+    val (enc, dec) = genNames(e.name, Nil, false)
     ok(
       List(
         enc + Doc.text(s" = Encoder[String].contramap($name.asString(_))"),
@@ -77,13 +81,15 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
           Doc.char(',') + line,
           tag ++
             fields.map(
-              f => Doc.text(s""""${f.name.name}" := $objName.${f.name.name}""")
+              f =>
+                Doc
+                  .text(s""""${f.name.name}" := $objName.${f.name.asScalaId}""")
             )
         )
     )(prefix, postfix, indent)
   }
 
-  private def genRecordDecoderBody(typeName: String,
+  private def genRecordDecoderBody(typeName: Ident,
                                    tag: Option[String],
                                    params0: List[GenericDef],
                                    cursorName: String,
@@ -96,10 +102,10 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
         Doc
           .intercalate(
             Doc.char(',') + Doc.lineOrSpace,
-            fields.map(f => Doc.text(f.name.name))
+            fields.map(f => Doc.text(f.name.asScalaId))
           )
       )(
-        Doc.text(s" yield $typeName") + params + Doc.text("("),
+        Doc.text(s" yield ${typeName.asScalaId}") + params + Doc.text("("),
         caseClassPostfix,
         indent
       )
@@ -110,7 +116,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
           fields.map(
             f =>
               Doc.text(
-                s"""${f.name.name} <- $cursorName.downField("${f.name.name}").as["""
+                s"""${f.name.asScalaId} <- $cursorName.downField("${f.name.name}").as["""
               ) + createTypeRef(f.`type`) + Doc.char(']')
           )
         )
@@ -120,9 +126,8 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
   override def handleRecord(r: Record) =
     for {
       indent <- getIndent
-      name = r.name.name
       typ = createTypeRef(r.ref)
-      (enc, dec) = genNames(name, r.parameters, true)
+      (enc, dec) = genNames(r.name, r.parameters, true)
       encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] { v =>")
       encoder = bracketBy(
@@ -133,7 +138,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
       )
       decoder = bracketBy(
         genRecordDecoderBody(
-          name,
+          r.name,
           None,
           r.parameters,
           "c",
@@ -154,7 +159,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
       line,
       a.constructors.toList.map { c =>
         val tagValue = c.tag.getOrElse(c.name.name)
-        val consRef = createTypeExpr(c.name.name, c.parameters)
+        val consRef = createTypeExpr(c.name, c.parameters)
         val pattern = if (c.fields.nonEmpty) {
           Doc.text("v: ") + consRef
         } else if (!isCaseObject(a, c)) {
@@ -177,7 +182,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
           line,
           a.constructors.toList.map { c =>
             val tagValue = c.tag.getOrElse(c.name.name)
-            val consRef = createTypeExpr(c.name.name, c.parameters)
+            val consRef = createTypeExpr(c.name, c.parameters)
             val prefix0 = Doc.text(s"""case "$tagValue" => """)
             if (isCaseObject(a, c)) {
               prefix0 + Doc.text(s"Right(") + consRef + Doc.text(")")
@@ -185,7 +190,7 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
               prefix0 + Doc.text(s"Right(") + consRef + Doc.text("())")
             else
               prefix0 + genRecordDecoderBody(
-                c.name.name,
+                c.name,
                 tagValue.some,
                 c.parameters,
                 cursorName,
@@ -204,9 +209,8 @@ final class CirceCodecs(adtTag: String) extends Feature with GenHelpers {
   override def handleADT(a: ADT) =
     for {
       indent <- getIndent
-      name = a.name.name
       typ = createTypeRef(a.ref)
-      (enc, dec) = genNames(name, a.parameters, true)
+      (enc, dec) = genNames(a.name, a.parameters, true)
       encPrefix = enc + Doc.text(s" = Encoder.AsObject.instance[") + typ + Doc
         .text("] {")
       encoder = bracketBy(genADTEncoderBody(a, indent))(

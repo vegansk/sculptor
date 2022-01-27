@@ -7,16 +7,18 @@ import sculptor.ast._
 
 object ADTGen extends GenHelpers {
 
+  import ScalaIdent._
+
   def generateConstructor(c: ADTConstructor,
                           adtType: Doc,
                           indent: Int): Result[List[Doc]] =
     for {
       genComments <- getGenerateComments
       comment = optionalComment(genComments)(c.comment)
-      typ = createTypeExpr(c.name.name, c.parameters)
+      typ = createTypeExpr(c.name, c.parameters)
       typeDef = {
         if (c.fields.isEmpty && c.parameters.isEmpty)
-          caseObject(typ)
+          caseObject0(typ)
         else if (c.fields.isEmpty)
           caseClassPrefix(typ) + caseClassPostfix
         else
@@ -35,9 +37,9 @@ object ADTGen extends GenHelpers {
       .map(Doc.intercalate(line, _))
 
   def generateHelper(c: ADTConstructor, adtType: Doc, indent: Int): Doc = {
-    val name = decapitalize(c.name.name)
-    val fName = createTypeExpr(name, c.parameters)
-    val fImpl = createTypeExpr(c.name.name, c.parameters)
+    val name = decapitalize(c.name.asScalaId)
+    val fName = createTypeExpr0(name, c.parameters)
+    val fImpl = createTypeExpr(c.name, c.parameters)
     (c.parameters, c.fields) match {
       case (Nil, Nil) =>
         Doc.text("val ") + fName + Doc.text(": ") + adtType + Doc.text(" = ") + fImpl
@@ -51,7 +53,10 @@ object ADTGen extends GenHelpers {
         )(fName + Doc.char('('), Doc.char(')'), indent)
         val call = bracketBy(
           Doc
-            .intercalate(paramDelim, fields.map(f => Doc.text(f.name.name)))
+            .intercalate(
+              paramDelim,
+              fields.map(f => Doc.text(f.name.asScalaId))
+            )
         )(fImpl + Doc.char('('), Doc.char(')'), indent)
         Doc.text("def ") + func + Doc.text(": ") + adtType + Doc.text(" = ") + call
       }
@@ -74,17 +79,15 @@ object ADTGen extends GenHelpers {
 
       genHelpers <- getGenerateAdtConstructorsHelpers
 
-      typ = createTypeExpr(a.name.name, a.parameters)
+      typ = createTypeExpr(a.name, a.parameters)
 
       comment = Option(genComments)
         .filter(identity)
         .map(_ => typeComment(a, typ))
 
-      objType = createTypeExpr(a.name.name, Nil)
+      trait_ = adtSealedTrait0(typ)
 
-      trait_ = adtSealedTrait(typ)
-
-      implPrefix = objectPrefix(objType)
+      implPrefix = objectPrefix(a.name)
 
       implBody <- generateImplBody(a, typ, indent)
 

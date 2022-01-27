@@ -66,5 +66,16 @@ object AliasGenSpec
       )
     }
 
+    "escape reserved words" >> {
+      val a = alias("case")
+        .generic(GenericDef.of("P", TypeRef.spec("val"), TypeRef.spec("class")))
+        .baseType(TypeRef.spec("object", TypeRef.gen("P")))
+        .build
+
+      runGen(AliasGen.generate(a), cfg) must beEqvTo(
+        "type `case`[P <: `val` with `class`] = `object`[P]".fix.asRight
+      )
+    }
+
   }
 }
