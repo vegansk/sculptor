@@ -9,18 +9,20 @@ import sculptor.common._
 
 trait GenHelpers extends CommonGenHelpers {
 
+  import ScalaIdent._
+
   def createTypeRef(r: TypeRef): Doc = {
     def generic(g: TypeRef.Generic) =
-      createTypeExpr(g.name.name, Nil)
+      createTypeExpr(g.name, Nil)
 
     def specialized(s: TypeRef.Specialized) =
-      createTypeExpr0(s.name.mkString("."), s.parameters.map(createTypeRef))
+      createTypeExpr00(s.name.asScalaId, s.parameters.map(createTypeRef))
 
     TypeRef.cata(specialized, generic)(r)
   }
 
   def createGenericParam(g: GenericDef): Doc =
-    Doc.text(g.`type`.name.name) + g.`extends`.toNel
+    Doc.text(g.`type`.name.asScalaId) + g.`extends`.toNel
       .map(
         l =>
           Doc.text(" <: ") + Doc
@@ -43,14 +45,17 @@ trait GenHelpers extends CommonGenHelpers {
   def createParameters(l0: List[GenericDef]): Doc =
     createParameters0(l0.map(p => Doc.text(p.`type`.name.name)))
 
-  def createTypeExpr0(name: String, parameters: List[Doc]): Doc =
+  def createTypeExpr00(name: String, parameters: List[Doc]): Doc =
     Doc.text(name) + createParameters0(parameters)
 
-  def createTypeExpr(name: String, parameters: List[GenericDef]): Doc =
+  def createTypeExpr(name: Ident, parameters: List[GenericDef]): Doc =
+    createTypeExpr0(name.asScalaId, parameters)
+
+  def createTypeExpr0(name: String, parameters: List[GenericDef]): Doc =
     Doc.text(name) + createParameters(parameters)
 
   def createField0(name: Ident, `type`: TypeRef): Doc =
-    Doc.text(name.name) + Doc.text(": ") + createTypeRef(`type`)
+    Doc.text(name.asScalaId) + Doc.text(": ") + createTypeRef(`type`)
 
   def createField(withComment: Boolean)(f: FieldDef): Doc =
     createField0(f.name, f.`type`) + optionalComment(withComment)(f.comment)
@@ -88,10 +93,16 @@ trait GenHelpers extends CommonGenHelpers {
 
   val caseClassPostfix = Doc.char(')')
 
-  def caseObject(`type`: Doc): Doc =
-    Doc.text("case object ") + `type`
+  def caseObject(`type`: Ident): Doc =
+    caseObject0(Doc.text(`type`.asScalaId))
 
-  def objectPrefix(`type`: Doc): Doc =
+  def caseObject0(`type`: Doc): Doc =
+    Doc.text(s"case object ") + `type`
+
+  def objectPrefix(`type`: Ident): Doc =
+    objectPrefix0(Doc.text(`type`.asScalaId))
+
+  def objectPrefix0(`type`: Doc): Doc =
     Doc.text("object ") + `type` + Doc.text(" {")
 
   val objectPostfix = Doc.char('}')
@@ -108,6 +119,18 @@ trait GenHelpers extends CommonGenHelpers {
   def extend(what: Doc, `with`: Doc): Doc =
     what + Doc.text(" extends ") + `with`
 
-  def adtSealedTrait(typ: Doc): Doc =
+  def adtSealedTrait(typ: Ident): Doc =
+    adtSealedTrait0(Doc.text(typ.asScalaId))
+
+  def adtSealedTrait0(typ: Doc): Doc =
     extend(sealedTrait((typ)), Doc.text("Product with Serializable"))
+
+  def mkQuotedString(s: String): String = {
+    val lines = s.linesIterator.toList
+    if (lines.length > 1) {
+      "\"\"\"" + lines.map("|" + _).mkString("\n") + "\"\"\".stripMargin"
+    } else {
+      "\"" + s + "\""
+    }
+  }
 }

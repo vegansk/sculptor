@@ -14,7 +14,7 @@ object RecordGen extends GenHelpers {
 
       genComments <- getGenerateComments
 
-      typ = createTypeExpr(r.name.name, r.parameters)
+      typ = createTypeExpr(r.name, r.parameters)
 
       comment = Option(genComments)
         .filter(identity)
@@ -29,7 +29,7 @@ object RecordGen extends GenHelpers {
       features <- features.collectFeatures(_.handleRecord(r))
 
       result = comment.toList ++ List(record) ++ features.toNel.map { f =>
-        val prefix = objectPrefix(createTypeExpr(r.name.name, Nil))
+        val prefix = objectPrefix(r.name)
         bracketBy(
           Doc
             .intercalate(dblLine, f.toList)

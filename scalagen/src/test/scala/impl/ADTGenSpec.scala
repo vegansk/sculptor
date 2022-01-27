@@ -257,25 +257,23 @@ object ADTGenSpec
            |  ) extends MaybeInt
            |  
            |  implicit val MaybeIntSchema: Schema[MaybeInt] = {
-           |    implicit val EmptySchema: Schema[Empty.type] =
+           |    val EmptySchema =
            |      Schema.derived[Empty.type]
-           |    implicit val JustIntSchema: Schema[JustInt] =
+           |    val JustIntSchema =
            |      Schema.derived[JustInt]
-           |    mouse.ignore(EmptySchema)
-           |    mouse.ignore(JustIntSchema)
            |    val base = Schema.derived[MaybeInt]
            |    val mappings = Map(
-           |      "Empty" -> EmptySchema.schemaType,
-           |      "JustInt" -> JustIntSchema.schemaType
+           |      "Empty" -> (EmptySchema.schemaType -> EmptySchema.name),
+           |      "JustInt" -> (JustIntSchema.schemaType -> JustIntSchema.name)
            |    ).collect {
-           |      case (k, sp: SchemaType.SProduct) => (k, SchemaType.SRef(sp.info))
+           |      case (k, (_: SchemaType.SProduct[_], Some(name))) => (k, SchemaType.SRef(name))
            |    }
            |    base.copy(
            |      schemaType = base.schemaType match {
-           |        case sc: SchemaType.SCoproduct =>
+           |        case sc: SchemaType.SCoproduct[_] =>
            |          sc.addDiscriminatorField(
            |            FieldName("__tag", "__tag"),
-           |            discriminatorMappingOverride = mappings
+           |            discriminatorMapping = mappings
            |          )
            |        case _ => sys.error("unexpected schemaType")
            |      }
@@ -299,33 +297,104 @@ object ADTGenSpec
            |  ) extends Maybe[A]
            |  
            |  implicit def MaybeSchema[A:Schema]: Schema[Maybe[A]] = {
-           |    implicit val EmptySchema: Schema[Empty[A]] =
+           |    val EmptySchema =
            |      Schema.derived[Empty[A]]
            |        .description("The empty value")
-           |    implicit val JustSchema: Schema[Just[A]] =
+           |    val JustSchema =
            |      Schema.derived[Just[A]]
            |        .description("The non empty value")
            |        .modify(_.value)(_.description("The value"))
-           |    mouse.ignore(EmptySchema)
-           |    mouse.ignore(JustSchema)
            |    val base = Schema.derived[Maybe[A]]
            |    val mappings = Map(
-           |      "Empty" -> EmptySchema.schemaType,
-           |      "Just" -> JustSchema.schemaType
+           |      "Empty" -> (EmptySchema.schemaType -> EmptySchema.name),
+           |      "Just" -> (JustSchema.schemaType -> JustSchema.name)
            |    ).collect {
-           |      case (k, sp: SchemaType.SProduct) => (k, SchemaType.SRef(sp.info))
+           |      case (k, (_: SchemaType.SProduct[_], Some(name))) => (k, SchemaType.SRef(name))
            |    }
            |    base.copy(
            |      schemaType = base.schemaType match {
-           |        case sc: SchemaType.SCoproduct =>
+           |        case sc: SchemaType.SCoproduct[_] =>
            |          sc.addDiscriminatorField(
            |            FieldName("__customTag", "__customTag"),
-           |            discriminatorMappingOverride = mappings
+           |            discriminatorMapping = mappings
            |          )
            |        case _ => sys.error("unexpected schemaType")
            |      }
            |    )
            |  }
+           |}""".fix.asRight
+      )
+    }
+
+    "escape reserved words" >> {
+      val t = adt("type")
+        .constructors(cons("if"), cons("case").field("catch", "Int".spec))
+        .build
+      runGen(
+        ADTGen.generate(t),
+        cfg.copy(
+          features = List(
+            Feature.TapirSchema(),
+            Feature.CirceCodecs(),
+            Feature.CatsEqTypeclass
+          )
+        )
+      ) must beEqvTo(
+        """|sealed trait `type` extends Product with Serializable
+           |
+           |object `type` {
+           |  case object `if` extends `type`
+           |  final case class `case`(
+           |    `catch`: Int
+           |  ) extends `type`
+           |  
+           |  implicit val typeSchema: Schema[`type`] = {
+           |    val ifSchema =
+           |      Schema.derived[`if`.type]
+           |    val caseSchema =
+           |      Schema.derived[`case`]
+           |    val base = Schema.derived[`type`]
+           |    val mappings = Map(
+           |      "if" -> (ifSchema.schemaType -> ifSchema.name),
+           |      "case" -> (caseSchema.schemaType -> caseSchema.name)
+           |    ).collect {
+           |      case (k, (_: SchemaType.SProduct[_], Some(name))) => (k, SchemaType.SRef(name))
+           |    }
+           |    base.copy(
+           |      schemaType = base.schemaType match {
+           |        case sc: SchemaType.SCoproduct[_] =>
+           |          sc.addDiscriminatorField(
+           |            FieldName("__tag", "__tag"),
+           |            discriminatorMapping = mappings
+           |          )
+           |        case _ => sys.error("unexpected schemaType")
+           |      }
+           |    )
+           |  }
+           |  
+           |  implicit val typeEncoder: Encoder.AsObject[`type`] = Encoder.AsObject.instance[`type`] {
+           |    case `if` => JsonObject(
+           |      "__tag" := "if"
+           |    )
+           |    case v: `case` => JsonObject(
+           |      "__tag" := "case",
+           |      "catch" := v.`catch`
+           |    )
+           |  }
+           |  
+           |  implicit val typeDecoder: Decoder[`type`] = Decoder.instance[`type`] { c =>
+           |    c.downField("__tag").as[String].flatMap {
+           |      case "if" => Right(`if`)
+           |      case "case" => for {
+           |        `catch` <- c.downField("catch").as[Int]
+           |      } yield `case`(
+           |        `catch`
+           |      )
+           |      case tag => Left(DecodingFailure("Invalid ADT tag value type." + tag, c.history))
+           |    }
+           |  }
+           |  
+           |  implicit val typeEq: Eq[`type`] = Eq.fromUniversalEquals
            |}""".fix.asRight
       )
     }
