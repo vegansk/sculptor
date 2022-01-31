@@ -99,8 +99,10 @@ object NewtypeGenSpec
            |
            |object MyInt {
            |  implicit val MyIntSchema: Schema[MyInt] =
-           |    Schema.derived[MyInt]
+           |    implicitly[Schema[Int]]
+           |      .map(x => Some(MyInt(x)))(_.value)
            |      .description("The Int type")
+           |      .name(Schema.SName("MyInt"))
            |}""".fix.asRight)
     }
 
@@ -121,6 +123,7 @@ object NewtypeGenSpec
         .baseType(TypeRef.spec("object", TypeRef.gen("P")))
         .build
 
+      // TODO: Should be changed after issue #256
       runGen(
         NewtypeGen.generate(a),
         cfg.copy(
@@ -137,7 +140,9 @@ object NewtypeGenSpec
           |
           |object `case` {
           |  implicit def caseSchema[P:Schema]: Schema[`case`[P]] =
-          |    Schema.derived[`case`[P]]
+          |    implicitly[Schema[`object`[P]]]
+          |      .map(x => Some(`case`(x)))(_.value)
+          |      .name(Schema.SName("case"))
           |  
           |  implicit def caseEq[P]: Eq[`case`[P]] = Eq.fromUniversalEquals
           |  
