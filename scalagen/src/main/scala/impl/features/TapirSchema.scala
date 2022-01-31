@@ -159,9 +159,30 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
         )
     }
 
+  private def mkNewtypeSchema(n: Newtype): Result[Doc] =
+    getIndent.map { indent =>
+      val typeclassDef = createTypeclassDef(n.ref, "Schema", true)
+      val baseSchema = Doc.text("implicitly[Schema[") + createTypeRef(
+        n.baseType
+      ) + Doc.text("]]")
+      val map =
+        Doc.text(s""".map(x => Some(${n.name.asScalaId}(x)))(_.value)""")
+      val description = mkDescription(n.comment)
+      val name = Doc.text(s""".name(Schema.SName("${n.name.name}"))""")
+      val body =
+        baseSchema
+          .line(
+            List(map.some, description, name.some).flattenOption
+              .intercalate(Doc.line)
+          )
+          .nested(indent)
+      typeclassDef
+        .line(body)
+        .nested(indent)
+    }
+
   override def handleNewtype(n: Newtype): Result[List[Doc]] =
-    // It just so happens that this works for newtypes as well.
-    mkRecordSchema(n, Nil).map(List(_))
+    mkNewtypeSchema(n).map(List(_))
 
   override def handleRecord(r: Record): Result[List[Doc]] =
     mkRecordSchema(r, r.fields.toList).map(List(_))
