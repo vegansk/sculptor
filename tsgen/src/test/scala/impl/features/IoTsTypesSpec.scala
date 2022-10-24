@@ -131,40 +131,84 @@ object IoTsTypesSpec
         .build
 
       "without namespaces" >> {
-        runFeature(IoTsTypes(feature).handleADT(a), cfg) must beEqvTo(
-          """|const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |  {__tag: t.literal("Empty")}, {}, "Empty"
-             |)
-             |
-             |const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
-             |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
-             |)
-             |
-             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
-             |  EmptyType(AType), JustType(AType)
-             |], "Maybe")""".fix.asRight
-        )
+
+        "without export" >> {
+          runFeature(IoTsTypes(feature).handleADT(a), cfg) must beEqvTo(
+            """|const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
+              |  {__tag: t.literal("Empty")}, {}, "Empty"
+              |)
+              |
+              |const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
+              |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
+              |)
+              |
+              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
+              |  EmptyType(AType), JustType(AType)
+              |], "Maybe")""".fix.asRight
+          )
+        }
+
+        "with export" >> {
+          runFeature(IoTsTypes(feature.copy(exportADTConstructorsCodecs = true)).handleADT(a), cfg) must beEqvTo(
+            """|export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
+              |  {__tag: t.literal("Empty")}, {}, "Empty"
+              |)
+              |
+              |export const JustType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Just<A>> = <A>(AType: t.Type<A>) => typeImpl(
+              |  {__tag: t.literal("Just"), value: AType}, {}, "Just"
+              |)
+              |
+              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
+              |  EmptyType(AType), JustType(AType)
+              |], "Maybe")""".fix.asRight
+          )
+        }
+
       }
 
       "with namespaces" >> {
-        runFeature(
-          IoTsTypes(feature).handleADT(a),
-          cfg.copy(generateAdtNs = true)
-        ) must beEqvTo(
-          """|const MaybeCodecs = {
-             |  EmptyType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Empty<A>> => typeImpl(
-             |    {__tag: t.literal("Empty")}, {}, "Empty"
-             |  ),
-             |  
-             |  JustType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Just<A>> => typeImpl(
-             |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
-             |  )
-             |}
-             |
-             |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
-             |  MaybeCodecs.EmptyType(AType), MaybeCodecs.JustType(AType)
-             |], "Maybe")""".fix.asRight
-        )
+
+        "without export" >> {
+          runFeature(
+            IoTsTypes(feature).handleADT(a),
+            cfg.copy(generateAdtNs = true)
+          ) must beEqvTo(
+            """|const MaybeCodecs = {
+              |  EmptyType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Empty<A>> => typeImpl(
+              |    {__tag: t.literal("Empty")}, {}, "Empty"
+              |  ),
+              |  
+              |  JustType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Just<A>> => typeImpl(
+              |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
+              |  )
+              |}
+              |
+              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
+              |  MaybeCodecs.EmptyType(AType), MaybeCodecs.JustType(AType)
+              |], "Maybe")""".fix.asRight
+          )
+        }
+
+        "with export" >> {
+          runFeature(
+            IoTsTypes(feature.copy(exportADTConstructorsCodecs = true)).handleADT(a),
+            cfg.copy(generateAdtNs = true)
+          ) must beEqvTo(
+            """|export const MaybeCodecs = {
+              |  EmptyType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Empty<A>> => typeImpl(
+              |    {__tag: t.literal("Empty")}, {}, "Empty"
+              |  ),
+              |  
+              |  JustType: <A>(AType: t.Type<A>): t.Tagged<"__tag", Maybe.Just<A>> => typeImpl(
+              |    {__tag: t.literal("Just"), value: AType}, {}, "Just"
+              |  )
+              |}
+              |
+              |export const MaybeType: <A>(AType: t.Type<A>) => t.Type<Maybe<A>> = <A>(AType: t.Type<A>) => t.union([
+              |  MaybeCodecs.EmptyType(AType), MaybeCodecs.JustType(AType)
+              |], "Maybe")""".fix.asRight
+          )
+        }
       }
 
       "with one element" >> {
