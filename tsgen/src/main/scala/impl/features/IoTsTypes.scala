@@ -285,14 +285,18 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
       genADTTaggedUnionImpl(indent, tagName, genAdtNs)(a)
   }
 
-  private def withCodec(a: ADT, indent: Int)(what: List[Doc]): Doc =
-    Doc
+  private def withCodec(a: ADT, indent: Int, generateExport: Boolean)(
+    what: List[Doc]
+  ): Doc = {
+    val codec = Doc
       .intercalate(Doc.char(',') + dblLine, what)
       .tightBracketBy(
         Doc.text(s"const ${a.name.name}${cfg.codecsObjectEnding} = {"),
         Doc.char('}'),
         indent
       )
+    if (generateExport) exported(codec) else codec
+  }
 
   private def adtConstructorTypeRef(a: ADT,
                                     c: ADTConstructor,
@@ -322,13 +326,16 @@ final case class IoTsTypes(cfg: TsFeature.IoTsTypes)
         genRecordTypeConst(
           opt,
           indent,
-          generateExport = false,
+          generateExport = cfg.exportADTConstructorsCodecs,
           generateField = genAdtNs
         )(c.name, tagName.some, a.parameters, List(tagExpr), c.fields, ref)
       }
       constructors = genAdtNs match {
         case false => constructors0
-        case _ => List(withCodec(a, indent)(constructors0))
+        case _ =>
+          List(
+            withCodec(a, indent, cfg.exportADTConstructorsCodecs)(constructors0)
+          )
       }
     } yield constructors ++ List(genADTTypeConst(indent, tagName, genAdtNs)(a))
 

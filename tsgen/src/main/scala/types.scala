@@ -13,7 +13,8 @@ object Feature {
                              typeMapping: IotsMapping = StdIotsMappings,
                              customIotsType: String = "",
                              customIotsTaggedType: String = "",
-                             codecsObjectEnding: String = "Codecs")
+                             codecsObjectEnding: String = "Codecs",
+                             exportADTConstructorsCodecs: Boolean = false)
       extends Feature
   case object Constructors extends Feature
   case object AdditionalCode extends Feature
