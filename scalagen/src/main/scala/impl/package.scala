@@ -43,4 +43,11 @@ package object impl {
         .get[GeneratorState]
         .map(s => Config.generateAdtConstructorsHelpers(s.config))
     )
+
+  def getGenerateParametersDefaultValues: Result[Boolean] =
+    EitherT.liftF(
+      State
+        .get[GeneratorState]
+        .map(s => Config.generateParametersDefaultValues(s.config))
+    )
 }

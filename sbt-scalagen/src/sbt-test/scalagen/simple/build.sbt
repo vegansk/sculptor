@@ -33,7 +33,8 @@ val caOptions = XsdScalagenOptions(
     generateCirceCodecs = false,
     generateXmlSerializers = true,
     generateKantanXPathDecoders = true,
-    generateOptionalTypes = XsdScalagenOptionalTypes.No
+    generateOptionalTypes = XsdScalagenOptionalTypes.No,
+    generateParametersDefaultValues = true
   )
 )
 
@@ -64,7 +65,8 @@ val xsdScalagenOptions = XsdScalagenOptions(
     generateCirceCodecs = true,
     generateXmlSerializers = true,
     generateKantanXPathDecoders = true,
-    generateOptionalTypes = XsdScalagenOptionalTypes.No
+    generateOptionalTypes = XsdScalagenOptionalTypes.No,
+    generateParametersDefaultValues = true
   )
 )
 

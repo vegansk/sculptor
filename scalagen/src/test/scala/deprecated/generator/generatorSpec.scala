@@ -11,10 +11,8 @@ object generatorSpec
     with ScalaCheck
     with sculptor.scalagen.testing.Helpers {
 
-  "scala generator" should {
-
+  object data {
     import ast._
-    import sculptor.scalagen.testing.paiges._
 
     val genConfig = generator.Config(
       "com.github.vegansk".some,
@@ -28,73 +26,22 @@ object generatorSpec
       )
     )
 
-    val gen = generator.create(genConfig)
-    import gen._
+    val newtypeDecl = NewtypeDecl(
+      TypeRef.definedFrom("NewString"),
+      TypeRef.std(Ident("String")),
+      None
+    )
 
-    "handle newtype" >> {
+    val enumDecl = EnumDecl(
+      TypeRef.definedFrom("Test"),
+      NEL.of(
+        EnumMemberDecl(Ident("A"), "valueA", Some("Value A")),
+        EnumMemberDecl(Ident("B"), "valueB", None),
+      ),
+      None
+    )
 
-      val t = NewtypeDecl(
-        TypeRef.definedFrom("NewString"),
-        TypeRef.std(Ident("String")),
-        None
-      )
-      newtypeDecl(t) must beEqvTo(
-        Doc.text("""|final case class NewString(
-                    |  value: String
-                    |)
-                    |object NewString {
-                    |  implicit val NewStringEq: Eq[NewString] = Eq.fromUniversalEquals
-                    |
-                    |  implicit val NewStringEncoder: Encoder[NewString] = Encoder[String].contramap(_.value)
-                    |
-                    |  implicit val NewStringDecoder: Decoder[NewString] = Decoder[String].map(NewString(_))
-                    |}""".stripMargin)
-      )
-    }
-
-    "handle enums" >> {
-      val e = EnumDecl(
-        TypeRef.definedFrom("Test"),
-        NEL.of(
-          EnumMemberDecl(Ident("A"), "valueA", Some("Value A")),
-          EnumMemberDecl(Ident("B"), "valueB", None),
-        ),
-        None
-      )
-
-      enumTypeDecl(e) must beEqvTo(
-        Doc.text("""|sealed trait Test extends Product with Serializable {
-                    |  val code: String
-                    |  val description: String
-                    |}""".stripMargin)
-      )
-      enumObjectDecl(e) must beEqvTo(
-        Doc.text("""|object Test {
-                    |  case object A extends Test {
-                    |    override val code = "valueA"
-                    |    override val description = "Value A"
-                    |  }
-                    |  case object B extends Test {
-                    |    override val code = "valueB"
-                    |    override val description = "valueB"
-                    |  }
-                    |
-                    |  lazy val values = Set[Test](A, B)
-                    |
-                    |  val fromString: String => Option[Test] = {
-                    |    s => values.find(_.code === s)
-                    |  }
-                    |
-                    |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
-                    |
-                    |  implicit val TestEncoder: Encoder[Test] = Encoder[String].contramap(_.code)
-                    |
-                    |  implicit val TestDecoder: Decoder[Test] = Decoder[String].emap(fromString(_).toRight("Invalid enum value"))
-                    |}""".stripMargin)
-      )
-    }
-
-    val ct = ComplexTypeDecl(
+    val complexTypeDecl = ComplexTypeDecl(
       TypeRef.definedFrom("Test"),
       None,
       NEL.of(
@@ -129,8 +76,92 @@ object generatorSpec
       None
     )
 
+    val complexTypeWithDocDecl = ComplexTypeDecl(
+      TypeRef.definedFrom("Test"),
+      None,
+      NEL.of(
+        FieldDecl(
+          Ident("id"),
+          "id",
+          TypeRef.std(Ident("Int")),
+          FieldConstraint.Optional,
+          false,
+          false,
+          "The id field".some
+        ),
+        FieldDecl(
+          Ident("str"),
+          "str",
+          TypeRef.std(Ident("String")),
+          FieldConstraint.Required,
+          false,
+          false,
+          "The str field".some
+        )
+      ),
+      "Complex type for test".some
+    )
+  }
+
+  "scala generator" should {
+
+    import sculptor.scalagen.testing.paiges._
+
+    val gen = generator.create(data.genConfig)
+    import gen._
+
+    "handle newtype" >> {
+
+      newtypeDecl(data.newtypeDecl) must beEqvTo(
+        Doc.text("""|final case class NewString(
+                    |  value: String
+                    |)
+                    |object NewString {
+                    |  implicit val NewStringEq: Eq[NewString] = Eq.fromUniversalEquals
+                    |
+                    |  implicit val NewStringEncoder: Encoder[NewString] = Encoder[String].contramap(_.value)
+                    |
+                    |  implicit val NewStringDecoder: Decoder[NewString] = Decoder[String].map(NewString(_))
+                    |}""".stripMargin)
+      )
+    }
+
+    "handle enums" >> {
+
+      enumTypeDecl(data.enumDecl) must beEqvTo(
+        Doc.text("""|sealed trait Test extends Product with Serializable {
+                    |  val code: String
+                    |  val description: String
+                    |}""".stripMargin)
+      )
+      enumObjectDecl(data.enumDecl) must beEqvTo(
+        Doc.text("""|object Test {
+                    |  case object A extends Test {
+                    |    override val code = "valueA"
+                    |    override val description = "Value A"
+                    |  }
+                    |  case object B extends Test {
+                    |    override val code = "valueB"
+                    |    override val description = "valueB"
+                    |  }
+                    |
+                    |  lazy val values = Set[Test](A, B)
+                    |
+                    |  val fromString: String => Option[Test] = {
+                    |    s => values.find(_.code === s)
+                    |  }
+                    |
+                    |  implicit val TestEq: Eq[Test] = Eq.fromUniversalEquals
+                    |
+                    |  implicit val TestEncoder: Encoder[Test] = Encoder[String].contramap(_.code)
+                    |
+                    |  implicit val TestDecoder: Decoder[Test] = Decoder[String].emap(fromString(_).toRight("Invalid enum value"))
+                    |}""".stripMargin)
+      )
+    }
+
     "handle complex types" >> {
-      complexTypeDecl(ct) must beEqvTo(
+      complexTypeDecl(data.complexTypeDecl) must beEqvTo(
         Doc.text("""|final case class Test(
              |  id: Option[Int],
              |  str: String,
@@ -159,34 +190,9 @@ object generatorSpec
     }
 
     "generate scaladoc for complex types" >> {
-      val ct0 = ComplexTypeDecl(
-        TypeRef.definedFrom("Test"),
-        None,
-        NEL.of(
-          FieldDecl(
-            Ident("id"),
-            "id",
-            TypeRef.std(Ident("Int")),
-            FieldConstraint.Optional,
-            false,
-            false,
-            "The id field".some
-          ),
-          FieldDecl(
-            Ident("str"),
-            "str",
-            TypeRef.std(Ident("String")),
-            FieldConstraint.Required,
-            false,
-            false,
-            "The str field".some
-          )
-        ),
-        "Complex type for test".some
-      )
 
       val gen0 = generator.create(
-        genConfig.copy(
+        data.genConfig.copy(
           parameters = generator.Parameters(
             generateComments = true,
             generateCatsEq = false,
@@ -198,7 +204,7 @@ object generatorSpec
         )
       )
 
-      gen0.complexTypeDecl(ct0) must beEqvTo(
+      gen0.complexTypeDecl(data.complexTypeWithDocDecl) must beEqvTo(
         Doc.text("""|/** Complex type for test
                     |  * @param id The id field
                     |  * @param str The str field
@@ -211,6 +217,56 @@ object generatorSpec
       )
     }
 
+    "generate parameters default values for complex types" >> {
+
+      "producing strong types" >> {
+        val gen0 = generator.create(
+          data.genConfig.copy(
+            parameters = generator.Parameters(
+              generateComments = true,
+              generateCatsEq = false,
+              generateCirceCodecs = false,
+              generateXmlSerializers = false,
+              generateKantanXPathDecoders = false,
+              generateOptionalTypes = generator.OptionalTypes.No,
+              generateParametersDefaultValues = true
+            )
+          )
+        )
+
+        gen0.complexTypeDecl(data.complexTypeDecl) must beEqvTo(
+          Doc.text("""|final case class Test(
+              |  id: Option[Int] = None,
+              |  str: String,
+              |  date: Instant
+              |)""".stripMargin)
+        )
+      }
+
+      "producing optional types" >> {
+        val gen0 = generator.create(
+          data.genConfig.copy(
+            parameters = generator.Parameters(
+              generateComments = true,
+              generateCatsEq = false,
+              generateCirceCodecs = false,
+              generateXmlSerializers = false,
+              generateKantanXPathDecoders = false,
+              generateOptionalTypes = generator.OptionalTypes.Generate(),
+              generateParametersDefaultValues = true
+            )
+          )
+        )
+
+        gen0.complexTypeDecl(data.complexTypeDecl) must beEqvTo(
+          Doc.text("""|final case class Test(
+              |  id: Option[Int] = None,
+              |  str: Option[String] = None,
+              |  date: Option[Instant] = None
+              |)""".stripMargin)
+        )
+      }
+    }
   }
 
 }

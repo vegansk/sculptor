@@ -149,7 +149,11 @@ object IoTsTypesSpec
         }
 
         "with export" >> {
-          runFeature(IoTsTypes(feature.copy(exportADTConstructorsCodecs = true)).handleADT(a), cfg) must beEqvTo(
+          runFeature(
+            IoTsTypes(feature.copy(exportADTConstructorsCodecs = true))
+              .handleADT(a),
+            cfg
+          ) must beEqvTo(
             """|export const EmptyType: <A>(AType: t.Type<A>) => t.Tagged<"__tag", Empty<A>> = <A>(AType: t.Type<A>) => typeImpl(
               |  {__tag: t.literal("Empty")}, {}, "Empty"
               |)
@@ -191,7 +195,8 @@ object IoTsTypesSpec
 
         "with export" >> {
           runFeature(
-            IoTsTypes(feature.copy(exportADTConstructorsCodecs = true)).handleADT(a),
+            IoTsTypes(feature.copy(exportADTConstructorsCodecs = true))
+              .handleADT(a),
             cfg.copy(generateAdtNs = true)
           ) must beEqvTo(
             """|export const MaybeCodecs = {

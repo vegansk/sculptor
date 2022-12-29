@@ -33,7 +33,8 @@ final case class Config(tabSize: Int = 2,
                         prefixCode: String = "",
                         generateComments: Boolean = true,
                         generateAdtConstructorsHelpers: Boolean = true,
-                        generateEnumsDescriptions: Boolean = false)
+                        generateEnumsDescriptions: Boolean = false,
+                        generateParametersDefaultValues: Boolean = false)
 
 object Config {
   def tabSize(c: Config): Int = c.tabSize
@@ -47,4 +48,6 @@ object Config {
     c.generateAdtConstructorsHelpers
   def generateEnumDescriptions(c: Config): Boolean =
     c.generateEnumsDescriptions
+  def generateParametersDefaultValues(c: Config): Boolean =
+    c.generateParametersDefaultValues
 }
