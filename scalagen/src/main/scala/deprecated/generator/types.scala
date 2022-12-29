@@ -26,7 +26,8 @@ final case class Parameters(generateComments: Boolean = true,
                             generateXmlSerializers: Boolean = false,
                             generateKantanXPathDecoders: Boolean = false,
                             generateOptionalTypes: OptionalTypes =
-                              OptionalTypes.No)
+                              OptionalTypes.No,
+                            generateParametersDefaultValues: Boolean = false)
 
 final case class ExternalType(name: String) extends AnyVal
 

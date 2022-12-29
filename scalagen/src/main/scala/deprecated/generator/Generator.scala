@@ -295,22 +295,42 @@ class Generator(config: Config) {
     */
   def typeExpr(f: FieldDecl,
                strongTypeExpr: Boolean = false,
-               requiredField: Boolean = false): Doc =
-    typeExprImpl(
-      f,
-      f.array,
-      isOptionalField(f) || (!requiredField && !strongTypeExpr && config.parameters.generateOptionalTypes.toBool),
-      config.parameters.generateOptionalTypes.strongTypesPrefix
-        .filter(_ => strongTypeExpr)
-    )
-
-  def fieldDecl(f: FieldDecl, requiredField: Boolean = false): Doc =
+               requiredField: Boolean = false,
+               generateDefaultValue: Boolean = false): Doc = {
+    val optionalField = isOptionalField(f) || (!requiredField && !strongTypeExpr && config.parameters.generateOptionalTypes.toBool)
+    val defaultValue = if (generateDefaultValue && optionalField) {
+      Some(text("= None"))
+    } else {
+      None
+    }
     spread(
       List(
-        ident(f.name) + char(':'),
-        typeExpr(f, requiredField = requiredField)
+        typeExprImpl(
+          f,
+          f.array,
+          optionalField,
+          config.parameters.generateOptionalTypes.strongTypesPrefix
+            .filter(_ => strongTypeExpr)
+        ).some,
+        defaultValue
+      ).flattenOption
+    )
+  }
+
+  def fieldDecl(f: FieldDecl,
+                requiredField: Boolean,
+                generateDefaultValue: Boolean = false): Doc = {
+    spread(
+      List(
+        (ident(f.name) + char(':')),
+        typeExpr(
+          f,
+          requiredField = requiredField,
+          generateDefaultValue = generateDefaultValue
+        )
       )
     )
+  }
 
   def complexTypeClassDecl(ct: ComplexTypeDecl): Doc = {
     val prefix = spread(List(text("final case class"), ident(ct.`type`.name))) + char(
@@ -321,7 +341,14 @@ class Generator(config: Config) {
     bracketBy(
       intercalate(
         comma + line,
-        ct.fields.toList.map(f => fieldDecl(f, isRequiredField(ct.`type`, f)))
+        ct.fields.toList.map(
+          f =>
+            fieldDecl(
+              f,
+              isRequiredField(ct.`type`, f),
+              config.parameters.generateParametersDefaultValues
+          )
+        )
       )
     )(prefix, postfix)
   }
