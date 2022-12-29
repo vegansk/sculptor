@@ -106,6 +106,25 @@ object NewtypeGenSpec
            |}""".fix.asRight)
     }
 
+    "generate lazy tapir Schema" >> {
+      runGen(
+        NewtypeGen.generate(myInt),
+        cfg.copy(
+          features = List(Feature.TapirSchema(schemaLazyInstances = true))
+        )
+      ) must beEqvTo("""|final case class MyInt(
+           |  value: Int
+           |) extends AnyVal
+           |
+           |object MyInt {
+           |  implicit lazy val MyIntSchema: Schema[MyInt] =
+           |    implicitly[Schema[Int]]
+           |      .map(x => Some(MyInt(x)))(_.value)
+           |      .description("The Int type")
+           |      .name(Schema.SName("MyInt"))
+           |}""".fix.asRight)
+    }
+
     "generate comments" >> {
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Newtype MyInt:

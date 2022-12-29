@@ -67,12 +67,17 @@ trait GenHelpers extends CommonGenHelpers {
 
   def createTypeclassDef(r: TypeRef,
                          className: String,
-                         classInParams: Boolean): Doc = {
+                         classInParams: Boolean,
+                         lazyInstance: Boolean): Doc = {
     val typ = createTypeRef(r)
     val (definition, name, params) = TypeRef.cata(
       s =>
         (
-          if (s.parameters.isEmpty) "val" else "def",
+          if (s.parameters.isEmpty) {
+            if (lazyInstance) "lazy val" else "val"
+          } else {
+            "def"
+          },
           s.name.name.name,
           createParameters0(
             s.parameters.map(createTypeRef),

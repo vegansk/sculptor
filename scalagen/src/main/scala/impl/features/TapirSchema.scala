@@ -8,7 +8,9 @@ import cats.implicits._
 
 import sculptor.ast._
 
-final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
+final class TapirSchema(adtTag: String, schemaLazyInstances: Boolean)
+    extends Feature
+    with GenHelpers {
 
   import ScalaIdent._
 
@@ -21,8 +23,12 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
 
   private def mkRecordSchema(t: TypeDef, fields: List[FieldDef]): Result[Doc] =
     getIndent.map { indent =>
-      createTypeclassDef(t.ref, "Schema", true)
-        .line(
+      createTypeclassDef(
+        t.ref,
+        "Schema",
+        classInParams = true,
+        lazyInstance = schemaLazyInstances
+      ).line(
           recordLikeSchemaValue(createTypeRef(t.ref), t.comment, fields, indent)
         )
         .nested(indent)
@@ -77,8 +83,12 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
       ).intercalate(Doc.line)
         .nested(indent)
 
-      createTypeclassDef(t.ref, "Schema", true)
-        .line(value)
+      createTypeclassDef(
+        t.ref,
+        "Schema",
+        classInParams = true,
+        lazyInstance = schemaLazyInstances
+      ).line(value)
         .nested(indent)
     }
   }
@@ -154,14 +164,24 @@ final class TapirSchema(adtTag: String) extends Feature with GenHelpers {
           //Doc.line + Doc.line
         )
         .bracketBy(
-          createTypeclassDef(t.ref, "Schema", true).space("{"),
+          createTypeclassDef(
+            t.ref,
+            "Schema",
+            classInParams = true,
+            lazyInstance = schemaLazyInstances
+          ).space("{"),
           Doc.text("}")
         )
     }
 
   private def mkNewtypeSchema(n: Newtype): Result[Doc] =
     getIndent.map { indent =>
-      val typeclassDef = createTypeclassDef(n.ref, "Schema", true)
+      val typeclassDef = createTypeclassDef(
+        n.ref,
+        "Schema",
+        classInParams = true,
+        lazyInstance = schemaLazyInstances
+      )
       val baseSchema = Doc.text("implicitly[Schema[") + createTypeRef(
         n.baseType
       ) + Doc.text("]]")
