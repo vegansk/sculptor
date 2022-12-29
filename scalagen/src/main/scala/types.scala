@@ -23,8 +23,12 @@ object Feature {
   def CirceCodecs(adtTag: String = ""): Feature =
     new impl.features.CirceCodecs(adtTag = adtTag)
   val AdditionalCode: Feature = impl.features.AdditionalCode
-  def TapirSchema(adtTag: String = ""): Feature =
-    new impl.features.TapirSchema(adtTag = adtTag)
+  def TapirSchema(adtTag: String = "",
+                  schemaLazyInstances: Boolean = false): Feature =
+    new impl.features.TapirSchema(
+      adtTag = adtTag,
+      schemaLazyInstances = schemaLazyInstances
+    )
 }
 
 final case class Config(tabSize: Int = 2,

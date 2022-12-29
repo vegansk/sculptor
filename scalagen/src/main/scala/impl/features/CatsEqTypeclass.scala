@@ -9,7 +9,10 @@ import sculptor.scalagen.Feature
 object CatsEqTypeclass extends Feature with GenHelpers {
 
   private def fromUniversalEquals(r: TypeRef): Result[Doc] =
-    ok(createTypeclassDef(r, "Eq", false).space("Eq.fromUniversalEquals"))
+    ok(
+      createTypeclassDef(r, "Eq", classInParams = false, lazyInstance = false)
+        .space("Eq.fromUniversalEquals")
+    )
 
   override def handleNewtype(n: Newtype) =
     fromUniversalEquals(n.ref).map(List(_))
