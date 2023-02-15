@@ -57,11 +57,27 @@ object Transform {
   def getDependencies: Result[Dependencies] =
     getTransformState.map(_.dependencies)
 
+  def splitCamelCase(v: String): List[String] = v match {
+    case "" => Nil
+    case _ if v.length === 1 => List(v)
+    case _ =>
+      if (v.forall(_.isUpper))
+        List(v.toLowerCase.capitalize)
+      else {
+        val (x, xs) = v.drop(1).span(_.isLower)
+        (v.take(1) + x) :: splitCamelCase(xs)
+      }
+  }
+
+  def splitName(v: String): List[String] =
+    v.replaceAll("[-\\.]", "_").split('_').toList.map(splitCamelCase _).flatten
+
   def toCamelCase(v: String, firstUpperCase: Boolean): String = {
     def camel(firstUpper: Boolean, v: String): String =
       if (firstUpper) v.toLowerCase.capitalize
+      else if (v.forall(_.isUpper)) v
       else v.toLowerCase
-    v.split('_').toList match {
+    splitName(v) match {
       case x :: xs => {
         val first = camel(firstUpperCase, x)
         (first :: xs.map(camel(true, _))).mkString

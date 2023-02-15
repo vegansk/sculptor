@@ -68,7 +68,7 @@ object Transform {
   }
 
   def splitName(v: String): List[String] =
-    v.replaceAll("\\.", "_").split('_').toList.map(splitCamelCase _).flatten
+    v.replaceAll("[-\\.]", "_").split('_').toList.map(splitCamelCase _).flatten
 
   def toCamelCase(v: String, firstUpperCase: Boolean): String = {
     def camel(firstUpper: Boolean, v: String): String =
