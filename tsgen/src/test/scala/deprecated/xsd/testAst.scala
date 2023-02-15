@@ -35,7 +35,7 @@ object testAst {
     lazy val src = parseXsdTypes(<xs:complexType name="id_t">
         <xs:sequence>
           <xs:element name="id" type="xs:string"/>
-          <xs:element name="org" type="xs:string" minOccurs="0"/>
+          <xs:element name="org-name" type="xs:string" minOccurs="0"/>
         </xs:sequence>
       </xs:complexType>).head
 
@@ -53,7 +53,7 @@ object testAst {
             None
           ),
           FieldDecl(
-            Ident("org"),
+            Ident("orgName"),
             TypeRef.std(Ident("string")),
             FieldConstraint.Optional,
             false,
