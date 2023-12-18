@@ -5,7 +5,7 @@ object Dependencies {
   object Versions {
     val sbt = "1.3.1"
     val scala212 = "2.12.12"
-    val scalaXml = "1.2.0"
+    val scalaXml = "2.2.0"
     val scalaGraph = "1.13.0"
     val specs2 = "4.7.1"
     val cats = "2.0.0"
