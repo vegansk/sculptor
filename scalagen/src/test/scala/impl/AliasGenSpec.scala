@@ -60,8 +60,8 @@ object AliasGenSpec
     "generate comments" >> {
       runGen(AliasGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Alias MyInt:
-           |// The Int type alias
            |
+           |/** The Int type alias */
            |type MyInt = Int""".fix.asRight
       )
     }

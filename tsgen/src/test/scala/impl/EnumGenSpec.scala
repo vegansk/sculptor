@@ -89,12 +89,15 @@ object EnumGenSpec
     "generate comments" >> {
       runGen(EnumGen.generate(e), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Enum Colors:
-           |// The Colors enum
            |
+           |/** The Colors enum */
            |export enum Colors {
-           |  Red = "red" /* Red color */,
-           |  Green = "green" /* Green color */,
-           |  Blue = "blue" /* Blue color */
+           |  /** Red color */
+           |  Red = "red",
+           |  /** Green color */
+           |  Green = "green",
+           |  /** Blue color */
+           |  Blue = "blue"
            |}
            |
            |export const colorsValues: Colors[] = [
@@ -107,16 +110,19 @@ object EnumGenSpec
       val e = enum("Foo")
         .comment("""|Lorem
              |ipsum
-             |dolor""".stripMargin)
+             |dolor
+             |""".stripMargin)
         .values(enumValue("Bar"))
         .build
 
       runGen(EnumGen.generate(e), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Enum Foo:
-           |// Lorem
-           |// ipsum
-           |// dolor
            |
+           |/**
+           |  Lorem
+           |  ipsum
+           |  dolor
+           |*/
            |export enum Foo {
            |  Bar = "Bar"
            |}

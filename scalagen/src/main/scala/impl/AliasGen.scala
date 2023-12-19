@@ -28,11 +28,18 @@ object AliasGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleAlias(a))
 
-      result = comment.toList ++ List(alias) ++ features.toNel.map { f =>
-        val prefix = objectPrefix(a.name)
-        Doc
-          .intercalate(dblLine, f.toList)
-          .tightBracketBy(prefix, objectPostfix, indent)
-      }.toList
-    } yield Doc.intercalate(dblLine, result)
+    } yield
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(
+            dblLine,
+            alias :: features.toNel.map { f =>
+              val prefix = objectPrefix(a.name)
+              Doc
+                .intercalate(dblLine, f.toList)
+                .tightBracketBy(prefix, objectPostfix, indent)
+            }.toList
+          ) :: Nil
+        )
+      )
 }

@@ -85,9 +85,13 @@ object EnumGen extends GenHelpers {
       features <- features.collectFeatures(_.handleEnum(e))
 
     } yield
-      Doc.intercalate(
-        dblLine,
-        comment.toList ++ List(enum_, values) ++ descriptions.toList ++ features
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(
+            dblLine,
+            List(enum_, values) ++ descriptions.toList ++ features
+          ) :: Nil
+        )
       )
 
 }

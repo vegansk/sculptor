@@ -26,5 +26,9 @@ object NewtypeGen extends GenHelpers {
       features <- features.collectFeatures(_.handleNewtype(n))
 
     } yield
-      Doc.intercalate(dblLine, comment.toList ++ List(newtype) ++ features)
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(dblLine, newtype :: features) :: Nil
+        )
+      )
 }

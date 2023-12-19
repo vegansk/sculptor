@@ -30,11 +30,19 @@ trait CommonGenHelpers {
 
     typ.comment match {
       case None => header
-      case Some(c) =>
-        Doc.stack(
-          (header + Doc.text(":")) +:
-            c.linesIterator.map(line => Doc.text(s"// $line")).toVector
-        )
+      case Some(c) => {
+        val comment = Doc.hardLine + (c.linesIterator.toList match {
+          case comment :: Nil => Doc.text(s"/** $comment */")
+          case multiline =>
+            Doc.text("/**") + Doc.hardLine +
+              Doc.intercalate(
+                Doc.hardLine,
+                multiline.map(v => Doc.text(s"  $v"))
+              ) +
+              Doc.hardLine + Doc.text("*/")
+        })
+        Doc.stack((header + Doc.text(":")) :: comment :: Nil)
+      }
     }
   }
 
@@ -44,10 +52,10 @@ trait CommonGenHelpers {
     Option(genComment)
       .filter(identity)
       .flatMap(_ => comment)
-      .map(c => Doc.text(s"/* $c */"))
+      .map(c => Doc.text(s"/** $c */"))
 
   def comment(genComment: Boolean)(comment: => String): Option[Doc] =
-    Option(genComment).filter(identity).map(_ => Doc.text(s"/* $comment */"))
+    Option(genComment).filter(identity).map(_ => Doc.text(s"/** $comment */"))
 
   def doc(needDoc: Boolean)(doc: => Doc): Option[Doc] =
     Option(needDoc).filter(identity).map(_ => doc)

@@ -34,12 +34,19 @@ object NewtypeGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleNewtype(n))
 
-      result = comment.toList ++ List(newtype) ++ features.toNel.map { f =>
-        val prefix = objectPrefix(n.name)
-        bracketBy(
-          Doc
-            .intercalate(dblLine, f.toList)
-        )(prefix, objectPostfix, indent)
-      }.toList
-    } yield Doc.intercalate(dblLine, result)
+    } yield
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(
+            dblLine,
+            newtype :: features.toNel.map { f =>
+              val prefix = objectPrefix(n.name)
+              bracketBy(
+                Doc
+                  .intercalate(dblLine, f.toList)
+              )(prefix, objectPostfix, indent)
+            }.toList
+          ) :: Nil
+        )
+      )
 }
