@@ -208,16 +208,17 @@ object ADTGenSpec
     "generate comments" >> {
       runGen(ADTGen.generate(maybeAdt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// ADT Maybe[A]:
-           |// The type representing optional value
            |
+           |/** The type representing optional value */
            |sealed trait Maybe[A] extends Product with Serializable
            |
            |object Maybe {
-           |  /* The empty value */
+           |  /** The empty value */
            |  final case class Empty[A]() extends Maybe[A]
-           |  /* The non empty value */
+           |  /** The non empty value */
            |  final case class Just[A](
-           |    value: A /* The value */
+           |    /** The value */
+           |    value: A
            |  ) extends Maybe[A]
            |}""".fix.asRight
       )

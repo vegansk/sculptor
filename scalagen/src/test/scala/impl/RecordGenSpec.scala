@@ -114,11 +114,13 @@ object RecordGenSpec
     "generate comments" >> {
       runGen(RecordGen.generate(rec), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Record Record[A]:
-           |// The Record
            |
+           |/** The Record */
            |final case class Record[A](
-           |  id: Int /* The id */,
-           |  nameO: Option[A] /* The name */
+           |  /** The id */
+           |  id: Int,
+           |  /** The name */
+           |  nameO: Option[A]
            |)""".fix.asRight
       )
     }

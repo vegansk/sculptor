@@ -128,8 +128,8 @@ object NewtypeGenSpec
     "generate comments" >> {
       runGen(NewtypeGen.generate(myInt), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Newtype MyInt:
-           |// The Int type
            |
+           |/** The Int type */
            |final case class MyInt(
            |  value: Int
            |) extends AnyVal""".fix.asRight

@@ -65,11 +65,13 @@ object RecordGenSpec
     "generates comments" >> {
       runGen(RecordGen.generate(r), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Record Record<A>:
-           |// The Record
            |
+           |/** The Record */
            |export interface Record<A> {
-           |  id: number /* The id */
-           |  nameO: Option<A> /* The name */
+           |  /** The id */
+           |  id: number
+           |  /** The name */
+           |  nameO: Option<A>
            |}""".fix.asRight
       )
     }

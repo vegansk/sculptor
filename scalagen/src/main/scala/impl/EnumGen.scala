@@ -11,12 +11,10 @@ object EnumGen extends GenHelpers {
 
   def generateEnumValue(genComment: Boolean)(e: EnumValue,
                                              enumType: Doc): List[Doc] =
-    Option(genComment)
-      .filter(identity)
-      .flatMap(_ => e.comment)
-      .map(c => Doc.text(s"// $c"))
-      .toList ++
-      List(extend(caseObject(e.name), enumType))
+    List(
+      optionalComment(genComment)(e.comment),
+      extend(caseObject(e.name), enumType).some
+    ).flattenOption
 
   def generateValues(e: Enum, enumType: Doc, indent: Int): Result[Doc] = {
     val prefix = Doc.text("val values: List[") + enumType + Doc.text(
@@ -147,6 +145,11 @@ object EnumGen extends GenHelpers {
           .intercalate(dblLine, body :: features)
       )(enumPrefix, objectPostfix, indent)
 
-    } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, enum_))
+    } yield
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(dblLine, List(trait_, enum_)) :: Nil
+        )
+      )
 
 }

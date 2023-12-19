@@ -71,9 +71,9 @@ object ADTGen extends GenHelpers {
       features <- features.collectFeatures(_.handleADT(a))
 
     } yield
-      Doc.intercalate(
-        dblLine,
-        comment.toList ++ List(adtType) ++ constructors ++ features
+      Doc.stack(
+        comment.toList ++ (Doc
+          .intercalate(dblLine, adtType :: constructors ++ features) :: Nil)
       )
 
 }

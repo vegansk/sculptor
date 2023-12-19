@@ -31,6 +31,9 @@ object RecordGen extends GenHelpers {
 
       features <- features.collectFeatures(_.handleRecord(r))
 
-    } yield Doc.intercalate(dblLine, comment.toList ++ List(record) ++ features)
+    } yield
+      Doc.stack(
+        comment.toList ++ (Doc.intercalate(dblLine, record :: features) :: Nil)
+      )
 
 }

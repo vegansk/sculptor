@@ -14,5 +14,10 @@ object AliasGen extends GenHelpers {
       baseType = createTypeRef(a.baseType)
       alias = exported(Doc.text("type ") + typ + Doc.text(" = ") + baseType)
 
-    } yield Doc.intercalate(dblLine, comment.toList ++ List(alias) ++ features)
+    } yield
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(dblLine, alias :: features) :: Nil
+        )
+      )
 }

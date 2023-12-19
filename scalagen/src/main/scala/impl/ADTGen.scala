@@ -103,6 +103,11 @@ object ADTGen extends GenHelpers {
           .intercalate(dblLine, List(implBody) ++ helpers ++ features)
       )(implPrefix, objectPostfix, indent)
 
-    } yield Doc.intercalate(dblLine, comment.toList ++ List(trait_, impl))
+    } yield
+      Doc.stack(
+        comment.toList ++ (
+          Doc.intercalate(dblLine, List(trait_, impl)) :: Nil
+        )
+      )
 
 }

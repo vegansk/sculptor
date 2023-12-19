@@ -127,16 +127,16 @@ object EnumGenSpec
     "generate comments" >> {
       runGen(EnumGen.generate(testEnum), cfg.copy(generateComments = true)) must beEqvTo(
         """|// Enum Colors:
-           |// The Colors enum
            |
+           |/** The Colors enum */
            |sealed trait Colors extends Product with Serializable
            |
            |object Colors {
-           |  // Red color
+           |  /** Red color */
            |  case object Red extends Colors
-           |  // Green color
+           |  /** Green color */
            |  case object Green extends Colors
-           |  // Blue color
+           |  /** Blue color */
            |  case object Blue extends Colors
            |  
            |  val values: List[Colors] = List(
