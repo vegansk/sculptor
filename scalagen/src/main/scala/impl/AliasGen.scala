@@ -26,7 +26,7 @@ object AliasGen extends GenHelpers {
         a.baseType
       )
 
-      features <- features.collectFeatures(_.handleAlias(a))
+      features <- features.collectTypeFeatures(a)(_.handleAlias(a))
 
     } yield
       Doc.stack(

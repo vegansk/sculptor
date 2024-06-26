@@ -138,7 +138,7 @@ object EnumGen extends GenHelpers {
 
       body <- generateEnumBody(e, typ, indent)
 
-      features <- features.collectFeatures(_.handleEnum(e))
+      features <- features.collectTypeFeatures(e)(_.handleEnum(e))
 
       enum_ = bracketBy(
         Doc
