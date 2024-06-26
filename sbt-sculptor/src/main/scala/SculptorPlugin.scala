@@ -19,6 +19,10 @@ object SculptorPlugin extends AutoPlugin {
       type Feature = scalagen.Feature
       @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
       val Feature = scalagen.Feature
+
+      type TypesFeaturesOverrides = scalagen.TypesFeaturesOverrides
+      @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+      val TypesFeaturesOverrides = scalagen.TypesFeaturesOverrides
     }
 
     final case class ScalagenConfig(pkg: ast.Package,
@@ -49,6 +53,10 @@ object SculptorPlugin extends AutoPlugin {
 
       @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
       val StdIotsMappings = tsgen.StdIotsMappings
+
+      type TypesFeaturesOverrides = tsgen.TypesFeaturesOverrides
+      @SuppressWarnings(Array("org.wartremover.warts.PublicInference"))
+      val TypesFeaturesOverrides = tsgen.TypesFeaturesOverrides
     }
 
     final case class TsgenConfig(pkg: ast.Package,

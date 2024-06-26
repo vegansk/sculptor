@@ -82,7 +82,7 @@ object EnumGen extends GenHelpers {
       descriptions <- if (genDescriptions) generateDescriptions(e, typ, indent)
       else ok(None)
 
-      features <- features.collectFeatures(_.handleEnum(e))
+      features <- features.collectTypeFeatures(e)(_.handleEnum(e))
 
     } yield
       Doc.stack(

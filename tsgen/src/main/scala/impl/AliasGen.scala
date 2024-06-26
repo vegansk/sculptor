@@ -8,7 +8,7 @@ object AliasGen extends GenHelpers {
 
   def generate(a: Alias): Result[Doc] =
     for {
-      features <- features.collectFeatures(_.handleAlias(a))
+      features <- features.collectTypeFeatures(a)(_.handleAlias(a))
       typ = createTypeExpr0(a.name.name, a.parameters.map(createGenericParam))
       comment <- getGenerateComments.map(doc(_)(typeComment(a, typ)))
       baseType = createTypeRef(a.baseType)

@@ -96,7 +96,7 @@ object ADTGen extends GenHelpers {
         case _ => List(generateHelpers(a, typ, indent))
       }
 
-      features <- features.collectFeatures(_.handleADT(a))
+      features <- features.collectTypeFeatures(a)(_.handleADT(a))
 
       impl = bracketBy(
         Doc

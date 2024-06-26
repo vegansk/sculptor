@@ -26,7 +26,7 @@ object RecordGen extends GenHelpers {
 
       record = bracketBy(body)(caseClassPrefix(typ), caseClassPostfix, indent)
 
-      features <- features.collectFeatures(_.handleRecord(r))
+      features <- features.collectTypeFeatures(r)(_.handleRecord(r))
     } yield
       Doc.stack(
         comment.toList ++ (

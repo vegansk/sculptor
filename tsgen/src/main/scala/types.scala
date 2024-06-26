@@ -31,8 +31,14 @@ object Feature {
 final case class OptionalEncoding(optionalType: String = "",
                                   allFieldsOptional: Boolean = false)
 
+final case class TypesFeaturesOverrides(
+  value: Map[String, List[Feature]] = Map.empty
+) extends AnyVal
+
 final case class Config(tabSize: Int = 2,
                         features: List[Feature] = List.empty,
+                        typesFeaturesOverrides: TypesFeaturesOverrides =
+                          TypesFeaturesOverrides(),
                         lineWidth: Int = 120,
                         adtTag: String = "",
                         prefixCode: String = "",
@@ -44,6 +50,8 @@ final case class Config(tabSize: Int = 2,
 object Config {
   def tabSize(c: Config): Int = c.tabSize
   def features(c: Config): List[Feature] = c.features
+  def typesFeaturesOverrides(c: Config): TypesFeaturesOverrides =
+    c.typesFeaturesOverrides
   def lineWidth(c: Config): Int = c.lineWidth
   def adtTag(c: Config): String = if (c.adtTag.isEmpty()) "__tag" else c.adtTag
   def prefixCode(c: Config): Option[Doc] =

@@ -23,7 +23,7 @@ object NewtypeGen extends GenHelpers {
 
       newtype = exported(body.tightBracketBy(prefix, newtypePostfix, indent))
 
-      features <- features.collectFeatures(_.handleNewtype(n))
+      features <- features.collectTypeFeatures(n)(_.handleNewtype(n))
 
     } yield
       Doc.stack(

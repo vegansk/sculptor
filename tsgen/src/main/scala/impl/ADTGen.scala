@@ -68,7 +68,7 @@ object ADTGen extends GenHelpers {
         case _ => List(withNamespace(a.name.name, indent)(constructors0))
       }
 
-      features <- features.collectFeatures(_.handleADT(a))
+      features <- features.collectTypeFeatures(a)(_.handleADT(a))
 
     } yield
       Doc.stack(
